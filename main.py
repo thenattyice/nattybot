@@ -1,9 +1,33 @@
 import os
 import discord
+import asyncpg
+import asyncio
 from discord.ext import commands
 from discord import app_commands
 
 class Client(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.db_pool = None  #Stores the pool
+        
+    #DB conenction details method
+    async def setup_db(self):
+        self.db_pool = await asyncpg.create_pool(
+            user='your_user',
+            password='your_password',
+            database='your_database',
+            host='localhost',
+            port=5432
+        )
+        async with self.db_pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id BIGINT PRIMARY KEY,
+                    balance BIGINT NOT NULL DEFAULT 0
+                );
+            """)
+    print("Database connection pool created and schema ensured.")
+    
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
         print("successfully finished startup")
@@ -179,7 +203,7 @@ async def f1Schedule(interaction: discord.Interaction):
         }
     }
     
-    # Format all races into a single message
+    #Format all races into a single message
     message = "**2025 Formula 1 Race Schedule**\n\n"
     
     for race_num, race_info in schedule_2025.items():
@@ -189,4 +213,6 @@ async def f1Schedule(interaction: discord.Interaction):
     
     await interaction.response.send_message(message)
     
-client.run('ENTER TOKEN HERE')
+async def main():
+    await client.setup_db() #Connect to the DB first
+    await client.start('MTMzMTA1OTUyNjYxODcxNDI0NA.GY6ze9.vrFogwR7CiVKWH_TdruNQqvboanQRkUXSiiB34')

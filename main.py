@@ -4,6 +4,7 @@ import asyncpg
 import asyncio
 from discord.ext import commands
 from discord import app_commands
+from discord import Member
 
 class Client(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -68,6 +69,44 @@ GUILD_ID = discord.Object(id=412828225144750092)
 @client.tree.command(name="test", description="Nate's test command", guild=GUILD_ID)
 async def sayTest(interaction: discord.Interaction):
     await interaction.response.send_message("The test worked!")
+    
+""" Base commands for the economy function """
+
+#Check balance
+@client.tree.command(name="balance", description="Check your balance", guild=GUILD_ID)
+async def balance_check(interaction: discord.Interaction):
+    user_id = interaction.user.id
+    
+    async with client.db_pool.acquire() as conn:
+            result = await conn.fethcrow("SELECT balance FROM users WHERE user_id = $1", user_id)
+            
+    balance = result["balance"] if result else 0
+    await interaction.response.send_message(f"YOur balance is {balance} NattyCoins.", ephemeral=True)
+    
+#Add money
+ROLES_ALLOWED_ADD_MONEY = {412966700544163840} #Mr. Ice for now
+@client.tree.command(name="addmoney", description="Add currency to your balance", guild=GUILD_ID)
+async def dd_money(interaction: discord.Interaction, user: Member, amount: int):
+    user_role_ids = [role.id for role in interaction.user.roles]
+    if not any(role_id in ROLES_ALLOWED_ADD_MONEY for role_id in user_role_ids):
+        await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+        return
+    
+    if amount <= 0:
+        await interaction.response.send_message("The balance addition cannot be negative.", ephemeral=True)
+        return
+    
+    target_user_id = user.id
+    
+    async with client.db_pool.acquire() as conn:
+        await conn.execute("""
+            INSERT INTO users (user_id, balance)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id) DO UPDATE
+            SET balance = users.balance + $2;
+        """, target_user_id, amount)
+
+    await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.")
 
 #Command to ping the boys for RL
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_ID)

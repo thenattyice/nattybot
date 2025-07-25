@@ -14,10 +14,10 @@ class Client(commands.Bot):
     #DB conenction details method
     async def setup_db(self):
         self.db_pool = await asyncpg.create_pool(
-            user='your_user',
-            password='your_password',
-            database='your_database',
-            host='localhost',
+            user='postgres',
+            password='yFsWfHszlSjPRNdtStfLNNgaegstkYJg',
+            database='railway',
+            host='postgres.railway.internal',
             port=5432
         )
         async with self.db_pool.acquire() as conn:

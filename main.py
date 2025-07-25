@@ -44,7 +44,7 @@ class Client(commands.Bot):
         except Exception as e:
             print(f'Error syncing commands: {e}')
             
-    # Event handler for voice state updates
+    #Event handler for voice state updates
     async def on_voice_state_update(self, member, before, after):
         print(f"Voice state update detected for {member.name}")
         
@@ -67,7 +67,7 @@ client = Client(command_prefix="!", intents=intents)
 GUILD_ID = discord.Object(id=412828225144750092)
 #Test command
 @client.tree.command(name="test", description="Nate's test command", guild=GUILD_ID)
-async def sayTest(interaction: discord.Interaction):
+async def say_test(interaction: discord.Interaction):
     await interaction.response.send_message("The test worked!")
     
 """ Base commands for the economy function """
@@ -110,7 +110,7 @@ async def dd_money(interaction: discord.Interaction, user: Member, amount: int):
 
 #Command to ping the boys for RL
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_ID)
-async def rlPing(interaction: discord.Interaction):
+async def rl_ping(interaction: discord.Interaction):
     grayson = interaction.guild.get_member(162343822179696640)
     jake = interaction.guild.get_member(277997412583473152)
     nate = interaction.guild.get_member(280683796020330497)

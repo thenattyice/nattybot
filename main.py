@@ -86,15 +86,15 @@ async def balance_check(interaction: discord.Interaction):
     user_id = interaction.user.id
     
     async with client.db_pool.acquire() as conn:
-            result = await conn.fethcrow("SELECT balance FROM users WHERE user_id = $1", user_id)
+            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
             
     balance = result["balance"] if result else 0
-    await interaction.response.send_message(f"YOur balance is {balance} NattyCoins.", ephemeral=True)
+    await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
     
 #Add money
 ROLES_ALLOWED_ADD_MONEY = {412966700544163840} #Mr. Ice for now
 @client.tree.command(name="addmoney", description="Add currency to your balance", guild=GUILD_ID)
-async def dd_money(interaction: discord.Interaction, user: Member, amount: int):
+async def add_money(interaction: discord.Interaction, user: Member, amount: int):
     user_role_ids = [role.id for role in interaction.user.roles]
     if not any(role_id in ROLES_ALLOWED_ADD_MONEY for role_id in user_role_ids):
         await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
@@ -135,4 +135,7 @@ async def f1_schedule(interaction: discord.Interaction):
     
 async def main():
     await client.setup_db() #Connect to the DB first
-    await client.start(os.getenv('YOUR_TOKEN'))
+    await client.start(os.getenv('DISCORD_TOKEN'))
+
+if __name__ == '__main__':
+    asyncio.run(main())

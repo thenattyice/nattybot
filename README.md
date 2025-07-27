@@ -1,4 +1,4 @@
-# NattyBot 🪙🎮
+# Degenbot 🪙🎮
 
 Discord bot built with `discord.py`, `asyncpg`, and `dotenv` for managing a lightweight economy system, social commands, and a live F1 schedule.
 
@@ -68,7 +68,7 @@ python bot.py
 
 To use `/addmoney`, your role must be in the allowed set:
 ```python
-ROLES_ALLOWED_ADD_MONEY = {412966700544163840}  # Mr. Ice, etc.
+ROLES_ALLOWED_ADD_MONEY = {412966700544163840}
 ```
 
 Update these in the source code as needed.
@@ -78,7 +78,7 @@ Update these in the source code as needed.
 ## 📁 Project Structure
 
 ```
-nattybot/
+degenbot/
 │
 ├── bot.py
 ├── f1_schedule_data.py
@@ -93,7 +93,7 @@ nattybot/
 
 ## 🤝 Contributing
 
-Pull requests and suggestions are welcome. Just keep it natty.
+Pull requests and suggestions are welcome.
 
 ---
 

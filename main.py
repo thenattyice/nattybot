@@ -121,7 +121,7 @@ async def rl_ping(interaction: discord.Interaction):
         if member:
             mentions.append(member.mention)
 
-    await interaction.response.send_message(f"Let's go boys, it's trio time {' '.join(mentions)}")
+    await interaction.response.send_message(f"Lets go boys, its trio time {' '.join(mentions)}")
 
 @client.tree.command(name="f1", description="Show 2025 F1 schedule", guild=GUILD_OBJECT)
 async def f1_schedule(interaction: discord.Interaction):
@@ -131,7 +131,7 @@ async def f1_schedule(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 async def main():
-    await client.setup_db()
+    await client.setup_db() #Connect to the DB first
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 if __name__ == '__main__':

@@ -99,4 +99,4 @@ Pull requests and suggestions are welcome.
 
 ## 📜 License
 
-MIT License
+[MIT License](https://github.com/thenattyice/degenbot/blob/main/LICENSE)

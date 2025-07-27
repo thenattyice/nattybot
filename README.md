@@ -47,7 +47,7 @@ DATABASE_URL=postgres://user:pass@host:port/dbname
 ### 3. Run the Bot
 
 ```bash
-python bot.py
+python main.py
 ```
 
 ---

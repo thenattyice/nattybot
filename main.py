@@ -108,7 +108,7 @@ async def add_money(interaction: discord.Interaction, user: Member, amount: int)
             SET balance = users.balance + $2;
         """, target_user_id, amount)
 
-    await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.")
+    await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
 
 #Command to ping the boys for RL
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_ID)

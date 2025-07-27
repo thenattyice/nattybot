@@ -5,29 +5,37 @@ import asyncio
 from discord.ext import commands
 from discord import app_commands
 from discord import Member
+from dotenv import load_dotenv
+
+load_dotenv() #Load the env file
 
 class Client(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.db_pool = None  #Stores the pool
+        self.db_pool = None #Stores the pool
         
     #DB conenction details method
     async def setup_db(self):
-        self.db_pool = await asyncpg.create_pool(
-            user='u402962_1seq4O8QnB',
-            password='0cpeoFUB6uuvMzguMI50sEE3',
-            database='s402962_Bot_DB',
-            host='gamesnj344.bisecthosting.com',
-            port=5432
-        )
-        async with self.db_pool.acquire() as conn:
-            await conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    user_id BIGINT PRIMARY KEY,
-                    balance BIGINT NOT NULL DEFAULT 0
-                );
-            """)
-    print("Database connection pool created and schema ensured.")
+        try:
+            self.db_pool = await asyncpg.create_pool(
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                database=os.getenv("DB_NAME"),
+                host=os.getenv("DB_HOST"),
+                port=int(os.getenv("DB_PORT", 5432)) #Use default if missing
+            )
+            async with self.db_pool.acquire() as conn:
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        user_id BIGINT PRIMARY KEY,
+                        balance BIGINT NOT NULL DEFAULT 0
+                    );
+                """)
+            print("Database connection pool created and schema ensured.")
+            
+        except asyncpg.PostgresError as e:
+            print(f"❌ Failed to connect to the database: {e}")
+            
     
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
@@ -127,4 +135,4 @@ async def f1_schedule(interaction: discord.Interaction):
     
 async def main():
     await client.setup_db() #Connect to the DB first
-    await client.start('MTMzMTA1OTUyNjYxODcxNDI0NA.GY6ze9.vrFogwR7CiVKWH_TdruNQqvboanQRkUXSiiB34')
+    await client.start(os.getenv('YOUR_TOKEN'))

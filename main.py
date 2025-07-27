@@ -17,13 +17,7 @@ class Client(commands.Bot):
     #DB conenction details method
     async def setup_db(self):
         try:
-            self.db_pool = await asyncpg.create_pool(
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD"),
-                database=os.getenv("DB_NAME"),
-                host=os.getenv("DB_HOST"),
-                port=int(os.getenv("DB_PORT", 5432)) #Use default if missing
-            )
+            self.db_pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
             async with self.db_pool.acquire() as conn:
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS users (

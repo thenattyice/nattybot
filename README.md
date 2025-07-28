@@ -97,6 +97,13 @@ Pull requests and suggestions are welcome.
 
 ---
 
+## Development Procedure
+
+- All changes, updates, and fixes will first be merged to the dev branch
+- Once tested in dev, they will be merged to main
+
+---
+
 ## 📜 License
 
 [MIT License](https://github.com/thenattyice/degenbot/blob/main/LICENSE)

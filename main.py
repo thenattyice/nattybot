@@ -137,7 +137,7 @@ async def remove_money(interaction: discord.Interaction, user: Member, amount: i
         current_balance = result["balance"] if result else 0
         
         if current_balance < amount:
-            await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. Current balance: {current_balance} NattyCoins.", ephemeral=True)
+            await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {target_user_id}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
             return
 
     async with client.db_pool.acquire() as conn:

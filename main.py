@@ -14,6 +14,7 @@ load_dotenv() #Load the env file
 GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
+WORDLE_APP_ID = 1211781489931452447
 
 # User mappings for adding and removing users
 USERS = {
@@ -72,6 +73,64 @@ class Client(commands.Bot):
             except Exception as e:
                 print(f"Error sending DM: {e}")
                 
+    # Event listener for the Wordle channel, specifically tracking daily results
+    async def on_message(message):
+        if message.channel.name != 'wordle': # Filter for the 'wordle' channel
+            return
+        
+        if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
+            return
+        
+        if "Here are yesterday's results:" not in message.content: # Finds the summary message via the sumamry phrase
+            return
+        
+        lines = message.content.splitlines() # Split out the worlde daily summary line by line
+        user_rewards = {}
+        
+        # Loop through each line
+        for line in lines:
+            match = re.match(r"(👑 )?(\d)/6: (.+)", line) # Regex for the line format. Crown optional as group 1, group 2 is the score, and group 3 is the name
+            if match:
+                score = int(match.group(2))
+                raw_name = match.group(3).strip()
+                
+                matched_user = None # Init the matched user
+                
+                # First look for actual user mentions
+                for user in message.mentions:
+                    if user.display_name in raw_name or user.name in raw_name:
+                        matched_user = user
+                        break
+                    
+                # Sometimes it fails to mention, so we grab the raw_name and search using that
+                if not matched_user:
+                    for member in message.guild.members:
+                        if member.display_name in raw_name or member.name in raw_name:
+                            matched_user = member
+                            break
+                        
+                if matched_user:
+                    user_rewards[matched_user.id] = score
+                else:
+                    print(f"⚠️ Could not match user for: {raw_name}")
+                    
+        for user_id, score in user_rewards.items():
+            reward = calculate_wordle_reward(score)
+            await add_money(user_id, reward)
+
+            # Fetch the member object from the ID
+            member = message.guild.get_member(user_id)
+            if member:
+                await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
+            else:
+                print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
+            
+        await client.process_commands(message)
+    
+    # Function to calc the score                
+    def calculate_wordle_reward(score):
+        return max(0, 7 - score) * 10
+    
 # Declared intents for bot perms in server
 intents = discord.Intents.all()
 intents.message_content = True

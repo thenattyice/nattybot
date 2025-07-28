@@ -11,9 +11,9 @@ from f1_schedule_data import schedule_2025
 load_dotenv() #Load the env file
 
 # Vars instead of hard coding guids
-GUILD_ID = 412828225144750092
+GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
-ROLES_ALLOWED_ADD_MONEY = {412966700544163840}  # Mr. Ice for now
+ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 
 # User mappings for adding and removing users
 USERS = {

@@ -2,11 +2,12 @@ import os
 import discord
 import asyncpg
 import asyncio
+import re
 from discord.ext import commands
-from discord import app_commands
 from discord import Member
 from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
+from cogs.economy import Economy
 
 load_dotenv() #Load the env file
 
@@ -50,9 +51,6 @@ class Client(commands.Bot):
         print("Successfully finished startup")
 
         try:
-            await self.tree.sync()
-            print(f'Synced commands globally')
-
             synced = await self.tree.sync(guild=GUILD_OBJECT)
             print(f'Synced {len(synced)} commands to guild {GUILD_ID}')
 
@@ -73,16 +71,8 @@ class Client(commands.Bot):
             except Exception as e:
                 print(f"Error sending DM: {e}")
     
-    # Function for adding money to users in DB
-    async def add_money_to_user(self, user_id: int, amount: int):
-        async with client.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO users (user_id, balance)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE
-                SET balance = users.balance + $2;
-            """, user_id, amount)
-                
+    
+    
     # Event listener for the Wordle channel, specifically tracking daily results
     async def on_message(self, message):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
@@ -91,7 +81,7 @@ class Client(commands.Bot):
         if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
             return
         
-        if "Here are yesterday's results:" not in message.content: # Finds the summary message via the sumamry phrase
+        if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
             return
         
         lines = message.content.splitlines() # Split out the wordle daily summary line by line
@@ -125,7 +115,7 @@ class Client(commands.Bot):
                     print(f"⚠️ Could not match user for: {raw_name}")
                     
         for user_id, score in user_rewards.items():
-            reward = calculate_wordle_reward(score)
+            reward = self.calculate_wordle_reward(score)
             await client.add_money_to_user(user_id, reward)
 
             # Fetch the member object from the ID
@@ -153,67 +143,6 @@ client = Client(command_prefix="!", intents=intents)
 async def say_test(interaction: discord.Interaction):
     await interaction.response.send_message("The test worked!")
     
-# Balance check command
-@client.tree.command(name="balance", description="Check your balance", guild=GUILD_OBJECT)
-async def balance_check(interaction: discord.Interaction):
-    user_id = interaction.user.id
-
-    async with client.db_pool.acquire() as conn:
-        result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
-
-    balance = result["balance"] if result else 0
-    await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
-    
-# Add money command
-@client.tree.command(name="addmoney", description="Add currency to a user's balance", guild=GUILD_OBJECT)
-async def add_money(interaction: discord.Interaction, user: Member, amount: int):
-    user_role_ids = [role.id for role in interaction.user.roles]
-    if not any(role_id in ROLES_ALLOWED_ADD_MONEY for role_id in user_role_ids):
-        await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
-        return
-
-    if amount <= 0:
-        await interaction.response.send_message("The balance addition cannot be negative.", ephemeral=True)
-        return
-
-    target_user_id = user.id
-    
-    await client.add_money_to_user(user.id, amount)
-
-    await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
-
-# Remove money command
-@client.tree.command(name="removemoney", description="Remove currency from a user's balance", guild=GUILD_OBJECT)
-async def remove_money(interaction: discord.Interaction, user: Member, amount: int):
-    user_role_ids = [role.id for role in interaction.user.roles]
-    if not any(role_id in ROLES_ALLOWED_ADD_MONEY for role_id in user_role_ids):
-        await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
-        return
-
-    if amount <= 0:
-        await interaction.response.send_message("The balance edit cannot be negative.", ephemeral=True)
-        return
-
-    target_user_id = user.id
-    
-    async with client.db_pool.acquire() as conn:
-        result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", target_user_id)
-        current_balance = result["balance"] if result else 0
-        
-        if current_balance < amount:
-            await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
-            return
-
-    async with client.db_pool.acquire() as conn:
-        await conn.execute("""
-            INSERT INTO users (user_id, balance)
-            VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE
-            SET balance = users.balance - $2;
-        """, target_user_id, amount)
-
-    await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)
-
 # RL LFG ping command
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)
 async def rl_ping(interaction: discord.Interaction):
@@ -233,12 +162,18 @@ async def f1_schedule(interaction: discord.Interaction):
         embed.add_field(name=race['name'], value=f"Date: {race['date']}\nTime: {race['time']} EST", inline=False)
     await interaction.response.send_message(embed=embed)
 
+# Setup the cogs
+async def setup_cogs():
+    economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
+    await client.add_cog(economy_cog)
+    client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
+
 # Main method
 async def main():
     await client.setup_db() #Connect to the DB first
+    await setup_cogs()
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 # Run main
 if __name__ == '__main__':
     asyncio.run(main())
-

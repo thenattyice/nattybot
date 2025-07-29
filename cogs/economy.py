@@ -1,0 +1,84 @@
+from discord import app_commands, Member
+from discord.ext import commands
+
+class Economy(commands.Cog):
+    def __init__(self, bot, guild_object, allowed_roles):
+        self.bot = bot
+        self.guild_object = guild_object
+        self.allowed_roles = allowed_roles
+        
+        # Register commands to my specific guild/server
+        self.bot.tree.add_command(self.balance_check, guild=self.guild_object)
+        self.bot.tree.add_command(self.add_money, guild=self.guild_object)
+        self.bot.tree.add_command(self.remove_money, guild=self.guild_object)
+    
+    # Function for adding money to users in DB
+    async def add_money_to_user(self, user_id: int, amount: int):
+        async with self.bot.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, balance)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET balance = users.balance + $2;
+            """, user_id, amount)
+    
+    # Balance check command
+    @app_commands.command(name="balance", description="Check your balance")
+    async def balance_check(self, interaction: discord.Interaction):
+        user_id = interaction.user.id
+
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
+
+        balance = result["balance"] if result else 0
+        await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
+        
+    # Add money command
+    @app_commands.command(name="addmoney", description="Add currency to a user's balance")
+    async def add_money(self, interaction: discord.Interaction, user: Member, amount: int):
+        user_role_ids = [role.id for role in interaction.user.roles]
+        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            return
+
+        if amount <= 0:
+            await interaction.response.send_message("The balance addition cannot be negative.", ephemeral=True)
+            return
+
+        target_user_id = user.id
+        
+        await self.add_money_to_user(user.id, amount)
+
+        await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
+        
+    # Remove money command
+    @app_commands.command(name="removemoney", description="Remove currency from a user's balance")
+    async def remove_money(self, interaction: discord.Interaction, user: Member, amount: int):
+        user_role_ids = [role.id for role in interaction.user.roles]
+        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            return
+
+        if amount <= 0:
+            await interaction.response.send_message("The balance edit cannot be negative.", ephemeral=True)
+            return
+
+        target_user_id = user.id
+        
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", target_user_id)
+            current_balance = result["balance"] if result else 0
+            
+            if current_balance < amount:
+                await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
+                return
+
+        async with self.bot.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, balance)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET balance = users.balance - $2;
+            """, target_user_id, amount)
+
+        await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)

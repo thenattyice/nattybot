@@ -90,57 +90,66 @@ class Client(commands.Bot):
         
         # Loop through each line of the Wordle summary text
         for line in lines:
-            match = re.match(r"(👑 )?(\d|X)/6: (.+)", line)
+            line = line.replace("👑", "").strip()  # Clean up crown emoji
+            match = re.match(r"(\d|X)/6: (.+)", line)
+
             if match:
-                raw_score = match.group(2)
-                if raw_score == 'X': # Handles when a user doesnt get the Wordle
+                raw_score = match.group(1)
+                raw_name = match.group(2).strip()
+                raw_name_lower = raw_name.lower()
+
+                if raw_score == 'X':
                     score = 0
                 else:
                     score = int(raw_score)
-                raw_name = match.group(3).strip()
-                raw_name_lower = raw_name.lower()
-                print(f"{score}") # For testing only
+
+                print(f"🧪 Score: {score}, Raw name: {raw_name}")
 
                 matched_user = None
 
-                # First: Try to match using real mentions
+                # Attempt 1: Match by ID from actual mentions
                 for user in message.mentions:
-                    if user.display_name.lower() in raw_name_lower or user.name.lower() in raw_name_lower:
+                    mention_str = f"<@{user.id}>"
+                    if mention_str in raw_name or raw_name in (user.display_name, user.name):
                         matched_user = user
                         print(f"✅ Matched via mention: {user.display_name} ({user.id})")
                         break
 
-                # Second: Fallback to manual name match if no mention matched
+                # Attempt 2: Fallback to string match on names
                 if not matched_user:
                     for member in message.guild.members:
+                        if member.bot:
+                            continue  # Skip bots
                         display = member.display_name.lower()
                         username = member.name.lower()
                         if display in raw_name_lower or username in raw_name_lower or \
                         raw_name_lower in display or raw_name_lower in username:
                             matched_user = member
-                            print(f"✅ Fallback matched '{raw_name}' to member '{member.display_name}' ({member.id})")
+                            print(f"✅ Fallback matched '{raw_name}' to '{member.display_name}' ({member.id})")
                             break
 
-                # Final handling
                 if matched_user:
                     user_rewards[matched_user.id] = score
                 else:
                     print(f"⚠️ Could not match user for: '{raw_name}'")
-                
+
         for user_id, score in user_rewards.items():
             reward = self.calculate_wordle_reward(score)
             await client.add_money_to_user(user_id, reward)
 
-            # Fetch the member object from the ID
             member = message.guild.get_member(user_id)
             if member:
                 if score == 0:
-                    await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!")
+                    await message.channel.send(
+                        f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!"
+                    )
                 else:
-                    await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
+                    await message.channel.send(
+                        f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!"
+                    )
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
-        
+
         await self.process_commands(message)
     
     # Function to calc the score 

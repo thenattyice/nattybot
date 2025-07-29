@@ -36,7 +36,7 @@ class Economy(commands.Cog):
             return rows
     
     # Balance check command
-    @app_commands.command(name="balance", description="Check your balance")
+    @app_commands.command(name="balance", description="Check your balance", guild=self.guild_object)
     async def balance_check(self, interaction: discord.Interaction):
         user_id = interaction.user.id
 
@@ -47,7 +47,7 @@ class Economy(commands.Cog):
         await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
         
     # Add money command
-    @app_commands.command(name="addmoney", description="Add currency to a user's balance")
+    @app_commands.command(name="addmoney", description="Add currency to a user's balance", guild=self.guild_object)
     async def add_money(self, interaction: discord.Interaction, user: Member, amount: int):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
@@ -65,7 +65,7 @@ class Economy(commands.Cog):
         await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
         
     # Remove money command
-    @app_commands.command(name="removemoney", description="Remove currency from a user's balance")
+    @app_commands.command(name="removemoney", description="Remove currency from a user's balance", guild=self.guild_object)
     async def remove_money(self, interaction: discord.Interaction, user: Member, amount: int):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
@@ -97,7 +97,7 @@ class Economy(commands.Cog):
         await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)
         
     # Leaderboard command
-    @app_commands.command(name="leaderboard", description="Displays a leaderboard based on NattyCoin balance among users")
+    @app_commands.command(name="leaderboard", description="Displays a leaderboard based on NattyCoin balance among users", guild=self.guild_object)
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:

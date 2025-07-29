@@ -89,10 +89,10 @@ class Client(commands.Bot):
         
         # Loop through each line of the Wordle summary text
         for line in lines:
-            match = re.match(r"(👑 )?(\d)/6: (.+)", line)
+            match = re.match(r"(👑 )?(\d|X)/6: (.+)", line)
             if match:
                 raw_score = match.group(2)
-                if score == 'X':
+                if raw_score == 'X': # Handles when a user doesnt get the Wordle
                     score = 0
                 else:
                     score = int(raw_score)
@@ -125,19 +125,19 @@ class Client(commands.Bot):
                     user_rewards[matched_user.id] = score
                 else:
                     print(f"⚠️ Could not match user for: '{raw_name}'")
-                    
-                for user_id, score in user_rewards.items():
-                    reward = self.calculate_wordle_reward(score)
-                    await client.add_money_to_user(user_id, reward)
-
-                    # Fetch the member object from the ID
-                    member = message.guild.get_member(user_id)
-                    if member:
-                        await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
-                    else:
-                        print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
                 
-                await self.process_commands(message)
+        for user_id, score in user_rewards.items():
+            reward = self.calculate_wordle_reward(score)
+            await client.add_money_to_user(user_id, reward)
+
+            # Fetch the member object from the ID
+            member = message.guild.get_member(user_id)
+            if member:
+                await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
+            else:
+                print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
+        
+        await self.process_commands(message)
     
     # Function to calc the score 
     @staticmethod               

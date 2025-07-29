@@ -112,11 +112,21 @@ class Economy(commands.Cog):
                 # Mention the user based on id
                 display_name = f"<@{user_id}>"
                 
-                description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+                # Add emoji for top 3
+                if rank == 1:
+                    medal = "🥇"
+                elif rank == 2:
+                    medal = "🥈"
+                elif rank == 3:
+                    medal = "🥉"
+                else:
+                    medal = f"#{rank}"
+                
+                description += f"**#{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
                 
             #Discord embed structure
             embed = discord.Embed(
-                title="NattyCoin Leaderboard",
+                title="🏆 NattyCoin Leaderboard 🏆",
                 description=description,
                 color=discord.Color.gold()
             )

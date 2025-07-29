@@ -142,7 +142,10 @@ class Client(commands.Bot):
     # Function to calc the score 
     @staticmethod               
     def calculate_wordle_reward(score):
-        return max(0, 7 - score) * 10
+        if score == 0:
+            await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!")
+        else:
+            return max(0, 7 - score) * 10
     
 # Declared intents for bot perms in server
 intents = discord.Intents.all()

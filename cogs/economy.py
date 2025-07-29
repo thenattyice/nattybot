@@ -1,4 +1,5 @@
 import discord
+import traceback
 from discord import app_commands, Member
 from discord.ext import commands
 
@@ -8,11 +9,11 @@ class Economy(commands.Cog):
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
         
-        # Register commands to my specific guild/server
+        """ # Register commands to my specific guild/server
         self.bot.tree.add_command(self.balance_check, guild=self.guild_object)
         self.bot.tree.add_command(self.add_money, guild=self.guild_object)
         self.bot.tree.add_command(self.remove_money, guild=self.guild_object)
-        self.bot.tree.add_command(self.leaderboard, guild=self.guild_object)
+        self.bot.tree.add_command(self.leaderboard, guild=self.guild_object) """
     
     # Function for adding money to users in DB
     async def add_money_to_user(self, user_id: int, amount: int):
@@ -99,24 +100,29 @@ class Economy(commands.Cog):
     @app_commands.command(name="leaderboard", description="Displays a leaderboard based on NattyCoin balance among users")
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
-        leaderboard = await self.leaderboard_pull()
-        description = '' # Init the field
-        for row in leaderboard:
-            user_id = row['user_id']
-            balance = row['balance']
-            rank = row['rank']
+        try:
+            embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
+            leaderboard = await self.leaderboard_pull()
+            description = '' # Init the field
+            for row in leaderboard:
+                user_id = row['user_id']
+                balance = row['balance']
+                rank = row['rank']
+                
+                # Mention the user based on id
+                display_name = f"<@{user_id}>"
+                
+                description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+                
+            #Discord embed structure
+            embed = discord.Embed(
+                title="NattyCoin Leaderboard",
+                description=description,
+                color=discord.Color.gold()
+            )
+                
+            await interaction.followup.send_message(embed=embed)
             
-            # Mention the user based on id
-            display_name = f"<@{user_id}>"
-            
-            description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
-            
-        #Discord embed structure
-        embed = discord.Embed(
-            title="NattyCoin Leaderboard",
-            description=description,
-            color=discord.Color.gold()
-        )
-            
-        await interaction.followup.send_message(embed=embed)
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while fetching the leaderboard.", ephemeral=True)

@@ -142,8 +142,7 @@ async def say_test(interaction: discord.Interaction):
 # Wordle test command
 @client.tree.command(name="wtest", description="Wordle results test command", guild=GUILD_OBJECT)
 async def say_test(interaction: discord.Interaction):
-    await interaction.response.send_message("""Here are yesterday's results:
-                                            X/6: @Natty""")
+    await interaction.channel.send("Here are yesterday's results:\n2/6: Natty")
     
 # RL LFG ping command
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)

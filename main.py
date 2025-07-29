@@ -78,8 +78,8 @@ class Client(commands.Bot):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return
         
-        if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
-            return
+        """ if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
+            return """
         
         if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
             return
@@ -92,7 +92,9 @@ class Client(commands.Bot):
             match = re.match(r"(👑 )?(\d)/6: (.+)", line) # Regex for the line format. Crown optional as group 1, group 2 is the score, and group 3 is the name
             if match:
                 score = int(match.group(2))
+                print(f"{score}")
                 raw_name = match.group(3).strip()
+                print(f"{raw_name}")
                 
                 matched_user = None # Init the matched user
                 
@@ -142,6 +144,11 @@ client = Client(command_prefix="!", intents=intents)
 @client.tree.command(name="test", description="Nate's test command", guild=GUILD_OBJECT)
 async def say_test(interaction: discord.Interaction):
     await interaction.response.send_message("The test worked!")
+    
+# Wordle test command
+@client.tree.command(name="wtest", description="Wordle results test command", guild=GUILD_OBJECT)
+async def say_test(interaction: discord.Interaction):
+    await interaction.response.send_message("Here are yesterday's results:\nX/6: @Natty")
     
 # RL LFG ping command
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)

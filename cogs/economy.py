@@ -122,7 +122,7 @@ class Economy(commands.Cog):
                 else:
                     medal = f"#{rank}"
                 
-                description += f"**#{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+                description += f"**{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
                 
             #Discord embed structure
             embed = discord.Embed(

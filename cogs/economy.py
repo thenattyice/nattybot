@@ -121,7 +121,7 @@ class Economy(commands.Cog):
                 color=discord.Color.gold()
             )
                 
-            await interaction.followup.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
             
         except Exception as e:
             traceback.print_exc()

@@ -72,9 +72,19 @@ class Client(commands.Bot):
                 print(f"DM sent to {user.name}")
             except Exception as e:
                 print(f"Error sending DM: {e}")
+    
+    # Function for adding money to users in DB
+    async def add_money_to_user(self, user_id: int, amount: int):
+        async with client.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, balance)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET balance = users.balance + $2;
+            """, user_id, amount)
                 
     # Event listener for the Wordle channel, specifically tracking daily results
-    async def on_message(message):
+    async def on_message(self, message):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return
         
@@ -116,7 +126,7 @@ class Client(commands.Bot):
                     
         for user_id, score in user_rewards.items():
             reward = calculate_wordle_reward(score)
-            await add_money(user_id, reward)
+            await client.add_money_to_user(user_id, reward)
 
             # Fetch the member object from the ID
             member = message.guild.get_member(user_id)
@@ -125,7 +135,7 @@ class Client(commands.Bot):
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
             
-        await client.process_commands(message)
+        await self.process_commands(message)
     
     # Function to calc the score                
     def calculate_wordle_reward(score):

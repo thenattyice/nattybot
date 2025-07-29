@@ -107,9 +107,8 @@ class Economy(commands.Cog):
             balance = row['balance']
             rank = row['rank']
             
-            # Fetch the user's display name based on id
-            member = interaction.guild.get_member(user_id)
-            display_name = member.display_name if member else f"<@{user_id}>"
+            # Mention the user based on id
+            display_name = f"<@{user_id}>"
             
             description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
             

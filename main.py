@@ -133,7 +133,10 @@ class Client(commands.Bot):
             # Fetch the member object from the ID
             member = message.guild.get_member(user_id)
             if member:
-                await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
+                if score == 0:
+                    await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!")
+                else:
+                    await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
         
@@ -142,10 +145,7 @@ class Client(commands.Bot):
     # Function to calc the score 
     @staticmethod               
     def calculate_wordle_reward(score):
-        if score == 0:
-            await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!")
-        else:
-            return max(0, 7 - score) * 10
+        return 0 if score == 0 else max(0, 7 - score) * 10
     
 # Declared intents for bot perms in server
 intents = discord.Intents.all()

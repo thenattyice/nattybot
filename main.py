@@ -21,7 +21,8 @@ WORDLE_APP_ID = 1211781489931452447
 USERS = {
     "grayson": 162343822179696640,
     "jake": 277997412583473152,
-    "nate": 280683796020330497
+    "nate": 280683796020330497,
+    "gunnar": 768246922766450689
 }
 
 class Client(commands.Bot):
@@ -162,7 +163,7 @@ async def say_test(interaction: discord.Interaction):
 # Wordle test command
 @client.tree.command(name="wtestscore", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)
 async def wtest(interaction: discord.Interaction):
-    await interaction.channel.send("Here are yesterday's results:\n2/6: Natty")
+    await interaction.channel.send("Here are yesterday's results:\n2/6: Natty\nX/6: @Guru Pathik")
     await interaction.response.send_message("✅ Real Wordle message sent.")
     
 # Wordle test command

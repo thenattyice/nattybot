@@ -94,7 +94,7 @@ class Client(commands.Bot):
         if "Here are yesterday's results:" not in message.content: # Finds the summary message via the sumamry phrase
             return
         
-        lines = message.content.splitlines() # Split out the worlde daily summary line by line
+        lines = message.content.splitlines() # Split out the wordle daily summary line by line
         user_rewards = {}
         
         # Loop through each line
@@ -137,7 +137,8 @@ class Client(commands.Bot):
             
         await self.process_commands(message)
     
-    # Function to calc the score                
+    # Function to calc the score 
+    @staticmethod               
     def calculate_wordle_reward(score):
         return max(0, 7 - score) * 10
     

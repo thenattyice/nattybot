@@ -98,6 +98,7 @@ class Economy(commands.Cog):
     # Leaderboard command
     @app_commands.command(name="leaderboard", description="Displays a leaderboard based on NattyCoin balance among users")
     async def leaderboard(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
         leaderboard = self.leaderboard_pull()
         description = '' # Init the field
@@ -119,4 +120,4 @@ class Economy(commands.Cog):
                 color=discord.Color.gold()
             )
             
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send_message(embed=embed)

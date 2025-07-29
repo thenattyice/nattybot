@@ -12,6 +12,7 @@ class Economy(commands.Cog):
         self.bot.tree.add_command(self.balance_check, guild=self.guild_object)
         self.bot.tree.add_command(self.add_money, guild=self.guild_object)
         self.bot.tree.add_command(self.remove_money, guild=self.guild_object)
+        self.bot.tree.add_command(self.leaderboard, guild=self.guild_object)
     
     # Function for adding money to users in DB
     async def add_money_to_user(self, user_id: int, amount: int):
@@ -22,6 +23,16 @@ class Economy(commands.Cog):
                 ON CONFLICT (user_id) DO UPDATE
                 SET balance = users.balance + $2;
             """, user_id, amount)
+            
+    # Function for pulling the leaderboard data
+    async def leaderboard_pull(self):
+        async with self.bot.db_pool.acquire() as conn:
+            rows = await conn.fetch("""SELECT 
+                                    RANK() OVER (ORDER BY balance DESC) AS rank,
+                                    user_id,
+                                    balance
+                                    FROM users;""")
+            return rows
     
     # Balance check command
     @app_commands.command(name="balance", description="Check your balance")
@@ -83,3 +94,29 @@ class Economy(commands.Cog):
             """, target_user_id, amount)
 
         await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)
+        
+    # Leaderboard command
+    @app_commands.command(name="leaderboard", description="Displays a leaderboard based on NattyCoin balance among users")
+    async def leaderboard(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
+        leaderboard = self.leaderboard_pull()
+        description = '' # Init the field
+        for row in leaderboard:
+            user_id = row['user_id']
+            balance = row['balance']
+            rank = row['rank']
+            
+            # Fetch the user's display name based on id
+            member = interaction.guild.get_member(user_id)
+            display_name = member.display_name if member else f"<@{user_id}>"
+            
+            description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+            
+            #Discord embed structure
+            embed = discord.Embed(
+                title="NattyCoin Leaderboard",
+                description=description,
+                color=discord.Color.gold()
+            )
+            
+        await interaction.response.send_message(embed=embed)

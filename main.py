@@ -177,14 +177,8 @@ async def add_money(interaction: discord.Interaction, user: Member, amount: int)
         return
 
     target_user_id = user.id
-
-    async with client.db_pool.acquire() as conn:
-        await conn.execute("""
-            INSERT INTO users (user_id, balance)
-            VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE
-            SET balance = users.balance + $2;
-        """, target_user_id, amount)
+    
+    await client.add_money_to_user(user.id, amount)
 
     await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
 

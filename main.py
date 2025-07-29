@@ -87,47 +87,40 @@ class Client(commands.Bot):
         lines = message.content.splitlines() # Split out the wordle daily summary line by line
         user_rewards = {}
         
-        # Loop through each line
+        # Loop through each line of the Wordle summary text
         for line in lines:
-            match = re.match(r"(👑 )?(\d)/6: (.+)", line) # Regex for the line format. Crown optional as group 1, group 2 is the score, and group 3 is the name
+            match = re.match(r"(👑 )?(\d)/6: (.+)", line)
             if match:
                 score = int(match.group(2))
-                print(f"{score}")
                 raw_name = match.group(3).strip()
-                print(f"{raw_name}")
-                
-                matched_user = None # Init the matched user
-                
-                # First look for actual user mentions
+                raw_name_lower = raw_name.lower()
+                print(f"{score}") # For testing only
+
+                matched_user = None
+
+                # First: Try to match using real mentions
                 for user in message.mentions:
-                    if user.display_name in raw_name or user.name in raw_name:
+                    if user.display_name.lower() in raw_name_lower or user.name.lower() in raw_name_lower:
                         matched_user = user
+                        print(f"✅ Matched via mention: {user.display_name} ({user.id})")
                         break
-                    
-                # Sometimes it fails to mention, so we grab the raw_name and search using that
+
+                # Second: Fallback to manual name match if no mention matched
                 if not matched_user:
                     for member in message.guild.members:
-                        if member.display_name in raw_name or member.name in raw_name:
+                        display = member.display_name.lower()
+                        username = member.name.lower()
+                        if display in raw_name_lower or username in raw_name_lower or \
+                        raw_name_lower in display or raw_name_lower in username:
                             matched_user = member
+                            print(f"✅ Fallback matched '{raw_name}' to member '{member.display_name}' ({member.id})")
                             break
-                        
+
+                # Final handling
                 if matched_user:
                     user_rewards[matched_user.id] = score
                 else:
-                    print(f"⚠️ Could not match user for: {raw_name}")
-                    
-        for user_id, score in user_rewards.items():
-            reward = self.calculate_wordle_reward(score)
-            await client.add_money_to_user(user_id, reward)
-
-            # Fetch the member object from the ID
-            member = message.guild.get_member(user_id)
-            if member:
-                await message.channel.send(f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!")
-            else:
-                print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
-            
-        await self.process_commands(message)
+                    print(f"⚠️ Could not match user for: '{raw_name}'")
     
     # Function to calc the score 
     @staticmethod               
@@ -138,6 +131,7 @@ class Client(commands.Bot):
 intents = discord.Intents.all()
 intents.message_content = True
 intents.voice_states = True
+intents.members = True
 client = Client(command_prefix="!", intents=intents)
 
 # Test command
@@ -148,7 +142,8 @@ async def say_test(interaction: discord.Interaction):
 # Wordle test command
 @client.tree.command(name="wtest", description="Wordle results test command", guild=GUILD_OBJECT)
 async def say_test(interaction: discord.Interaction):
-    await interaction.response.send_message("Here are yesterday's results:\nX/6: @Natty")
+    await interaction.response.send_message("""Here are yesterday's results:
+                                            X/6: @Natty""")
     
 # RL LFG ping command
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)

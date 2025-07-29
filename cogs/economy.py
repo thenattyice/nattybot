@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands, Member
 from discord.ext import commands
 

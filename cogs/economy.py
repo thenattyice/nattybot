@@ -31,7 +31,7 @@ class Economy(commands.Cog):
                                     RANK() OVER (ORDER BY balance DESC) AS rank,
                                     user_id,
                                     balance
-                                    FROM users;""")
+                                    FROM users LIMIT 5;""")
             return rows
     
     # Balance check command
@@ -100,7 +100,7 @@ class Economy(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
-        leaderboard = self.leaderboard_pull()
+        leaderboard = await self.leaderboard_pull()
         description = '' # Init the field
         for row in leaderboard:
             user_id = row['user_id']
@@ -113,11 +113,11 @@ class Economy(commands.Cog):
             
             description += f"**#{rank}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
             
-            #Discord embed structure
-            embed = discord.Embed(
-                title="NattyCoin Leaderboard",
-                description=description,
-                color=discord.Color.gold()
-            )
+        #Discord embed structure
+        embed = discord.Embed(
+            title="NattyCoin Leaderboard",
+            description=description,
+            color=discord.Color.gold()
+        )
             
         await interaction.followup.send_message(embed=embed)

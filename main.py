@@ -79,8 +79,8 @@ class Client(commands.Bot):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return
         
-        """ if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
-            return """
+        if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
+            return
         
         if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
             return
@@ -169,7 +169,7 @@ client = Client(command_prefix="!", intents=intents)
 async def say_test(interaction: discord.Interaction):
     await interaction.response.send_message("The test worked!")
     
-# Wordle test command
+""" # Wordle test command
 @client.tree.command(name="wtestscore", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)
 async def wtest(interaction: discord.Interaction):
     await interaction.channel.send("Here are yesterday's results:\n2/6: Natty\nX/6: @Guru Pathik")
@@ -179,7 +179,7 @@ async def wtest(interaction: discord.Interaction):
 @client.tree.command(name="wtestx", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)
 async def wtestx(interaction: discord.Interaction):
     await interaction.channel.send("Here are yesterday's results:\nX/6: Natty")
-    await interaction.response.send_message("✅ Real Wordle message sent.")
+    await interaction.response.send_message("✅ Real Wordle message sent.") """
     
 # RL LFG ping command
 @client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)

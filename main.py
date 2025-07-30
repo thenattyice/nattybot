@@ -196,6 +196,8 @@ class Client(commands.Bot):
                 description=description,
                 color=discord.Color.gold()
             )
+            
+            await interaction.message.send_message(embed=embed)
 
         await self.process_commands(message)
 

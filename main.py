@@ -8,6 +8,7 @@ from discord import Member
 from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
+from cogs.games import Games
 
 load_dotenv() #Load the env file
 

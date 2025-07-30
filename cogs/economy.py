@@ -16,14 +16,24 @@ class Economy(commands.Cog):
         self.bot.tree.add_command(self.leaderboard, guild=self.guild_object)
     
     # Function for adding money to users in DB
-    async def add_money_to_user(self, user_id: int, amount: int):
+    async def add_money_to_user(self, target_user_id: int, amount: int):
         async with self.bot.db_pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO users (user_id, balance)
                 VALUES ($1, $2)
                 ON CONFLICT (user_id) DO UPDATE
                 SET balance = users.balance + $2;
-            """, user_id, amount)
+            """, target_user_id, amount)
+            
+    # Function for removing money from users in DB
+    async def remove_money_from_user(self, target_user_id: int, amount: int):
+        async with self.bot.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, balance)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET balance = users.balance - $2;
+            """, target_user_id, amount)
             
     # Function for pulling the leaderboard data
     async def leaderboard_pull(self):
@@ -34,14 +44,20 @@ class Economy(commands.Cog):
                                     balance
                                     FROM users LIMIT 5;""")
             return rows
+        
+    # Function to check user balance
+    async def get_balance(self, user_id: int):
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
+            
+            return result
     
     # Balance check command
     @app_commands.command(name="balance", description="Check your balance")
     async def balance_check(self, interaction: discord.Interaction):
         user_id = interaction.user.id
 
-        async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
+        result = await self.get_balance(user_id)
 
         balance = result["balance"] if result else 0
         await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
@@ -60,7 +76,7 @@ class Economy(commands.Cog):
 
         target_user_id = user.id
         
-        await self.add_money_to_user(user.id, amount)
+        await self.add_money_to_user(target_user_id, amount)
 
         await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
         
@@ -86,13 +102,7 @@ class Economy(commands.Cog):
                 await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
                 return
 
-        async with self.bot.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO users (user_id, balance)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE
-                SET balance = users.balance - $2;
-            """, target_user_id, amount)
+        await self.remove_money_from_user(target_user_id, amount)
 
         await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)
         
@@ -101,7 +111,6 @@ class Economy(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:
-            embed = discord.Embed(title="NattyCoin Leaderboard", color=0xFF0000)
             leaderboard = await self.leaderboard_pull()
             description = '' # Init the field
             for row in leaderboard:

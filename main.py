@@ -191,13 +191,13 @@ class Client(commands.Bot):
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
             
-            embed = discord.Embed(
+            reward_embed = discord.Embed(
                 title="🪙**Daily Wordle Rewards**🪙",
                 description=description,
                 color=discord.Color.gold()
             )
             
-            await interaction.message.send_message(embed=embed)
+            await interaction.followup.send(embed=reward_embed)
 
         await self.process_commands(message)
 

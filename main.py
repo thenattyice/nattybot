@@ -187,10 +187,11 @@ class Client(commands.Bot):
 
             member = message.guild.get_member(user_id)
             if member:
-                descripton += f"{member.mention} is awarded **{reward}** NattyCoins🪙"
+                description += f"{member.mention} is awarded **{reward}** NattyCoins🪙"
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
-            
+        
+        if description:    
             reward_embed = discord.Embed(
                 title="🪙**Daily Wordle Rewards**🪙",
                 description=description,

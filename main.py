@@ -88,6 +88,8 @@ class Client(commands.Bot):
         lines = message.content.splitlines() # Split out the wordle daily summary line by line
         user_rewards = {}
         
+        description = '' # Init the field for the embed
+        
         # Loop through each line of the Wordle summary text
         for line in lines:
             line = line.replace("👑", "").strip()
@@ -185,16 +187,15 @@ class Client(commands.Bot):
 
             member = message.guild.get_member(user_id)
             if member:
-                if score == 0:
-                    await message.channel.send(
-                        f"{member.mention} was awarded {reward} NattyCoins because they failed the Wordle. Loser!"
-                    )
-                else:
-                    await message.channel.send(
-                        f"{member.mention} was awarded {reward} NattyCoins for their Wordle score!"
-                    )
+                descripton += f"{member.mention} is awarded **{reward}** NattyCoins🪙"
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
+            
+            embed = discord.Embed(
+                title="🪙**Daily Wordle Rewards**🪙",
+                description=description,
+                color=discord.Color.gold()
+            )
 
         await self.process_commands(message)
 

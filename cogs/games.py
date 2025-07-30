@@ -38,7 +38,7 @@ class Games(commands.Cog):
         prompt_msg = await interaction.original_response()
 
         # Add the 3 emoji reactions
-        for emoji in emoji_map.keys():
+        for emoji in emoji_map.values():
             await prompt_msg.add_reaction(emoji)
 
         # Check for valid reaction to prompt

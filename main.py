@@ -211,6 +211,7 @@ class Client(commands.Bot):
 # Declared intents for bot perms in server
 intents = discord.Intents.all()
 intents.message_content = True
+intents.reactions = True
 intents.voice_states = True
 intents.members = True
 client = Client(command_prefix="!", intents=intents)

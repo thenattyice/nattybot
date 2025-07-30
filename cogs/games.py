@@ -115,7 +115,7 @@ class Games(commands.Cog):
             # Prompt the user to pick
             prompt_embed = discord.Embed(
                 title="🎮 Natty Games: RPS 🎮",
-                description="Select your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
+                description="Select your choice to play Rock-Paper-Scissors:",
                 color=discord.Color.red()
             )
             

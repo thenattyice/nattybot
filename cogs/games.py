@@ -32,14 +32,20 @@ class Games(commands.Cog):
         }
         
         # Prompt the user to pick
-        await interaction.response.send_message("React with your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors")
+        prompt_embed = discord.Embed(
+            title="🎮 Natty Games: RPS 🎮",
+            description="React with your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=prompt_embed)
         
         # Get the message we just sent
         prompt_msg = await interaction.original_response()
 
-        # Add the 3 emoji reactions
-        for emoji in emoji_map.values():
-            await prompt_msg.add_reaction(emoji)
+        # Add emoji reactions concurrently
+        await asyncio.gather(*[
+            prompt_msg.add_reaction(emoji) for emoji in emoji_map.values()
+        ])
 
         # Check for valid reaction to prompt
         def check(reaction: discord.Reaction, user: discord.User):

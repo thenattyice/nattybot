@@ -101,48 +101,68 @@ class Client(commands.Bot):
             raw_mentions_or_names_lower = raw_mentions_or_names.lower()
 
             score = 0 if raw_score == 'X' else int(raw_score)
-            print(f"🧪 Score: {score}, Raw value: {raw_mentions_or_names}")
+            print(f"Score: {score}, Raw value: {raw_mentions_or_names}")
 
             matched_user_ids = set()
 
-            # 📋 Log all mentions in the message
-            print("📋 Mentions in message:", [f"{u.display_name} ({u.id})" for u in message.mentions])
+            # Log all mentions in the message
+            print("Mentions in message:", [f"{u.display_name} ({u.id})" for u in message.mentions])
+            print(f"Processing line: {raw_mentions_or_names}")
 
-            # ✅ 1. Match from actual parsed mentions
+            # 1 - Match from actual parsed mentions - but only those in this specific line
+            line_mention_ids = re.findall(r"<@!?(\d+)>", raw_mentions_or_names)
+            line_mention_ids = [int(uid) for uid in line_mention_ids]
+            
             for user in message.mentions:
-                if user.id not in matched_user_ids:
+                if user.id in line_mention_ids and user.id not in matched_user_ids:
                     user_rewards[user.id] = score
                     matched_user_ids.add(user.id)
                     print(f"✅ Matched via Discord mention: {user.display_name} ({user.id})")
 
-            # 🔎 2. Match from raw <@user_id> strings, in case Discord didn’t parse the mention
-            raw_ids = re.findall(r"<@!?(\d+)>", raw_mentions_or_names)
-            for user_id_str in raw_ids:
+            # 2 - Match from raw <@user_id> strings that weren't caught by Discord parsing
+            for user_id_str in line_mention_ids:
                 user_id = int(user_id_str)
-                if user_id not in user_rewards:
+                if user_id not in matched_user_ids:
                     member = message.guild.get_member(user_id)
                     if member:
                         user_rewards[user_id] = score
                         matched_user_ids.add(user_id)
                         print(f"✅ Matched via raw ID: {member.display_name} ({user_id})")
 
-            # 🛠️ 3. Fallback match using display name or username
+            # 3 - Fallback match using display name or username - but split by mentions first
             if not matched_user_ids:
-                for member in message.guild.members:
-                    if member.bot:
-                        continue
-                    display = member.display_name.lower()
-                    username = member.name.lower()
-
-                    if (
-                        display in raw_mentions_or_names_lower
-                        or username in raw_mentions_or_names_lower
-                        or raw_mentions_or_names_lower in display
-                        or raw_mentions_or_names_lower in username
-                    ):
-                        user_rewards[member.id] = score
-                        matched_user_ids.add(member.id)
-                        print(f"✅ Fallback matched '{raw_mentions_or_names}' to '{member.display_name}' ({member.id})")
+                # Split the line by @ to get individual name segments
+                name_segments = [seg.strip() for seg in raw_mentions_or_names.split('@') if seg.strip()]
+                
+                for segment in name_segments:
+                    segment_lower = segment.lower()
+                    best_match = None
+                    best_match_score = 0
+                    
+                    for member in message.guild.members:
+                        if member.bot or member.id in matched_user_ids:
+                            continue
+                            
+                        display = member.display_name.lower()
+                        username = member.name.lower()
+                        
+                        # Calculate match quality (prefer exact matches, then partial)
+                        match_score = 0
+                        if segment_lower == display or segment_lower == username:
+                            match_score = 3  # Exact match
+                        elif segment_lower in display or segment_lower in username:
+                            match_score = 2  # Name contains segment
+                        elif display in segment_lower or username in segment_lower:
+                            match_score = 1  # Segment contains name
+                        
+                        if match_score > best_match_score:
+                            best_match = member
+                            best_match_score = match_score
+                    
+                    if best_match:
+                        user_rewards[best_match.id] = score
+                        matched_user_ids.add(best_match.id)
+                        print(f"✅ Fallback matched '{segment}' to '{best_match.display_name}' ({best_match.id})")
 
             if not matched_user_ids:
                 print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")

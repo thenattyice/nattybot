@@ -49,8 +49,7 @@ class Economy(commands.Cog):
     async def get_balance(self, user_id: int):
         async with self.bot.db_pool.acquire() as conn:
             result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", user_id)
-            
-            return result
+            return result['balance'] if result else 0
     
     # Balance check command
     @app_commands.command(name="balance", description="Check your balance")

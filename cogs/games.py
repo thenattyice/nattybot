@@ -1,6 +1,7 @@
 import discord
 import random
 import asyncio
+import traceback
 from discord import app_commands, Member
 from discord.ext import commands
 
@@ -92,29 +93,35 @@ class Games(commands.Cog):
         }
         
         user_id = interaction.user.id # Identify and store the user who ran the command
-
-        current_balance = await economy_cog.get_balance(user_id)
-        
-        # Bet amount validations
-        if bet > current_balance:
-            await interaction.response.send_message("You cannot place a bet that is larger than your current balance.")
-            return
+        try:
+            current_balance = await economy_cog.get_balance(user_id)
             
-        if bet <= 0:
-            await interaction.response.send_message("You must bet at least 1 NattyCoin.")
-            return
-        
-        if current_balance <= 0:
-            await interaction.response.send_message("You cannot place a bet when you have 0 NattyCoins. Do the Wordle, or do it better... moron.")
-            return
-        
-         # Prompt the user to pick
-        prompt_embed = discord.Embed(
-            title="🎮 Natty Games: RPS 🎮",
-            description="Select your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
-            color=discord.Color.red()
-        )
-        
-        user = interaction.user
-        view = RPSView(user, bet, economy_cog, emoji_map, wins_against)
-        await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
+            # Bet amount validations
+            if bet > current_balance:
+                await interaction.response.send_message("You cannot place a bet that is larger than your current balance.", ephemeral=True)
+                print("Validation Failure: bet > current_balance")
+                return
+                
+            if bet <= 0:
+                await interaction.response.send_message("You must bet at least 1 NattyCoin.", ephemeral=True)
+                print("Validation Failure: bet <= 0")
+                return
+            
+            if current_balance <= 0:
+                await interaction.response.send_message("You cannot place a bet when you have 0 NattyCoins. Do the Wordle, or do it better... moron.", ephemeral=True)
+                print("Validation Failure: current_balance <= 0")
+                return
+            
+            # Prompt the user to pick
+            prompt_embed = discord.Embed(
+                title="🎮 Natty Games: RPS 🎮",
+                description="Select your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
+                color=discord.Color.red()
+            )
+            
+            user = interaction.user
+            view = RPSView(user, bet, economy_cog, emoji_map, wins_against)
+            await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while fetching the leaderboard.", ephemeral=True)

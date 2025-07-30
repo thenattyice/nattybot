@@ -101,15 +101,15 @@ class Client(commands.Bot):
             raw_mentions_or_names_lower = raw_mentions_or_names.lower()
 
             score = 0 if raw_score == 'X' else int(raw_score)
-            print(f"Score: {score}, Raw value: {raw_mentions_or_names}")
+            print(f"🧪 Score: {score}, Raw value: {raw_mentions_or_names}")
 
             matched_user_ids = set()
 
             # Log all mentions in the message
-            print("Mentions in message:", [f"{u.display_name} ({u.id})" for u in message.mentions])
-            print(f"Processing line: {raw_mentions_or_names}")
+            print("📋 Mentions in message:", [f"{u.display_name} ({u.id})" for u in message.mentions])
+            print(f"📋 Processing line: {raw_mentions_or_names}")
 
-            # 1 - Match from actual parsed mentions - but only those in this specific line
+            # 1. Match from actual parsed mentions - but only those in this specific line
             line_mention_ids = re.findall(r"<@!?(\d+)>", raw_mentions_or_names)
             line_mention_ids = [int(uid) for uid in line_mention_ids]
             
@@ -119,7 +119,7 @@ class Client(commands.Bot):
                     matched_user_ids.add(user.id)
                     print(f"✅ Matched via Discord mention: {user.display_name} ({user.id})")
 
-            # 2 - Match from raw <@user_id> strings that weren't caught by Discord parsing
+            # 2. Match from raw <@user_id> strings that weren't caught by Discord parsing
             for user_id_str in line_mention_ids:
                 user_id = int(user_id_str)
                 if user_id not in matched_user_ids:
@@ -129,10 +129,22 @@ class Client(commands.Bot):
                         matched_user_ids.add(user_id)
                         print(f"✅ Matched via raw ID: {member.display_name} ({user_id})")
 
-            # 3 - Fallback match using display name or username - but split by mentions first
-            if not matched_user_ids:
-                # Split the line by @ to get individual name segments
-                name_segments = [seg.strip() for seg in raw_mentions_or_names.split('@') if seg.strip()]
+            # 3. Fallback match using display name or username - process remaining text after removing mentions
+            # Remove the actual mention syntax to get remaining plain text names
+            remaining_text = raw_mentions_or_names
+            for mention_id in line_mention_ids:
+                # Remove both <@ID> and <@!ID> patterns
+                remaining_text = re.sub(rf"<@!?{mention_id}>", "", remaining_text)
+            
+            remaining_text = remaining_text.strip()
+            
+            if remaining_text:  # Only run fallback if there's remaining text to process
+                # Split the remaining text by @ to get individual name segments
+                name_segments = [seg.strip() for seg in remaining_text.split('@') if seg.strip()]
+                
+                # If no @ symbols, treat the whole remaining text as one segment
+                if not name_segments and remaining_text:
+                    name_segments = [remaining_text]
                 
                 for segment in name_segments:
                     segment_lower = segment.lower()
@@ -162,7 +174,7 @@ class Client(commands.Bot):
                     if best_match:
                         user_rewards[best_match.id] = score
                         matched_user_ids.add(best_match.id)
-                        print(f"✅ Fallback matched '{segment}' to '{best_match.display_name}' ({best_match.id})")
+                        print(f"✅ Fallback matched '{segment}' to '{best_match.display_name}' ({best_match.id}) from remaining text")
 
             if not matched_user_ids:
                 print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")

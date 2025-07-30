@@ -187,7 +187,7 @@ class Client(commands.Bot):
 
             member = message.guild.get_member(user_id)
             if member:
-                description += f"{member.mention} is awarded **{reward}** NattyCoins🪙"
+                description += f"{member.mention} is awarded **{reward}** NattyCoins🪙\n"
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
         
@@ -198,7 +198,7 @@ class Client(commands.Bot):
                 color=discord.Color.gold()
             )
             
-            await interaction.followup.send(embed=reward_embed)
+            await message.channel.send(embed=reward_embed)
 
         await self.process_commands(message)
 

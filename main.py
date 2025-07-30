@@ -79,8 +79,8 @@ class Client(commands.Bot):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return
         
-        """ if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
-            return """
+        if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
+            return
         
         if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
             return

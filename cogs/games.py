@@ -4,6 +4,66 @@ import asyncio
 from discord import app_commands, Member
 from discord.ext import commands
 
+class RPSView(discord.ui.View):
+    def __init__(self, user: discord.User, bet: int, economy_cog, emoji_map, wins_against, timeout=15):
+        super().__init__(timeout=timeout)
+        self.user = user
+        self.bet = bet
+        self.economy_cog = economy_cog
+        self.emoji_map = emoji_map
+        self.wins_against = wins_against
+        self.choice = None
+        self.result_sent = False
+        
+    async def rps_result_handler(self, interaction: discord.Interaction, user_choice: str):
+        if self.result_sent or interaction.user.id != self.user.id:
+            return
+
+        self.result_sent = True
+        self.user_choice = user_choice
+        bot_choice = random.choice(list(self.wins_against.keys()))
+        user_id = self.user.id
+
+        # Win conditions
+        if user_choice == bot_choice:
+            await interaction.response.send_message(f"It's a draw! Both picked {self.emoji_map[user_choice]} {user_choice}. You keep your {self.bet} NattyCoins.", ephemeral=True)
+            return
+
+        win = self.wins_against[user_choice] == bot_choice
+
+        if win:
+            winnings = self.bet * 2
+            await self.economy_cog.add_money_to_user(user_id, winnings)
+            result = discord.Embed(
+                title="🎉 You Win!",
+                description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} beats {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!",
+                color=discord.Color.green()
+            )
+        else:
+            await self.economy_cog.remove_money_from_user(user_id, self.bet)
+            result = discord.Embed(
+                title="😢 You Lose!",
+                description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} loses to {self.emoji_map[bot_choice]} {bot_choice.capitalize()}...\nYou lost **{self.bet}** NattyCoins.",
+                color=discord.Color.red()
+            )
+
+        await interaction.response.send_message(embed=result, ephemeral=True)
+        self.stop()
+
+    # Buttons defined for the UI
+    @discord.ui.button(label="Rock", emoji="🪨", style=discord.ButtonStyle.primary)
+    async def rock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.rps_result_handler(interaction, "rock")
+
+    @discord.ui.button(label="Paper", emoji="📄", style=discord.ButtonStyle.success)
+    async def paper_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.rps_result_handler(interaction, "paper")
+
+    @discord.ui.button(label="Scissors", emoji="✂️", style=discord.ButtonStyle.danger)
+    async def scissors_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.rps_result_handler(interaction, "scissors")
+
+# Class for all of the Games commands
 class Games(commands.Cog):
     def __init__(self, bot, guild_object, allowed_roles):
         self.bot = bot
@@ -31,95 +91,30 @@ class Games(commands.Cog):
         'scissors': '✂️'
         }
         
-        # Prompt the user to pick
+        user_id = interaction.user.id # Identify and store the user who ran the command
+
+        current_balance = await economy_cog.get_balance(user_id)
+        
+        # Bet amount validations
+        if bet > current_balance:
+            await interaction.response.send_message("You cannot place a bet that is larger than your current balance.")
+            return
+            
+        if bet <= 0:
+            await interaction.response.send_message("You must bet at least 1 NattyCoin.")
+            return
+        
+        if current_balance <= 0:
+            await interaction.response.send_message("You cannot place a bet when you have 0 NattyCoins. Do the Wordle, or do it better... moron.")
+            return
+        
+         # Prompt the user to pick
         prompt_embed = discord.Embed(
             title="🎮 Natty Games: RPS 🎮",
-            description="React with your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
+            description="Select your choice to play Rock-Paper-Scissors:\n🪨 Rock\n📄 Paper\n✂️ Scissors",
             color=discord.Color.red()
         )
-        await interaction.response.send_message(embed=prompt_embed)
         
-        # Get the message we just sent
-        prompt_msg = await interaction.original_response()
-
-        # Add emoji reactions concurrently
-        await asyncio.gather(*[
-            prompt_msg.add_reaction(emoji) for emoji in emoji_map.values()
-        ])
-
-        # Check for valid reaction to prompt
-        def check(reaction: discord.Reaction, user: discord.User):
-            return (
-                user.id == interaction.user.id
-                and reaction.message.id == prompt_msg.id
-                and str(reaction.emoji) in emoji_map
-            )
-        
-        # Does this if chocie isnt timed out
-        try:
-            user_id = interaction.user.id # Identify and store the user who ran the command
-
-            current_balance = await economy_cog.get_balance(user_id)
-            
-            # Check that the bet is not larger than the user's total balance
-            if bet > current_balance:
-                    await interaction.followup.send("You cannot place a bet that is larger than your current balance.")
-                    return
-                
-            if bet <= 0:
-                await interaction.followup.send("You must bet at least 1 NattyCoin.")
-                return
-            
-            # Check the user's balance is > 0 for a bet
-            if current_balance <= 0:
-                await interaction.followup.send("You cannot place a bet when you have 0 NattyCoins. Do the Wordle, or do it better... moron.")
-                return
-            
-            reaction, user = await self.bot.wait_for("reaction_add", timeout=15.0, check=check)
-            
-            # Map the choices to emojis as vars for use in messaging
-            reverse_emoji_map = {v: k for k, v in emoji_map.items()}
-            user_choice = reverse_emoji_map[str(reaction.emoji)]
-            bot_choice = random.choice(list(wins_against.keys())) # Also randomly makes a choice for the bot
-        
-            # Scenarios for winning/losing
-            if user_choice == bot_choice:
-                await interaction.followup.send("It's a draw! You keep your NattyCoins.")
-                return
-            
-            description = ''
-            
-            # Winner format
-            winner_embed = discord.Embed(
-                title=f"{emoji_map['rock']}Rock, {emoji_map['paper']}Paper, {emoji_map['scissors']}Scissors",
-                description=description,
-                color=discord.Color.gold()
-            )
-            
-            # Loser format
-            loser_embed = discord.Embed(
-                title=f"{emoji_map['rock']}Rock, {emoji_map['paper']}Paper, {emoji_map['scissors']}Scissors",
-                description=description,
-                color=discord.Color.red()
-            )
-            
-            if wins_against[user_choice] == bot_choice:
-                amount = bet * 2
-                description += f"{emoji_map[user_choice]} {user_choice.capitalize()} beats {emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won! **{amount}** NattyCoins..."
-                winner_embed.set_description(description)
-                await economy_cog.add_money_to_user(user_id, amount)
-                await interaction.followup.send(embed=winner_embed)
-                return
-            else:
-                description += f"{emoji_map[user_choice]} {user_choice.capitalize()} loses against {emoji_map[bot_choice]} {bot_choice.capitalize()}...\n **{bet}** NattyCoins have been taken from your balance"
-                loser_embed.set_description(description)
-                await economy_cog.remove_money_from_user(user_id, bet)
-                await interaction.followup.send(embed=loser_embed)
-        except asyncio.TimeoutError:
-            await interaction.followup.send("You took too long to respond! Try again.")
-            
-        
-        
-        
-            
-        
+        user = interaction.user
+        view = RPSView(user, bet, economy_cog, emoji_map, wins_against)
+        await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)

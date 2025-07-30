@@ -79,8 +79,8 @@ class Client(commands.Bot):
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return
         
-        if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
-            return
+        """ if message.author.id != WORDLE_APP_ID: # Filter for only messages by the Wordle app
+            return """
         
         if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
             return
@@ -96,7 +96,6 @@ class Client(commands.Bot):
             if match:
                 raw_score = match.group(1)
                 raw_name = match.group(2).strip()
-                raw_name_lower = raw_name.lower()
 
                 if raw_score == 'X':
                     score = 0
@@ -105,33 +104,38 @@ class Client(commands.Bot):
 
                 print(f"🧪 Score: {score}, Raw name: {raw_name}")
 
-                matched_user = None
+                matched_ids = set()
 
-                # Attempt 1: Match by ID from actual mentions
+                # Attempt 1: Match users via actual mentions
                 for user in message.mentions:
-                    mention_str = f"<@{user.id}>"
-                    if mention_str in raw_name or raw_name in (user.display_name, user.name):
-                        matched_user = user
+                    if user.id in matched_ids:
+                        continue
+                    if user.display_name in raw_name or user.name in raw_name:
+                        user_rewards[user.id] = score
+                        matched_ids.add(user.id)
                         print(f"✅ Matched via mention: {user.display_name} ({user.id})")
-                        break
 
-                # Attempt 2: Fallback to string match on names
-                if not matched_user:
+                # Attempt 2: Fallback to name-based matching for multiple names
+                remaining_names = raw_name.split("@")[1:]  # Split each user block after '@'
+
+                for name_fragment in remaining_names:
+                    name_fragment = name_fragment.strip()
+                    name_fragment_lower = name_fragment.lower()
+
                     for member in message.guild.members:
-                        if member.bot:
-                            continue  # Skip bots
+                        if member.bot or member.id in matched_ids:
+                            continue
                         display = member.display_name.lower()
                         username = member.name.lower()
-                        if display in raw_name_lower or username in raw_name_lower or \
-                        raw_name_lower in display or raw_name_lower in username:
-                            matched_user = member
-                            print(f"✅ Fallback matched '{raw_name}' to '{member.display_name}' ({member.id})")
+                        if name_fragment_lower in display or name_fragment_lower in username or \
+                        display in name_fragment_lower or username in name_fragment_lower:
+                            user_rewards[member.id] = score
+                            matched_ids.add(member.id)
+                            print(f"✅ Fallback matched '{name_fragment}' to '{member.display_name}' ({member.id})")
                             break
 
-                if matched_user:
-                    user_rewards[matched_user.id] = score
-                else:
-                    print(f"⚠️ Could not match user for: '{raw_name}'")
+                if not matched_ids:
+                    print(f"⚠️ Could not match any users for: '{raw_name}'")
 
         for user_id, score in user_rewards.items():
             reward = self.calculate_wordle_reward(score)
@@ -151,7 +155,7 @@ class Client(commands.Bot):
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
 
         await self.process_commands(message)
-    
+
     # Function to calc the score 
     @staticmethod               
     def calculate_wordle_reward(score):

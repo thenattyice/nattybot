@@ -95,47 +95,43 @@ class Client(commands.Bot):
 
             if match:
                 raw_score = match.group(1)
-                raw_name = match.group(2).strip()
+                raw_mentions_or_names = match.group(2).strip()
+                raw_mentions_or_names_lower = raw_mentions_or_names.lower()
 
-                if raw_score == 'X':
-                    score = 0
-                else:
-                    score = int(raw_score)
+                score = 0 if raw_score == 'X' else int(raw_score)
+                print(f"🧪 Score: {score}, Raw value: {raw_mentions_or_names}")
 
-                print(f"🧪 Score: {score}, Raw name: {raw_name}")
+                matched_user_ids = set()
 
-                matched_ids = set()
-
-                # Attempt 1: Match users via actual mentions
+                # ✅ Attempt 1: Match via actual mentions
                 for user in message.mentions:
-                    if user.id in matched_ids:
-                        continue
-                    if user.display_name in raw_name or user.name in raw_name:
+                    mention_str = f"<@{user.id}>"
+                    if mention_str in raw_mentions_or_names:
                         user_rewards[user.id] = score
-                        matched_ids.add(user.id)
+                        matched_user_ids.add(user.id)
                         print(f"✅ Matched via mention: {user.display_name} ({user.id})")
 
-                # Attempt 2: Fallback to name-based matching for multiple names
-                remaining_names = raw_name.split("@")[1:]  # Split each user block after '@'
-
-                for name_fragment in remaining_names:
-                    name_fragment = name_fragment.strip()
-                    name_fragment_lower = name_fragment.lower()
-
+                # 🛠️ Attempt 2: Fallback to name matching if no mentions matched
+                if not matched_user_ids:
                     for member in message.guild.members:
-                        if member.bot or member.id in matched_ids:
-                            continue
+                        if member.bot:
+                            continue  # Skip bots
+
                         display = member.display_name.lower()
                         username = member.name.lower()
-                        if name_fragment_lower in display or name_fragment_lower in username or \
-                        display in name_fragment_lower or username in name_fragment_lower:
-                            user_rewards[member.id] = score
-                            matched_ids.add(member.id)
-                            print(f"✅ Fallback matched '{name_fragment}' to '{member.display_name}' ({member.id})")
-                            break
 
-                if not matched_ids:
-                    print(f"⚠️ Could not match any users for: '{raw_name}'")
+                        if (
+                            display in raw_mentions_or_names_lower
+                            or username in raw_mentions_or_names_lower
+                            or raw_mentions_or_names_lower in display
+                            or raw_mentions_or_names_lower in username
+                        ):
+                            user_rewards[member.id] = score
+                            matched_user_ids.add(member.id)
+                            print(f"✅ Fallback matched '{raw_mentions_or_names}' to '{member.display_name}' ({member.id})")
+
+                if not matched_user_ids:
+                    print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")
 
         for user_id, score in user_rewards.items():
             reward = self.calculate_wordle_reward(score)

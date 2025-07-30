@@ -253,9 +253,14 @@ async def f1_schedule(interaction: discord.Interaction):
 
 # Setup the cogs
 async def setup_cogs():
+    # Economy Cog
     economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
     await client.add_cog(economy_cog)
     client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
+    
+    # Games Cog
+    games_cog = Games(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
+    await client.add_cog(games_cog)
 
 # Main method
 async def main():

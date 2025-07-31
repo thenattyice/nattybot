@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
 from cogs.games import Games
+from cogs.lfg import LookingForGroup
 
 load_dotenv() #Load the env file
 
@@ -259,7 +260,7 @@ async def setup_cogs():
     await client.add_cog(games_cog)
     
     # LFG Cog
-    lfg_cog = LFG(client, GUILD_OBJECT,GAME_ROLES)
+    lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await client.add_cog(lfg_cog)
 
 # Main method

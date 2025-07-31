@@ -3,7 +3,7 @@ import traceback
 from discord import app_commands, Member
 from discord.ext import commands
 
-class LFG(commands.Cog):
+class LookingForGroup(commands.Cog):
     def __init__(self, bot, guild_object, game_roles):
         self.bot = bot
         self.guild_object = guild_object

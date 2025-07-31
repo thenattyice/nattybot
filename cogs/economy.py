@@ -56,9 +56,8 @@ class Economy(commands.Cog):
     async def balance_check(self, interaction: discord.Interaction):
         user_id = interaction.user.id
 
-        result = await self.get_balance(user_id)
-
-        balance = result["balance"] if result else 0
+        balance = await self.get_balance(user_id)
+        
         await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
         
     # Add money command

@@ -33,7 +33,7 @@ class RPSView(discord.ui.View):
         win = self.wins_against[user_choice] == bot_choice
 
         if win:
-            winnings = self.bet * 2
+            winnings = self.bet
             await self.economy_cog.add_money_to_user(user_id, winnings)
             result = discord.Embed(
                 title="🎉 You Win!",

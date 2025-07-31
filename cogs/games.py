@@ -124,4 +124,4 @@ class Games(commands.Cog):
             await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
         except Exception as e:
             traceback.print_exc()
-            await interaction.followup.send("An error occurred while fetching the leaderboard.", ephemeral=True)
+            await interaction.followup.send("An error occurred while running the game.", ephemeral=True)

@@ -18,7 +18,7 @@ class LookingForGroup(commands.Cog):
     @app_commands.command(name="rl", description="Tag all user's with the Rocket League role to get some games going!")
     async def rl(self, interaction: discord.Interaction):
         try:
-            role_id = self.bot.game_roles["rocket league"]
+            role_id = self.game_roles["rocket league"]
             role = interaction.guild.get_role(role_id)
             
             if role is None:
@@ -33,7 +33,7 @@ class LookingForGroup(commands.Cog):
     # Rematch
     @app_commands.command(name="rematch", description="Tag all user's with the Rematch role to get some games going!")
     async def rematch(self, interaction: discord.Interaction):
-        role_id = self.bot.game_roles["rematch"]
+        role_id = self.game_roles["rematch"]
         role = interaction.guild.get_role(role_id)
         
         if role is None:
@@ -45,7 +45,7 @@ class LookingForGroup(commands.Cog):
     # MTG
     @app_commands.command(name="mtg", description="Tag all user's with the Magic Nerd role to get some games going!")
     async def mtg(self, interaction: discord.Interaction):
-        role_id = self.bot.game_roles["mtg"]
+        role_id = self.game_roles["mtg"]
         role = interaction.guild.get_role(role_id)
         
         if role is None:

@@ -18,6 +18,12 @@ GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 WORDLE_APP_ID = 1211781489931452447
 
+GAME_ROLES = {
+    "rocket league": int(os.getenv("RL_ROLE")),
+    "rematch": int(os.getenv("REMATCH_ROLE")),
+    "mtg": int(os.getenv("MTG_ROLE"))
+}
+
 # User mappings for adding and removing users
 USERS = {
     "grayson": 162343822179696640,
@@ -232,17 +238,6 @@ async def wtest(interaction: discord.Interaction):
 async def wtestx(interaction: discord.Interaction):
     await interaction.channel.send("Here are yesterday's results:\nX/6: Natty")
     await interaction.response.send_message("✅ Real Wordle message sent.") """
-    
-# RL LFG ping command
-@client.tree.command(name="rl", description="Ping the homies for rocket league", guild=GUILD_OBJECT)
-async def rl_ping(interaction: discord.Interaction):
-    mentions = []
-    for name, user_id in USERS.items():
-        member = interaction.guild.get_member(user_id)
-        if member:
-            mentions.append(member.mention)
-
-    await interaction.response.send_message(f"Lets go boys, its trio time {' '.join(mentions)}")
 
 # F1 schedule command. Pulls from f1_schedule_data.py
 @client.tree.command(name="f1", description="Show 2025 F1 schedule", guild=GUILD_OBJECT)
@@ -262,6 +257,10 @@ async def setup_cogs():
     # Games Cog
     games_cog = Games(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
     await client.add_cog(games_cog)
+    
+    # LFG Cog
+    lfg_cog = LFG(client, GUILD_OBJECT,GAME_ROLES)
+    await client.add_cog(lfg_cog)
 
 # Main method
 async def main():

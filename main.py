@@ -48,6 +48,25 @@ class Client(commands.Bot):
                         user_id BIGINT PRIMARY KEY,
                         balance BIGINT NOT NULL DEFAULT 0
                     );
+                    CREATE TABLE IF NOT EXISTS shop (
+                        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        price INTEGER NOT NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS inventory (
+                        user_id BIGINT REFERENCES users(user_id),
+                        item_id INTEGER REFERENCES shop(id),
+                        quantity INTEGER NOT NULL DEFAULT 1,
+                        PRIMARY KEY (user_id, item_id)
+                    );
+                    CREATE TABLE IF NOT EXISTS purchases (
+                        id SERIAL PRIMARY KEY,
+                        user_id BIGINT REFERENCES users(user_id),
+                        item_id INTEGER REFERENCES shop(id),
+                        quantity INTEGER NOT NULL DEFAULT 1,
+                        purchase_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
                 """)
             print("Database connection pool created and schema ensured.")
 

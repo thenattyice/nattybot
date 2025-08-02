@@ -101,7 +101,9 @@ class Shop(commands.Cog):
             description=f"<@{target_user_id}> purchased {item_name}!",
             color=discord.Color.green()
         )
-        await self.purchase_log_channel.send(embed=purchase_embed)
+        
+        log_channel = self.guild_object.get_channel(self.purchase_log_channel)
+        await log_channel.send(embed=purchase_embed)
     
     async def process_transaction(self, interaction, target_user_id: int, item_id: int, price: int) -> bool:
         economy_cog = self.bot.get_cog("Economy")
@@ -129,4 +131,3 @@ class Shop(commands.Cog):
         view = ShopView(interaction.user, self)
         await view.shop_setup()
         await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
-            

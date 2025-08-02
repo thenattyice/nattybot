@@ -10,6 +10,7 @@ from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
 from cogs.games import Games
 from cogs.lfg import LookingForGroup
+from cogs.shop import Shop
 
 load_dotenv() #Load the env file
 
@@ -18,6 +19,7 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 WORDLE_APP_ID = 1211781489931452447
+PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 
 GAME_ROLES = {
     "rocket league": int(os.getenv("RL_ROLE")),
@@ -281,6 +283,10 @@ async def setup_cogs():
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await client.add_cog(lfg_cog)
+    
+    # Shop Cog
+    games_cog = Shop(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
+    await client.add_cog(shop_cog)
 
 # Main method
 async def main():

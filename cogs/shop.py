@@ -52,6 +52,7 @@ class Shop(commands.Cog):
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
+        self.bot.tree.add_command(self.shop_add_item, guild=self.guild_object)
     
     # Add an item to the shop table for purchase in the shop
     async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int):

@@ -123,6 +123,7 @@ class Games(commands.Cog):
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.rock_paper_scissors, guild=self.guild_object)
+        self.bot.tree.add_command(self.coinflip, guild=self.guild_object)
     
     # Bet validation method
     async def bet_validation(self, interaction, target_user_id: int, bet: int):

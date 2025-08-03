@@ -57,12 +57,12 @@ class Shop(commands.Cog):
     # Add an item to the shop table for purchase in the shop
     async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
         async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("""
+            status = await conn.execute("""
                 INSERT INTO shop (name, description, price)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (name) DO NOTHING
             """, item_name, description, price)
-            if result:
+            if status.endswith("1"):
                 await interaction.response.send_message(f"{item_name} successfully added to the shop!")
             else:
                 await interaction.response.send_message(f"{item_name} already exists in the shop.")

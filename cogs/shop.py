@@ -17,7 +17,6 @@ class ShopView(discord.ui.View):
         
 class ShopSelect(discord.ui.Select):
     def __init__(self, items, parent_cog, parent_view):
-        super().__init__(placeholder="Choose an item to buy...", options=options, max_values=1)
         self.parent_cog = parent_cog
         self.parent_view = parent_view
         options = [
@@ -28,6 +27,7 @@ class ShopSelect(discord.ui.Select):
             )
             for item in items
         ]
+        super().__init__(placeholder="Choose an item to buy...", options=options, max_values=1)
         
     async def callback(self, interaction: discord.Interaction):
         try:
@@ -222,4 +222,3 @@ class Shop(commands.Cog):
         )
         
         await interaction.response.send_message(embed=inventory_embed)
-        

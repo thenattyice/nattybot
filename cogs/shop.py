@@ -36,9 +36,15 @@ class ShopSelect(discord.ui.Select):
             
             # Call the process_transaction method to hndle the purchase from the select
             item_row = await self.parent_cog.get_shop_item_by_id(item_id)
-            
             price = item_row['price']
+            
             success = await self.parent_cog.process_transaction(interaction, user_id, item_id, price)
+            
+            # Disable the dropdown after selection
+            self.disabled = True
+            self.parent_view.clear_items() # Remove all existing items
+            self.parent_view.add_item(self) # Add back the now-disabled version
+            
             if success:
                 await interaction.response.send_message(f"You bought **{item_row['name']}** for {price} NattyCoins")
             else:

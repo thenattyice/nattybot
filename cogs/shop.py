@@ -144,15 +144,25 @@ class Shop(commands.Cog):
     # Command for presenting the shop
     @app_commands.command(name="buy", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
     async def shop_open(self, interaction: discord.Interaction):
-        items = await self.get_all_shop_items()
+        try:
+            print("[DEBUG] /buy command invoked")
 
-        if not items:
-            await interaction.response.send_message("The shop is currently empty.", ephemeral=True)
-            return
-        
-        view = ShopView(interaction.user, self)
-        await view.shop_setup()
-        await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
+            items = await self.get_all_shop_items()
+            print(f"[DEBUG] Retrieved {len(items)} items")
+
+            if not items:
+                await interaction.response.send_message("The shop is currently empty.", ephemeral=True)
+                return
+
+            view = ShopView(interaction.user, self)
+            await view.shop_setup()
+            await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
+        except Exception:
+            traceback.print_exc()
+            try:
+                await interaction.response.send_message("Something went wrong showing the shop.", ephemeral=True)
+            except discord.InteractionResponded:
+                await interaction.followup.send("Something went wrong showing the shop.", ephemeral=True)
         
     # Command for dding an item to the shop
     @app_commands.command(name="additem", description="Add an item to the NattyShop")

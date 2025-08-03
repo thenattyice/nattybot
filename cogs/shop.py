@@ -40,7 +40,7 @@ class ShopSelect(discord.ui.Select):
             price = item_row['price']
             success = await self.parent_cog.process_transaction(interaction, user_id, item_id, price)
             if success:
-                await interaction.response.send_message(f"You bought **{item_row['name']}** for {price}")
+                await interaction.response.send_message(f"You bought **{item_row['name']}** for {price} NattyCoins")
             else:
                 pass
         except Exception as e:
@@ -61,6 +61,7 @@ class Shop(commands.Cog):
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
         self.bot.tree.add_command(self.shop_add_item, guild=self.guild_object)
+        self.bot.tree.add_command(self.show_inventory, guild=self.guild_object)
     
     # Add an item to the shop table for purchase in the shop
     async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
@@ -141,6 +142,18 @@ class Shop(commands.Cog):
             await self.add_item_to_user(target_user_id, item_id)
             await self.log_item_purchase(target_user_id, item_id)
             return True
+    
+    # Method to pull a player's inventory
+    async def get_inventory(self, target_user_id: int):
+        async with self.bot.db_pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT s.name, i.quantity
+                FROM inventory i
+                JOIN shop s ON
+                s.id = i.item_id
+                WHERE i.user_id = $1
+            """, target_user_id)
+        return rows
             
     # Command for presenting the shop
     @app_commands.command(name="buy", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
@@ -177,3 +190,25 @@ class Shop(commands.Cog):
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while adding the item.", ephemeral=True)
+            
+    # Shop command for shoing a player's inventory
+    @app_commands.command(name="inventory", description="See items in your inventory from the NattyShop")
+    async def show_inventory(self, interaction: discord.Interaction):
+        user_id = interaction.user.id
+        inventory_list = await self.show_inventory(user_id)
+        
+        description = ''
+        for row in inventory_list:
+            item_name = row['name']
+            quantity = row['quantity']
+            
+            description += f"{item_name}: {quantity}\n"
+        
+        inventory_embed = discord.Embed(
+            title="**Your Inventory**",
+            description=description,
+            color=discord.Color.blue()
+        )
+        
+        await interaction.response.send_message(embed=inventory_embed)
+        

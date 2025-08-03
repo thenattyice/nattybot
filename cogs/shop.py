@@ -48,11 +48,12 @@ class ShopSelect(discord.ui.Select):
             # Feedback message to replace the dropdown
             content = (
                 f"You bought **{item_row['name']}** for {price} NattyCoins"
-                if success else:
+                if success else
                     "You don't have enough NattyCoins for that purchase."
             )
             
-            await interaction.response.edit_message(content=content, view=self.parent_view) # Edit the dropdown message and replaces it with the content block
+            await interaction.response.edit_message(view=self.parent_view)
+            await interaction.followup.send(content=content, ephemeral=True)
             
         except Exception as e:
             print("Error in ShopSelect callback:")

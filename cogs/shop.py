@@ -153,5 +153,8 @@ class Shop(commands.Cog):
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
             return
-
-        await self.add_item_to_shop(item_name, description, price)
+        try:
+            await self.add_item_to_shop(item_name, description, price)
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while adding the item.", ephemeral=True)

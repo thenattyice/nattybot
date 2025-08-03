@@ -45,10 +45,15 @@ class ShopSelect(discord.ui.Select):
             self.parent_view.clear_items() # Remove all existing items
             self.parent_view.add_item(self) # Add back the now-disabled version
             
-            if success:
-                await interaction.response.send_message(f"You bought **{item_row['name']}** for {price} NattyCoins")
-            else:
-                pass
+            # Feedback message to replace the dropdown
+            content = (
+                f"You bought **{item_row['name']}** for {price} NattyCoins"
+                if success else:
+                    "You don't have enough NattyCoins for that purchase."
+            )
+            
+            await interaction.response.edit_message(content=content, view=self.parent_view) # Edit the dropdown message and replaces it with the content block
+            
         except Exception as e:
             print("Error in ShopSelect callback:")
             traceback.print_exc()

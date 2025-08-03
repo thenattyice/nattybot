@@ -12,12 +12,13 @@ class ShopView(discord.ui.View):
     async def shop_setup(self):
         items = await self.parent_cog.get_all_shop_items()
         self.clear_items()
-        select = ShopSelect(items, self.parent_cog)
+        select = ShopSelect(items, self.parent_cog. self)
         self.add_item(select)
         
 class ShopSelect(discord.ui.Select):
-    def __init__(self, items, parent_cog):
+    def __init__(self, items, parent_cog, parent_view):
         self.parent_cog = parent_cog
+        self.view = parent_view
         options = [
             discord.SelectOption(
                 label=item['name'],
@@ -29,19 +30,26 @@ class ShopSelect(discord.ui.Select):
         super().__init__(placeholder="Choose an item to buy...", options=options, max_values=1)
     
     async def callback(self, interaction: discord.Interaction):
-        item_id = int(self.values[0])
-        user_id = interaction.user.id
-        
-        # Call the process_transaction method to hndle the purchase from the select
-        item_row = await self.parent_cog.get_shop_item_by_id(item_id)
-        
-        price = item_row['price']
-        success = await self.parent_cog.process_transaction(interaction, user_id, item_id, price)
-        if success:
-            await interaction.response.send_message(f"You bought **{item_row['name']}** for {price}")
-        else:
-            pass
-        
+        try:
+            item_id = int(self.values[0])
+            user_id = interaction.user.id
+            
+            # Call the process_transaction method to hndle the purchase from the select
+            item_row = await self.parent_cog.get_shop_item_by_id(item_id)
+            
+            price = item_row['price']
+            success = await self.parent_cog.process_transaction(interaction, user_id, item_id, price)
+            if success:
+                await interaction.response.send_message(f"You bought **{item_row['name']}** for {price}")
+            else:
+                pass
+        except Exception as e:
+            print("Error in ShopSelect callback:")
+            traceback.print_exc()
+            try:
+                await interaction.response.send_message("An error occurred during purchase.", ephemeral=True)
+            except discord.InteractionResponded:
+                await interaction.followup.send("An error occurred during purchase.", ephemeral=True)
 # Class for all of the Shop commands
 class Shop(commands.Cog):
     def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel):

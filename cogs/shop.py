@@ -51,7 +51,20 @@ class Shop(commands.Cog):
         self.purchase_log_channel = purchase_log_channel
         
         # Register commands to my specific guild/server
-        self.bot.tree.add_command(self.buy, guild=self.guild_object)
+        self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
+    
+    # Add an item to the shop table for purchase in the shop
+    async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("""
+                INSERT INTO shop (name, description, price)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (name) DO NOTHING
+            """, item_name, price)
+            if result:
+                await interaction.response.send_message(f"{item_name} successfully added to the shop!")
+            else:
+                await interaction.response.send_message(f"{item_name} already exists in the shop.")
         
     # Directly add an item to a user's inventory
     async def add_item_to_user(self, target_user_id: int, item_id: int):
@@ -121,7 +134,7 @@ class Shop(commands.Cog):
             
     # Command for presenting the shop
     @app_commands.command(name="buy", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
-    async def shop_command(self, interaction: discord.Interaction):
+    async def shop_open(self, interaction: discord.Interaction):
         items = await self.get_all_shop_items()
 
         if not items:
@@ -131,3 +144,13 @@ class Shop(commands.Cog):
         view = ShopView(interaction.user, self)
         await view.shop_setup()
         await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
+        
+    # Command for dding an item to the shop
+    @app_commands.command(name="additem", description="Add an item to the NattyShop")
+    async def shop_add_item(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
+        user_role_ids = [role.id for role in interaction.user.roles]
+        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            return
+
+        await self.add_item_to_shop(item_name, description, price)

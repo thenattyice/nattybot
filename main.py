@@ -52,7 +52,7 @@ class Client(commands.Bot):
                     );
                     CREATE TABLE IF NOT EXISTS shop (
                         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                        name TEXT NOT NULL,
+                        name TEXT UNIQUE NOT NULL,
                         description TEXT,
                         price INTEGER NOT NULL
                     );
@@ -285,7 +285,7 @@ async def setup_cogs():
     await client.add_cog(lfg_cog)
     
     # Shop Cog
-    games_cog = Shop(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
+    games_cog = Shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
     await client.add_cog(shop_cog)
 
 # Main method

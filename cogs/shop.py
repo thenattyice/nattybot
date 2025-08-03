@@ -18,7 +18,7 @@ class ShopView(discord.ui.View):
 class ShopSelect(discord.ui.Select):
     def __init__(self, items, parent_cog, parent_view):
         self.parent_cog = parent_cog
-        self.view = parent_view
+        self.parent_view = parent_view
         options = [
             discord.SelectOption(
                 label=item['name'],

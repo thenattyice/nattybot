@@ -12,7 +12,7 @@ class ShopView(discord.ui.View):
     async def shop_setup(self):
         items = await self.parent_cog.get_all_shop_items()
         self.clear_items()
-        select = ShopSelect(items, self.parent_cog. self)
+        select = ShopSelect(items, self.parent_cog, self)
         self.add_item(select)
         
 class ShopSelect(discord.ui.Select):

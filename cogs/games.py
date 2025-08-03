@@ -91,7 +91,7 @@ class CoinFlipView(discord.ui.View):
             await self.economy_cog.add_money_to_user(user_id, winnings)
             result = discord.Embed(
                 title="🎉 You Win!",
-                description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} beats {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!",
+                description=f"The bot flipped... {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!",
                 color=discord.Color.green()
             )
         else:

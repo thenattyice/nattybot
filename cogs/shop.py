@@ -124,7 +124,8 @@ class Shop(commands.Cog):
             color=discord.Color.green()
         )
         
-        log_channel = self.guild_object.get_channel(self.purchase_log_channel)
+        guild = self.bot.get_guild(self.guild_object.id)
+        log_channel = guild.get_channel(self.purchase_log_channel)
         await log_channel.send(embed=purchase_embed)
     
     async def process_transaction(self, interaction, target_user_id: int, item_id: int, price: int) -> bool:

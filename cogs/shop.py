@@ -17,6 +17,7 @@ class ShopView(discord.ui.View):
         
 class ShopSelect(discord.ui.Select):
     def __init__(self, items, parent_cog, parent_view):
+        super().__init__(placeholder="Choose an item to buy...", options=options, max_values=1)
         self.parent_cog = parent_cog
         self.parent_view = parent_view
         options = [
@@ -27,8 +28,7 @@ class ShopSelect(discord.ui.Select):
             )
             for item in items
         ]
-        super().__init__(placeholder="Choose an item to buy...", options=options, max_values=1)
-    
+        
     async def callback(self, interaction: discord.Interaction):
         try:
             item_id = int(self.values[0])
@@ -152,6 +152,7 @@ class Shop(commands.Cog):
                 JOIN shop s ON
                 s.id = i.item_id
                 WHERE i.user_id = $1
+                ORDER BY i.quantity DESC
             """, target_user_id)
         return rows
             
@@ -191,11 +192,15 @@ class Shop(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send("An error occurred while adding the item.", ephemeral=True)
             
-    # Shop command for shoing a player's inventory
+    # Shop command for showing a player's inventory
     @app_commands.command(name="inventory", description="See items in your inventory from the NattyShop")
     async def show_inventory(self, interaction: discord.Interaction):
         user_id = interaction.user.id
-        inventory_list = await self.show_inventory(user_id)
+        inventory_list = await self.get_inventory(user_id)
+        
+        if not inventory_list:
+            await interaction.response.send_message("You don't have any items in your inventory yet.", ephemeral=True)
+            return
         
         description = ''
         for row in inventory_list:

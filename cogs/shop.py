@@ -154,7 +154,7 @@ class Shop(commands.Cog):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
             return
         try:
-            await self.add_item_to_shop(item_name, description, price)
+            await self.add_item_to_shop(interaction, item_name, description, price)
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while adding the item.", ephemeral=True)

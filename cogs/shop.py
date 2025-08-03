@@ -61,7 +61,7 @@ class Shop(commands.Cog):
                 INSERT INTO shop (name, description, price)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (name) DO NOTHING
-            """, item_name, price)
+            """, item_name, description, price)
             if result:
                 await interaction.response.send_message(f"{item_name} successfully added to the shop!")
             else:

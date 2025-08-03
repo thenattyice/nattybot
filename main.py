@@ -285,7 +285,7 @@ async def setup_cogs():
     await client.add_cog(lfg_cog)
     
     # Shop Cog
-    games_cog = Shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
+    shop_cog = Shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
     await client.add_cog(shop_cog)
 
 # Main method

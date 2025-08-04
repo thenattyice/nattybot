@@ -49,7 +49,8 @@ class Client(commands.Bot):
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         user_id BIGINT PRIMARY KEY,
-                        balance BIGINT NOT NULL DEFAULT 0
+                        balance BIGINT NOT NULL DEFAULT 0,
+                        wordle_pts BIGINT NOT NULL DEFAULT 0;
                     );
                     CREATE TABLE IF NOT EXISTS shop (
                         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

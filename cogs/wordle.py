@@ -12,6 +12,16 @@ class Wordle(commands.Cog):
         
         # Register commands to my specific guild/server
     
+    # Method to insert the wordle_pts
+    async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
+        async with self.bot.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, wordle_pts)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET wordle_pts = users.wordle_pts + $2;
+            """, target_user_id, points)
+    
     # Event listener for the Wordle channel, specifically tracking daily results
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -125,10 +135,13 @@ class Wordle(commands.Cog):
         for user_id, score in user_rewards.items():
             reward = self.calculate_wordle_reward(score)
             await economy_cog.add_money_to_user(user_id, reward)
+            
+            points = self.calculate_wordle_pts(score)
+            await self.add_wordle_pts_to_user(user_id, score)
 
             member = message.guild.get_member(user_id)
             if member:
-                description += f"{member.mention} is awarded **{reward}** NattyCoins🪙\n"
+                description += f"{member.mention} is awarded **{reward}** NattyCoins🪙 and **{score}** championship points!\n"
             else:
                 print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
         
@@ -146,7 +159,12 @@ class Wordle(commands.Cog):
 
         await self.bot.process_commands(message)
 
-    # Function to calc the score 
+    # Function to calc the NattyCoins reward
     @staticmethod               
     def calculate_wordle_reward(score):
         return 0 if score == 0 else max(0, 7 - score) * 10
+    
+    # Function to calc the wordle_pts score reward
+    @staticmethod               
+    def calculate_wordle_pts(score):
+        return 0 if score == 0 else max(0, 7 - score)

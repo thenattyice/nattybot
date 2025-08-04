@@ -243,11 +243,6 @@ intents.reactions = True
 intents.voice_states = True
 intents.members = True
 client = Client(command_prefix="!", intents=intents)
-
-# Test command
-@client.tree.command(name="test", description="Nate's test command", guild=GUILD_OBJECT)
-async def say_test(interaction: discord.Interaction):
-    await interaction.response.send_message("The test worked!")
     
 """ # Wordle test command
 @client.tree.command(name="wtestscore", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)

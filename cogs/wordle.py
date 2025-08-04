@@ -11,6 +11,7 @@ class Wordle(commands.Cog):
         self.wordle_app_id = wordle_app_id
         
         # Register commands to my specific guild/server
+        self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
     
     # Method to insert the wordle_pts
     async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
@@ -212,3 +213,13 @@ class Wordle(commands.Cog):
     @staticmethod               
     def calculate_wordle_pts(score):
         return 0 if score == 0 else max(0, 7 - score)
+    
+    # Leaderboard command
+    @app_commands.command(name="championship", description="Shows the Wordle points championship leaderboard")
+    async def wordle_championship(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        
+        # Display the Wordle points championship leaderboard
+        championship_embed = await self.championship_pull()
+        await interaction.followup.send(embed=championship_embed)
+        

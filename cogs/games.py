@@ -92,7 +92,7 @@ class CoinFlipView(discord.ui.View):
             new_balance = await self.economy_cog.get_balance(user_id)
             result = discord.Embed(
                 title="🎉 You Win!",
-                description=f"The bot flipped... {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!\nNew balance: {new_balance} NattyCoins",
+                description=f"The bot flipped... {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
                 color=discord.Color.green()
             )
         else:
@@ -100,7 +100,7 @@ class CoinFlipView(discord.ui.View):
             new_balance = await self.economy_cog.get_balance(user_id)
             result = discord.Embed(
                 title="😢 You Lose!",
-                description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} loses to {self.emoji_map[bot_choice]} {bot_choice.capitalize()}...\nYou lost **{self.bet}** NattyCoins.\nNew balance: {new_balance} NattyCoins",
+                description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} loses to {self.emoji_map[bot_choice]} {bot_choice.capitalize()}...\nYou lost **{self.bet}** NattyCoins.\nNew balance: **{new_balance}** NattyCoins",
                 color=discord.Color.red()
             )
 

@@ -102,10 +102,6 @@ class Client(commands.Bot):
             except Exception as e:
                 print(f"Error sending DM: {e}")
     
-    
-    
-    
-    
 # Declared intents for bot perms in server
 intents = discord.Intents.all()
 intents.message_content = True
@@ -113,18 +109,6 @@ intents.reactions = True
 intents.voice_states = True
 intents.members = True
 client = Client(command_prefix="!", intents=intents)
-    
-""" # Wordle test command
-@client.tree.command(name="wtestscore", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)
-async def wtest(interaction: discord.Interaction):
-    await interaction.channel.send("Here are yesterday's results:\n2/6: Natty\nX/6: @Guru Pathik")
-    await interaction.response.send_message("✅ Real Wordle message sent.")
-    
-# Wordle test command
-@client.tree.command(name="wtestx", description="Send a real Wordle message into the channel", guild=GUILD_OBJECT)
-async def wtestx(interaction: discord.Interaction):
-    await interaction.channel.send("Here are yesterday's results:\nX/6: Natty")
-    await interaction.response.send_message("✅ Real Wordle message sent.") """
 
 # F1 schedule command. Pulls from f1_schedule_data.py
 @client.tree.command(name="f1", description="Show 2025 F1 schedule", guild=GUILD_OBJECT)

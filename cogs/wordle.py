@@ -12,6 +12,7 @@ class Wordle(commands.Cog):
         # Register commands to my specific guild/server
     
     # Event listener for the Wordle channel, specifically tracking daily results
+    @commands.Cog.listener()
     async def on_message(self, message):
         economy_cog = self.bot.get_cog("Economy")
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
@@ -138,10 +139,10 @@ class Wordle(commands.Cog):
             
             await message.channel.send(embed=reward_embed)
             
-        leaderboard_embed = await self.economy_cog.leaderboard_pull()
+        leaderboard_embed = await economy_cog.leaderboard_pull()
         await message.channel.send(embed=leaderboard_embed)
 
-        await self.process_commands(message)
+        await self.bot.process_commands(message)
 
     # Function to calc the score 
     @staticmethod               

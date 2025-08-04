@@ -21,6 +21,45 @@ class Wordle(commands.Cog):
                 ON CONFLICT (user_id) DO UPDATE
                 SET wordle_pts = users.wordle_pts + $2;
             """, target_user_id, points)
+            
+    # Function for pulling the wordle points data
+    async def championship_pull(self):
+        async with self.bot.db_pool.acquire() as conn:
+            rows = await conn.fetch("""SELECT 
+                                    RANK() OVER (ORDER BY wordle_pts DESC) AS rank,
+                                    user_id,
+                                    wordle_pts
+                                    FROM users LIMIT 5;""")
+        
+        description = '' # Init the field
+        for row in rows:
+            user_id = row['user_id']
+            balance = row['balance']
+            rank = row['rank']
+            
+            # Mention the user based on id
+            display_name = f"<@{user_id}>"
+            
+            # Add emoji for top 3
+            if rank == 1:
+                medal = "🥇"
+            elif rank == 2:
+                medal = "🥈"
+            elif rank == 3:
+                medal = "🥉"
+            else:
+                medal = f"#{rank}"
+            
+            description += f"**{medal}** – {display_name}: {balance} points\n" # Formatting for each row in the embed
+            
+        # Discord embed structure
+        championship_embed = discord.Embed(
+            title="🏆 Wordle Championship Leaderboard 🏆",
+            description=description,
+            color=discord.Color.gold()
+        )
+        
+        return championship_embed
     
     # Event listener for the Wordle channel, specifically tracking daily results
     @commands.Cog.listener()
@@ -153,7 +192,12 @@ class Wordle(commands.Cog):
             )
             
             await message.channel.send(embed=reward_embed)
-            
+        
+        # Display the Wordle points championship leaderboard
+        championship_embed = await self.championship_pull()
+        await message.channel.send(embed=championship_embed)
+        
+        # Display the NattyCoin leaderboard
         leaderboard_embed = await economy_cog.leaderboard_pull()
         await message.channel.send(embed=leaderboard_embed)
 

@@ -43,7 +43,36 @@ class Economy(commands.Cog):
                                     user_id,
                                     balance
                                     FROM users LIMIT 5;""")
-            return rows
+        
+        description = '' # Init the field
+        for row in rows:
+            user_id = row['user_id']
+            balance = row['balance']
+            rank = row['rank']
+            
+            # Mention the user based on id
+            display_name = f"<@{user_id}>"
+            
+            # Add emoji for top 3
+            if rank == 1:
+                medal = "🥇"
+            elif rank == 2:
+                medal = "🥈"
+            elif rank == 3:
+                medal = "🥉"
+            else:
+                medal = f"#{rank}"
+            
+            description += f"**{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+            
+        #Discord embed structure
+        leaderboard_embed = discord.Embed(
+            title="🏆 NattyCoin Leaderboard 🏆",
+            description=description,
+            color=discord.Color.gold()
+        )
+        
+        return leaderboard_embed
         
     # Function to check user balance
     async def get_balance(self, user_id: int):
@@ -109,36 +138,9 @@ class Economy(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:
-            leaderboard = await self.leaderboard_pull()
-            description = '' # Init the field
-            for row in leaderboard:
-                user_id = row['user_id']
-                balance = row['balance']
-                rank = row['rank']
+            leaderboard_embed = await self.leaderboard_pull()
                 
-                # Mention the user based on id
-                display_name = f"<@{user_id}>"
-                
-                # Add emoji for top 3
-                if rank == 1:
-                    medal = "🥇"
-                elif rank == 2:
-                    medal = "🥈"
-                elif rank == 3:
-                    medal = "🥉"
-                else:
-                    medal = f"#{rank}"
-                
-                description += f"**{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
-                
-            #Discord embed structure
-            embed = discord.Embed(
-                title="🏆 NattyCoin Leaderboard 🏆",
-                description=description,
-                color=discord.Color.gold()
-            )
-                
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=leaderboard_embed)
             
         except Exception as e:
             traceback.print_exc()

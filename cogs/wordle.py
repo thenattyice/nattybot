@@ -34,7 +34,7 @@ class Wordle(commands.Cog):
         description = '' # Init the field
         for row in rows:
             user_id = row['user_id']
-            balance = row['balance']
+            points = row['wordle_pts']
             rank = row['rank']
             
             # Mention the user based on id
@@ -50,7 +50,7 @@ class Wordle(commands.Cog):
             else:
                 medal = f"#{rank}"
             
-            description += f"**{medal}** – {display_name}: {balance} points\n" # Formatting for each row in the embed
+            description += f"**{medal}** – {display_name}: {points} points\n" # Formatting for each row in the embed
             
         # Discord embed structure
         championship_embed = discord.Embed(

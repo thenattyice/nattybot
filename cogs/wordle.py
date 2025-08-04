@@ -1,5 +1,6 @@
 import discord
 import traceback
+import re
 from discord import app_commands, Member
 from discord.ext import commands
 
@@ -14,6 +15,7 @@ class Wordle(commands.Cog):
     # Event listener for the Wordle channel, specifically tracking daily results
     @commands.Cog.listener()
     async def on_message(self, message):
+        print(f"📥 Message received in #{message.channel.name}: {message.content[:100]}")
         economy_cog = self.bot.get_cog("Economy")
         if message.channel.name != 'wordle': # Filter for the 'wordle' channel
             return

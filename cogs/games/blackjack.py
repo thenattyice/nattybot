@@ -106,6 +106,7 @@ class Blackjack(commands.Cog):
         return shoe
     
     # Define the values for each card
+    @staticmethod
     def get_card_value(card):
         rank = card[:-1] # Strip the suit from the card
         if rank in ['J', 'Q', 'K']:
@@ -114,7 +115,8 @@ class Blackjack(commands.Cog):
             return 11 # Handling 1 or 11 later down the line in calculate_hand_value
         else:
             return int(rank)
-        
+    
+    @staticmethod    
     def calculate_hand_value(hand):
         value = sum(get_card_value(card) for card in hand)
         # Handling Ace if value is over 21

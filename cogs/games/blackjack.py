@@ -29,7 +29,7 @@ class BlackjackView(discord.ui.View):
             card = session['deck'].pop()
             session['player_hand'].append(card)
 
-            value = calculate_hand_value(session['player_hand'])
+            value = Blackjack.calculate_hand_value(session['player_hand'])
             if value > 21:
                 # Player busts, disable buttons
                 self.disable_all_items()
@@ -56,11 +56,11 @@ class BlackjackView(discord.ui.View):
         dealer_hand = session['dealer_hand']
         deck = session['deck']
 
-        while calculate_hand_value(dealer_hand) < 17:
+        while Blackjack.calculate_hand_value(dealer_hand) < 17:
             dealer_hand.append(deck.pop())
 
-        player_value = calculate_hand_value(session['player_hand'])
-        dealer_value = calculate_hand_value(dealer_hand)
+        player_value = Blackjack.calculate_hand_value(session['player_hand'])
+        dealer_value = Blackjack.calculate_hand_value(dealer_hand)
 
         # Decide winner
         if dealer_value > 21 or player_value > dealer_value:

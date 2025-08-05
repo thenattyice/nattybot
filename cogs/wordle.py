@@ -177,7 +177,7 @@ class Wordle(commands.Cog):
             await economy_cog.add_money_to_user(user_id, reward)
             
             points = self.calculate_wordle_pts(score)
-            await self.add_wordle_pts_to_user(user_id, score)
+            await self.add_wordle_pts_to_user(user_id, points)
 
             member = message.guild.get_member(user_id)
             if member:

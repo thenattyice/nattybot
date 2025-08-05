@@ -43,42 +43,46 @@ class BlackjackView(discord.ui.View):
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cog = self.bot.get_cog("Blackjack")
-        session = cog.sessions.get(self.user_id)
-        if not session:
-            await interaction.response.send_message("Session expired or not found.", ephemeral=True)
-            return
+        try:
+            cog = self.bot.get_cog("Blackjack")
+            session = cog.sessions.get(self.user_id)
+            if not session:
+                await interaction.response.send_message("Session expired or not found.", ephemeral=True)
+                return
 
-        session['stand'] = True
-        self.disable_all_items()
+            session['stand'] = True
+            self.disable_all_items()
 
-        # Dealer logic - dealer hits until 17 or higher
-        dealer_hand = session['dealer_hand']
-        deck = session['deck']
+            # Dealer logic - dealer hits until 17 or higher
+            dealer_hand = session['dealer_hand']
+            deck = session['deck']
 
-        while Blackjack.calculate_hand_value(dealer_hand) < 17:
-            dealer_hand.append(deck.pop())
+            while Blackjack.calculate_hand_value(dealer_hand) < 17:
+                dealer_hand.append(deck.pop())
 
-        player_value = Blackjack.calculate_hand_value(session['player_hand'])
-        dealer_value = Blackjack.calculate_hand_value(dealer_hand)
+            player_value = Blackjack.calculate_hand_value(session['player_hand'])
+            dealer_value = Blackjack.calculate_hand_value(dealer_hand)
 
-        # Decide winner
-        if dealer_value > 21 or player_value > dealer_value:
-            result = "You win!"
-        elif dealer_value == player_value:
-            result = "It's a tie!"
-        else:
-            result = "Dealer wins!"
+            # Decide winner
+            if dealer_value > 21 or player_value > dealer_value:
+                result = "You win!"
+            elif dealer_value == player_value:
+                result = "It's a tie!"
+            else:
+                result = "Dealer wins!"
 
-        await interaction.response.edit_message(
-            content=(
-                f"Dealer's hand: {dealer_hand} ({dealer_value})\n"
-                f"Your hand: {session['player_hand']} ({player_value})\n"
-                f"**{result}**"
-            ),
-            view=self
-        )
-        del cog.sessions[self.user_id]  # End game
+            await interaction.response.edit_message(
+                content=(
+                    f"Dealer's hand: {dealer_hand} ({dealer_value})\n"
+                    f"Your hand: {session['player_hand']} ({player_value})\n"
+                    f"**{result}**"
+                ),
+                view=self
+            )
+            del cog.sessions[self.user_id]  # End game
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while executing Stand button.", ephemeral=True)
 
 class Blackjack(commands.Cog):
     def __init__(self, bot, guild_object):

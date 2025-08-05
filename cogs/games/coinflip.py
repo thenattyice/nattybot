@@ -92,5 +92,5 @@ class CoinFlip(commands.Cog):
         view = CoinFlipView(user, bet, emoji_map, economy_cog)
         await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
         
-async def setup(bot):
+async def setup(bot, guild_object):
     await bot.add_cog(CoinFlip(bot, guild_object))

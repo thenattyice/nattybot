@@ -112,5 +112,5 @@ class RockPaperScissors(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
             
-async def setup(bot):
+async def setup(bot, guild_object, allowed_roles):
     await bot.add_cog(RockPaperScissors(bot, guild_object, allowed_roles))

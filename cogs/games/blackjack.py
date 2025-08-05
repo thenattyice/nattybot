@@ -126,7 +126,7 @@ class Blackjack(commands.Cog):
     
     # Blackjack game
     @app_commands.command(name="blackjack", description="Bet on a game of blackjack with your NattyCoins")
-    async def blackjack(self, interaction: discord.Interaction, bet: int):
+    async def blackjack(self, interaction: discord.Interaction):
         user_id = interaction.user.id
         self.create_new_game(user_id)
         session = self.sessions[user_id]

@@ -19,7 +19,7 @@ class BlackjackView(discord.ui.View):
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.green)
     async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
-            cog = self.bot.get_cog("BlackjackCog")
+            cog = self.bot.get_cog("Blackjack")
             session = cog.sessions.get(self.user_id)
             if not session:
                 await interaction.response.send_message("Session expired or not found.", ephemeral=True)
@@ -43,7 +43,7 @@ class BlackjackView(discord.ui.View):
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cog = self.bot.get_cog("BlackjackCog")
+        cog = self.bot.get_cog("Blackjack")
         session = cog.sessions.get(self.user_id)
         if not session:
             await interaction.response.send_message("Session expired or not found.", ephemeral=True)

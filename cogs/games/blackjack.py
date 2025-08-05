@@ -18,24 +18,28 @@ class BlackjackView(discord.ui.View):
 
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.green)
     async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cog = self.bot.get_cog("BlackjackCog")
-        session = cog.sessions.get(self.user_id)
-        if not session:
-            await interaction.response.send_message("Session expired or not found.", ephemeral=True)
-            return
+        try:
+            cog = self.bot.get_cog("BlackjackCog")
+            session = cog.sessions.get(self.user_id)
+            if not session:
+                await interaction.response.send_message("Session expired or not found.", ephemeral=True)
+                return
 
-        # Draw a card for player
-        card = session['deck'].pop()
-        session['player_hand'].append(card)
+            # Draw a card for player
+            card = session['deck'].pop()
+            session['player_hand'].append(card)
 
-        value = calculate_hand_value(session['player_hand'])
-        if value > 21:
-            # Player busts, disable buttons
-            self.disable_all_items()
-            await interaction.response.edit_message(content=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})", view=self)
-            del cog.sessions[self.user_id]  # End game
-        else:
-            await interaction.response.edit_message(content=f"You drew {card}. Your hand: {session['player_hand']} ({value})", view=self)
+            value = calculate_hand_value(session['player_hand'])
+            if value > 21:
+                # Player busts, disable buttons
+                self.disable_all_items()
+                await interaction.response.edit_message(content=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})", view=self)
+                del cog.sessions[self.user_id]  # End game
+            else:
+                await interaction.response.edit_message(content=f"You drew {card}. Your hand: {session['player_hand']} ({value})", view=self)
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while executing Hit button.", ephemeral=True)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):

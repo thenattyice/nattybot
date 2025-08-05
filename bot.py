@@ -8,10 +8,11 @@ from discord import Member
 from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
-from cogs.games import Games
 from cogs.lfg import LookingForGroup
 from cogs.shop import Shop
 from cogs.wordle import Wordle
+from cogs.games.coinflip import setup as setup_coinflip
+from cogs.games.rps import setup as setup_rps
 
 load_dotenv() #Load the env file
 
@@ -126,10 +127,6 @@ async def setup_cogs():
     await client.add_cog(economy_cog)
     client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
     
-    # Games Cog
-    games_cog = Games(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
-    await client.add_cog(games_cog)
-    
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await client.add_cog(lfg_cog)
@@ -141,6 +138,10 @@ async def setup_cogs():
     # Wordle Cog
     wordle_cog = Wordle(client, GUILD_OBJECT, WORDLE_APP_ID)
     await client.add_cog(wordle_cog)
+    
+    #Game Cogs
+    await setup_coinflip(client, GUILD_OBJECT)
+    await setup_rps(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
 
 # Main method
 async def main():

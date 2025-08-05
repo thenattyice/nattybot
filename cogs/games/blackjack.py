@@ -127,23 +127,27 @@ class Blackjack(commands.Cog):
     # Blackjack game
     @app_commands.command(name="blackjack", description="Bet on a game of blackjack with your NattyCoins")
     async def blackjack(self, interaction: discord.Interaction):
-        user_id = interaction.user.id
-        self.create_new_game(user_id)
-        session = self.sessions[user_id]
+        try:
+            user_id = interaction.user.id
+            self.create_new_game(user_id)
+            session = self.sessions[user_id]
 
-        player_hand = session['player_hand']
-        dealer_hand = session['dealer_hand']
+            player_hand = session['player_hand']
+            dealer_hand = session['dealer_hand']
 
-        view = BlackjackView(self.bot, user_id)
+            view = BlackjackView(self.bot, user_id)
 
-        await interaction.response.send_message(
-            content=(
-                f"Game started!\n"
-                f"Your hand: {player_hand} ({calculate_hand_value(player_hand)})\n"
-                f"Dealer’s visible card: {dealer_hand[0]}"
-            ),
-            view=view
-        )
+            await interaction.response.send_message(
+                content=(
+                    f"Game started!\n"
+                    f"Your hand: {player_hand} ({calculate_hand_value(player_hand)})\n"
+                    f"Dealer’s visible card: {dealer_hand[0]}"
+                ),
+                view=view
+            )
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
         
 async def setup(bot, guild_object):
     await bot.add_cog(Blackjack(bot, guild_object))

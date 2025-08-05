@@ -136,11 +136,13 @@ class Blackjack(commands.Cog):
             dealer_hand = session['dealer_hand']
 
             view = BlackjackView(self.bot, user_id)
+            
+            player_hand_value = self.calculate_hand_value(player_hand)
 
             await interaction.response.send_message(
                 content=(
                     f"Game started!\n"
-                    f"Your hand: {player_hand} ({self.calculate_hand_value(player_hand)})\n"
+                    f"Your hand: {player_hand} ({player_hand_value})\n"
                     f"Dealer’s visible card: {dealer_hand[0]}"
                 ),
                 view=view

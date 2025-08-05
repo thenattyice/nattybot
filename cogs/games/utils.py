@@ -6,9 +6,7 @@ from discord import app_commands, Member
 from discord.ext import commands
 
 # Bet validation method
-async def bet_validation(self, interaction, target_user_id: int, bet: int):
-    economy_cog = self.bot.get_cog('Economy')
-    
+async def bet_validation(interaction, economy_cog, target_user_id: int, bet: int):
     current_balance = await economy_cog.get_balance(target_user_id)
     
     # Bet amount validations

@@ -140,7 +140,7 @@ class Blackjack(commands.Cog):
             await interaction.response.send_message(
                 content=(
                     f"Game started!\n"
-                    f"Your hand: {player_hand} ({calculate_hand_value(player_hand)})\n"
+                    f"Your hand: {player_hand} ({self.calculate_hand_value(player_hand)})\n"
                     f"Dealer’s visible card: {dealer_hand[0]}"
                 ),
                 view=view

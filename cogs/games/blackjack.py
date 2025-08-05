@@ -118,7 +118,7 @@ class Blackjack(commands.Cog):
     
     @staticmethod    
     def calculate_hand_value(hand):
-        value = sum(get_card_value(card) for card in hand)
+        value = sum(Blackjack.get_card_value(card) for card in hand)
         # Handling Ace if value is over 21
         aces = sum(1 for card in hand if card[:-1] == 'A')
         while value > 21 and aces:

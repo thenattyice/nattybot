@@ -33,10 +33,20 @@ class BlackjackView(discord.ui.View):
             if value > 21:
                 # Player busts, disable buttons
                 self.disable_all_items()
-                await interaction.response.edit_message(content=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})", view=self)
+                bust_embed = discord.Embed(
+                    title="Blackjack",
+                    description=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})",
+                    color=discord.Color.red()
+                )
+                await interaction.response.edit_message(embed=bust_embed, view=self)
                 del cog.sessions[self.user_id]  # End game
             else:
-                await interaction.response.edit_message(content=f"You drew {card}. Your hand: {session['player_hand']} ({value})", view=self)
+                hit_embed = discord.Embed(
+                    title="Blackjack",
+                    description=f"You drew {card}. Your hand: {session['player_hand']} ({value})",
+                    color=discord.Color.red()
+                )
+                await interaction.response.edit_message(content=hit_embed, view=self)
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while executing Hit button.", ephemeral=True)
@@ -73,15 +83,21 @@ class BlackjackView(discord.ui.View):
             else:
                 result = "Dealer wins!"
 
-            await interaction.response.edit_message(
-                content=(
-                    f"Dealer's hand: {dealer_hand} ({dealer_value})\n"
-                    f"Your hand: {session['player_hand']} ({player_value})\n"
-                    f"**{result}**"
+            stand_embed = discord.Embed(
+                title="Blackjack",
+                description=(
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({value})\n"
+                    f"**Dealer’s visible card:** {session['dealer_hand'][0]}"
                 ),
+                color=discord.Color.red()
+                )
+            
+            await interaction.response.edit_message(
+                embed=stand_embed,
                 view=self
             )
-            del cog.sessions[self.user_id]  # End game
+            
+            del cog.sessions[self.user_id]  # End the game by deleting the session
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while executing Stand button.", ephemeral=True)
@@ -151,12 +167,18 @@ class Blackjack(commands.Cog):
             
             player_hand_value = self.calculate_hand_value(player_hand)
 
-            await interaction.response.send_message(
-                content=(
+            gamestart_embed = discord.Embed(
+                title="🎮 Natty Games: Blackjack 🎮",
+                description=(
                     f"Game started!\n"
-                    f"Your hand: {player_hand} ({player_hand_value})\n"
-                    f"Dealer’s visible card: {dealer_hand[0]}"
+                    f"**Your hand:** {', '.join(player_hand)} ({player_hand_value})\n"
+                    f"**Dealer’s visible card:** {dealer_hand[0]}"
                 ),
+                color=discord.Color.red()
+            )
+            
+            await interaction.response.send_message(
+                embed=gamestart_embed,
                 view=view
             )
         except Exception as e:

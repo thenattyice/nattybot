@@ -13,6 +13,7 @@ from cogs.shop import Shop
 from cogs.wordle import Wordle
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
+from cogs.games.blackjack import setup as setup_blackjack
 
 load_dotenv() #Load the env file
 
@@ -142,6 +143,7 @@ async def setup_cogs():
     #Game Cogs
     await setup_coinflip(client, GUILD_OBJECT)
     await setup_rps(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
+    await setup_blackjack(client, GUILD_OBJECT)
 
 # Main method
 async def main():

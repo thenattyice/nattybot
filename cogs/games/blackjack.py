@@ -53,7 +53,7 @@ class BlackjackView(discord.ui.View):
             session['stand'] = True
             # Disable the buttons
             for item in self.children:
-                item.disabled = true
+                item.disabled = True
 
             # Dealer logic - dealer hits until 17 or higher
             dealer_hand = session['dealer_hand']

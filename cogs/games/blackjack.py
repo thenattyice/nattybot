@@ -13,7 +13,7 @@ class BlackjackView(discord.ui.View):
         self.user_id = user_id
         
     # Only allow the player who started the game to use the buttons
-    async def interaction_check(self, interaction: Interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.user_id
 
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.green)

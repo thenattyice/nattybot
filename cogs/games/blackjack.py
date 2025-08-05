@@ -17,7 +17,7 @@ class BlackjackView(discord.ui.View):
         return interaction.user.id == self.user_id
 
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.green)
-    async def hit(self, interaction: discord.Interaction, button: Button):
+    async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
         cog = self.bot.get_cog("BlackjackCog")
         session = cog.sessions.get(self.user_id)
         if not session:
@@ -38,7 +38,7 @@ class BlackjackView(discord.ui.View):
             await interaction.response.edit_message(content=f"You drew {card}. Your hand: {session['player_hand']} ({value})", view=self)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
-    async def stand(self, interaction: discord.Interaction, button: Button):
+    async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
         cog = self.bot.get_cog("BlackjackCog")
         session = cog.sessions.get(self.user_id)
         if not session:

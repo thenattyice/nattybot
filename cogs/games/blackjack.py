@@ -69,9 +69,37 @@ class BlackjackView(discord.ui.View):
             # Dealer logic - dealer hits until 17 or higher
             dealer_hand = session['dealer_hand']
             deck = session['deck']
+            
+            initial_stand_embed = discord.Embed(
+                title="Blackjack",
+                description=(
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
+                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
+                    f"Dealer reveals their hole card..."
+                ),
+                color=discord.Color.red()
+                )
+            
+            await interaction.response.edit_message(embed=initial_stand_embed, view=self)
+            await asyncio.sleep(1.5)
 
+            # Dealer hits until 17+
             while Blackjack.calculate_hand_value(dealer_hand) < 17:
-                dealer_hand.append(deck.pop())
+                drawn_card = deck.pop()
+                dealer_hand.append(drawn_card)
+                
+                updated_stand_embed = discord.Embed(
+                title="Blackjack",
+                description=(
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
+                    f"**Dealer draws...** {drawn_card}"
+                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
+                ),
+                color=discord.Color.red()
+                )
+                
+                await interaction.edit_original_response(embed=updated_stand_embed, view=self)
+                await asyncio.sleep(1.5)
 
             player_value = Blackjack.calculate_hand_value(session['player_hand'])
             dealer_value = Blackjack.calculate_hand_value(dealer_hand)
@@ -84,19 +112,17 @@ class BlackjackView(discord.ui.View):
             else:
                 result = "Dealer wins!"
 
-            stand_embed = discord.Embed(
+            final_stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
-                    f"**Dealer’s visible card:** {session['dealer_hand'][0]}\n"
+                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
+                    f"**Result** {result}"
                 ),
-                color=discord.Color.red()
+                color=discord.Color.green() if "win" in result.lower() else discord.Color.red()
                 )
             
-            await interaction.response.edit_message(
-                embed=stand_embed,
-                view=self
-            )
+            await interaction.response.edit_message(embed=stand_embed, view=self)
             
             del cog.sessions[self.user_id]  # End the game by deleting the session
         except Exception as e:
@@ -123,7 +149,7 @@ class Blackjack(commands.Cog):
             'stand': False,
         }
         
-    def create_shoe(self, num_decks=1):
+    def create_shoe(self, num_decks=6):
         ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
         suits = ['♠', '♥', '♦', '♣']
         single_deck = [f"{rank}{suit}" for suit in suits for rank in ranks]

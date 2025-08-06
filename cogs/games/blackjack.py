@@ -32,7 +32,9 @@ class BlackjackView(discord.ui.View):
             value = Blackjack.calculate_hand_value(session['player_hand'])
             if value > 21:
                 # Player busts, disable buttons
-                self.disable_all_items()
+                for item in self.children:
+                    item.disabled = True
+                    
                 bust_embed = discord.Embed(
                     title="Blackjack",
                     description=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})",

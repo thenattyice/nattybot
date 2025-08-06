@@ -182,7 +182,7 @@ class Wordle(commands.Cog):
 
                 member = message.guild.get_member(user_id)
                 if member:
-                    description += f"{member.mention} is awarded **{reward}** NattyCoins🪙 and **{score}** championship points!\n"
+                    description += f"{member.mention} is awarded **{reward}** NattyCoins🪙 and **{points}** championship points!\n"
                 else:
                     print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
             

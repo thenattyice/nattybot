@@ -73,7 +73,7 @@ class BlackjackView(discord.ui.View):
             initial_stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
-                    f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
                     f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
                     f"Dealer reveals their hole card..."
                 ),

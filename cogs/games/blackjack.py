@@ -80,7 +80,7 @@ class BlackjackView(discord.ui.View):
                 )
             
             await interaction.response.edit_message(embed=initial_stand_embed, view=self)
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(3)
 
             # Dealer hits until 17+
             while Blackjack.calculate_hand_value(dealer_hand) < 17:
@@ -91,14 +91,14 @@ class BlackjackView(discord.ui.View):
                 title="Blackjack",
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
-                    f"**Dealer draws...** {drawn_card}"
+                    f"**Dealer draws...** {drawn_card}\n"
                     f"**Dealer’s hand:** {', '.join(dealer_hand)} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
                 ),
                 color=discord.Color.red()
                 )
                 
                 await interaction.edit_original_response(embed=updated_stand_embed, view=self)
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(3)
 
             player_value = Blackjack.calculate_hand_value(session['player_hand'])
             dealer_value = Blackjack.calculate_hand_value(dealer_hand)

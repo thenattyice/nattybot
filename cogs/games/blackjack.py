@@ -48,7 +48,7 @@ class BlackjackView(discord.ui.View):
                     description=f"You drew {card}. Your hand: {session['player_hand']} ({value})",
                     color=discord.Color.red()
                 )
-                await interaction.response.edit_message(content=hit_embed, view=self)
+                await interaction.response.edit_message(embed=hit_embed, view=self)
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while executing Hit button.", ephemeral=True)

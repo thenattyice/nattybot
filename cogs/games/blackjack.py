@@ -66,7 +66,6 @@ class BlackjackView(discord.ui.View):
             for item in self.children:
                 item.disabled = True
 
-            # Dealer logic - dealer hits until 17 or higher
             dealer_hand = session['dealer_hand']
             deck = session['deck']
             
@@ -74,7 +73,7 @@ class BlackjackView(discord.ui.View):
                 title="Blackjack",
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
-                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
+                    f"**Dealer’s visible card:** {dealer_hand[0]} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
                     f"Dealer reveals their hole card..."
                 ),
                 color=discord.Color.red()
@@ -91,9 +90,9 @@ class BlackjackView(discord.ui.View):
                 updated_stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
-                    f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
                     f"**Dealer draws...** {drawn_card}"
-                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
+                    f"**Dealer’s hand:** {', '.join(dealer_hand)} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
                 ),
                 color=discord.Color.red()
                 )
@@ -122,7 +121,7 @@ class BlackjackView(discord.ui.View):
                 color=discord.Color.green() if "win" in result.lower() else discord.Color.red()
                 )
             
-            await interaction.response.edit_message(embed=stand_embed, view=self)
+            await interaction.response.edit_message(embed=final_stand_embed, view=self)
             
             del cog.sessions[self.user_id]  # End the game by deleting the session
         except Exception as e:

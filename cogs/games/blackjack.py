@@ -51,7 +51,6 @@ class BlackjackView(discord.ui.View):
                 await interaction.response.edit_message(embed=hit_embed, view=self)
         except Exception as e:
             traceback.print_exc()
-            await interaction.followup.send("An error occurred while executing Hit button.", ephemeral=True)
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -88,8 +87,8 @@ class BlackjackView(discord.ui.View):
             stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
-                    f"**Your hand:** {', '.join(session['player_hand'])} ({value})\n"
-                    f"**Dealer’s visible card:** {session['dealer_hand'][0]}"
+                    f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
+                    f"**Dealer’s visible card:** {session['dealer_hand'][0]}\n"
                 ),
                 color=discord.Color.red()
                 )
@@ -102,7 +101,6 @@ class BlackjackView(discord.ui.View):
             del cog.sessions[self.user_id]  # End the game by deleting the session
         except Exception as e:
             traceback.print_exc()
-            await interaction.followup.send("An error occurred while executing Stand button.", ephemeral=True)
 
 class Blackjack(commands.Cog):
     def __init__(self, bot, guild_object):

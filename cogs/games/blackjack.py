@@ -74,7 +74,7 @@ class BlackjackView(discord.ui.View):
                 title="Blackjack",
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
-                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
+                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
                     f"Dealer reveals their hole card..."
                 ),
                 color=discord.Color.red()

@@ -71,8 +71,8 @@ class Wordle(commands.Cog):
             if message.channel.name != 'wordle': # Filter for the 'wordle' channel
                 return
             
-            """ if message.author.id != wordle_app_id: # Filter for only messages by the Wordle app
-                return """
+            if message.author.id != self.wordle_app_id: # Filter for only messages by the Wordle app
+                return
             
             if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
                 return

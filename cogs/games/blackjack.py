@@ -62,71 +62,81 @@ class BlackjackView(discord.ui.View):
                 return
 
             session['stand'] = True
+
             # Disable the buttons
             for item in self.children:
                 item.disabled = True
 
             dealer_hand = session['dealer_hand']
             deck = session['deck']
-            
+
+            # First update: dealer reveals hole card
             initial_stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
-                    f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
-                    f"**Dealer’s visible card:** {dealer_hand[0]} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
+                    f"**Your hand:** {', '.join(session['player_hand'])} "
+                    f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
+                    f"**Dealer’s hand:** {', '.join(dealer_hand)} "
+                    f"({Blackjack.calculate_hand_value(dealer_hand)})\n"
                     f"Dealer reveals their hole card..."
                 ),
                 color=discord.Color.red()
-                )
-            
+            )
             await interaction.response.edit_message(embed=initial_stand_embed, view=self)
             await asyncio.sleep(3)
 
-            # Dealer hits until 17+
+            # Dealer draws until at least 17
             while Blackjack.calculate_hand_value(dealer_hand) < 17:
                 drawn_card = deck.pop()
                 dealer_hand.append(drawn_card)
-                
+
                 updated_stand_embed = discord.Embed(
-                title="Blackjack",
-                description=(
-                    f"**Your hand:** {', '.join(session['player_hand'])} ({Blackjack.calculate_hand_value(session['player_hand'])})\n"
-                    f"**Dealer draws...** {drawn_card}\n"
-                    f"**Dealer’s hand:** {', '.join(dealer_hand)} ({Blackjack.calculate_hand_value(session['dealer_hand'])})\n"
-                ),
-                color=discord.Color.red()
+                    title="Blackjack",
+                    description=(
+                        f"**Your hand:** {', '.join(session['player_hand'])} "
+                        f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
+                        f"**Dealer draws:** {drawn_card}\n"
+                        f"**Dealer’s hand:** {', '.join(dealer_hand)} "
+                        f"({Blackjack.calculate_hand_value(dealer_hand)})"
+                    ),
+                    color=discord.Color.red()
                 )
-                
+
                 await interaction.edit_original_response(embed=updated_stand_embed, view=self)
                 await asyncio.sleep(3)
 
+            # Decide winner
             player_value = Blackjack.calculate_hand_value(session['player_hand'])
             dealer_value = Blackjack.calculate_hand_value(dealer_hand)
 
-            # Decide winner
             if dealer_value > 21 or player_value > dealer_value:
                 result = "You win!"
+                color = discord.Color.green()
             elif dealer_value == player_value:
                 result = "It's a tie!"
+                color = discord.Color.orange()
             else:
                 result = "Dealer wins!"
+                color = discord.Color.red()
 
             final_stand_embed = discord.Embed(
                 title="Blackjack",
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
-                    f"**Dealer’s visible card:** {', '.join(['dealer_hand'])} ({dealer_value})\n"
-                    f"**Result** {result}"
+                    f"**Dealer’s hand:** {', '.join(dealer_hand)} ({dealer_value})\n"
+                    f"**Result:** {result}"
                 ),
-                color=discord.Color.green() if "win" in result.lower() else discord.Color.red()
-                )
-            
-            await interaction.response.edit_message(embed=final_stand_embed, view=self)
-            
-            del cog.sessions[self.user_id]  # End the game by deleting the session
+                color=color
+            )
+
+            await interaction.edit_original_response(embed=final_stand_embed, view=self)
+
+            # End game session
+            del cog.sessions[self.user_id]
+
         except Exception as e:
             traceback.print_exc()
-
+            
 class Blackjack(commands.Cog):
     def __init__(self, bot, guild_object):
         self.bot = bot

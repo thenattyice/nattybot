@@ -42,7 +42,7 @@ class BlackjackView(discord.ui.View):
                 for item in self.children:
                     item.disabled = True
                     
-                bust_embed = discord.Embed(title=title,description=desc,color=color)
+                bust_embed = discord.Embed(title=title,description=description,color=color)
                 
                 await interaction.response.edit_message(embed=bust_embed, view=self)
                 del self.cog.sessions[self.user_id]  # End game
@@ -206,7 +206,7 @@ class Blackjack(commands.Cog):
             player_hand = session['player_hand']
             dealer_hand = session['dealer_hand']
 
-            view = BlackjackView(bot, user_id)
+            view = BlackjackView(self, self.bot, user_id)
             
             player_hand_value = self.calculate_hand_value(player_hand)
             

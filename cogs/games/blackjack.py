@@ -7,9 +7,10 @@ from discord.ext import commands
 from .utils import bet_validation
 
 class BlackjackView(discord.ui.View):
-    def __init__(self, bot, user_id):
+    def __init__(self, cog, bot, user_id):
         super().__init__(timeout=300)  # 5 min timeout
-        self.bot = bot
+        self.cog = cog
+        self.bot = cog.bot
         self.user_id = user_id
         
     # Only allow the player who started the game to use the buttons
@@ -19,8 +20,7 @@ class BlackjackView(discord.ui.View):
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.green)
     async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
-            cog = self.bot.get_cog("Blackjack")
-            session = cog.sessions.get(self.user_id)
+            session = self.cog.sessions.get(self.user_id)
             if not session:
                 await interaction.response.send_message("Session expired or not found.", ephemeral=True)
                 return
@@ -28,23 +28,27 @@ class BlackjackView(discord.ui.View):
             # Draw a card for player
             card = session['deck'].pop()
             session['player_hand'].append(card)
+            
+            title = self.cog.blackjack_title
 
             value = Blackjack.calculate_hand_value(session['player_hand'])
+            
+            color = discord.Color.red() if value <= 21 else discord.Color.green()
+            description = f"You drew {card}. Your hand: {session['player_hand']} ({value})"
+            
             if value > 21:
+                description += "\nBust!"
                 # Player busts, disable buttons
                 for item in self.children:
                     item.disabled = True
                     
-                bust_embed = discord.Embed(
-                    title=cog.blackjack_title,
-                    description=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})",
-                    color=discord.Color.red()
-                )
+                bust_embed = discord.Embed(title=title,description=desc,color=color)
+                
                 await interaction.response.edit_message(embed=bust_embed, view=self)
-                del cog.sessions[self.user_id]  # End game
+                del self.cog.sessions[self.user_id]  # End game
             else:
                 hit_embed = discord.Embed(
-                    title=cog.blackjack_title,
+                    title=title,
                     description=f"You drew {card}. Your hand: {session['player_hand']} ({value})",
                     color=discord.Color.red()
                 )
@@ -55,8 +59,7 @@ class BlackjackView(discord.ui.View):
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
     async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
-            cog = self.bot.get_cog("Blackjack")
-            session = cog.sessions.get(self.user_id)
+            session = self.cog.sessions.get(self.user_id)
             if not session:
                 await interaction.response.send_message("Session expired or not found.", ephemeral=True)
                 return
@@ -69,10 +72,12 @@ class BlackjackView(discord.ui.View):
 
             dealer_hand = session['dealer_hand']
             deck = session['deck']
+            
+            title = self.cog.blackjack_title
 
             # First update: dealer reveals hole card
             initial_stand_embed = discord.Embed(
-                title=cog.blackjack_title,
+                title=title,
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} "
                     f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
@@ -83,7 +88,7 @@ class BlackjackView(discord.ui.View):
                 color=discord.Color.red()
             )
             await interaction.response.edit_message(embed=initial_stand_embed, view=self)
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
 
             # Dealer draws until at least 17
             while Blackjack.calculate_hand_value(dealer_hand) < 17:
@@ -91,7 +96,7 @@ class BlackjackView(discord.ui.View):
                 dealer_hand.append(drawn_card)
 
                 updated_stand_embed = discord.Embed(
-                    title=cog.blackjack_title,
+                    title=title,
                     description=(
                         f"**Your hand:** {', '.join(session['player_hand'])} "
                         f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
@@ -103,7 +108,7 @@ class BlackjackView(discord.ui.View):
                 )
 
                 await interaction.edit_original_response(embed=updated_stand_embed, view=self)
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
 
             # Decide winner
             player_value = Blackjack.calculate_hand_value(session['player_hand'])
@@ -120,7 +125,7 @@ class BlackjackView(discord.ui.View):
                 color = discord.Color.red()
 
             final_stand_embed = discord.Embed(
-                title=cog.blackjack_title,
+                title=title,
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
                     f"**Dealer’s hand:** {', '.join(dealer_hand)} ({dealer_value})\n"
@@ -132,19 +137,20 @@ class BlackjackView(discord.ui.View):
             await interaction.edit_original_response(embed=final_stand_embed, view=self)
 
             # End game session
-            del cog.sessions[self.user_id]
+            del self.cog.sessions[self.user_id]
 
         except Exception as e:
             traceback.print_exc()
             
 class Blackjack(commands.Cog):
+    
+    blackjack_title = "🎮 Natty Games: Blackjack 🎮"
+    
     def __init__(self, bot, guild_object):
         self.bot = bot
         self.guild_object = guild_object
         
         self.sessions = {}
-        
-        blackjack_title = "🎮 Natty Games: Blackjack 🎮"
         
         # Blackjack slash command here
         self.bot.tree.add_command(self.blackjack, guild=self.guild_object)
@@ -200,12 +206,14 @@ class Blackjack(commands.Cog):
             player_hand = session['player_hand']
             dealer_hand = session['dealer_hand']
 
-            view = BlackjackView(self.bot, user_id)
+            view = BlackjackView(bot, user_id)
             
             player_hand_value = self.calculate_hand_value(player_hand)
+            
+            title = self.blackjack_title
 
             gamestart_embed = discord.Embed(
-                title=self.blackjack_title,
+                title=title,
                 description=(
                     f"Game started!\n"
                     f"**Your hand:** {', '.join(player_hand)} ({player_hand_value})\n"

@@ -12,8 +12,6 @@ class BlackjackView(discord.ui.View):
         self.bot = bot
         self.user_id = user_id
         
-    blackjack_title = "🎮 Natty Games: Blackjack 🎮"
-        
     # Only allow the player who started the game to use the buttons
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.user_id
@@ -38,7 +36,7 @@ class BlackjackView(discord.ui.View):
                     item.disabled = True
                     
                 bust_embed = discord.Embed(
-                    title=self.blackjack_title,
+                    title=cog.blackjack_title,
                     description=f"You drew {card}. Bust! Your hand: {session['player_hand']} ({value})",
                     color=discord.Color.red()
                 )
@@ -46,7 +44,7 @@ class BlackjackView(discord.ui.View):
                 del cog.sessions[self.user_id]  # End game
             else:
                 hit_embed = discord.Embed(
-                    title=self.blackjack_title,
+                    title=cog.blackjack_title,
                     description=f"You drew {card}. Your hand: {session['player_hand']} ({value})",
                     color=discord.Color.red()
                 )
@@ -74,7 +72,7 @@ class BlackjackView(discord.ui.View):
 
             # First update: dealer reveals hole card
             initial_stand_embed = discord.Embed(
-                title=self.blackjack_title,
+                title=cog.blackjack_title,
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} "
                     f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
@@ -93,7 +91,7 @@ class BlackjackView(discord.ui.View):
                 dealer_hand.append(drawn_card)
 
                 updated_stand_embed = discord.Embed(
-                    title=self.blackjack_title,
+                    title=cog.blackjack_title,
                     description=(
                         f"**Your hand:** {', '.join(session['player_hand'])} "
                         f"({Blackjack.calculate_hand_value(session['player_hand'])})\n"
@@ -122,7 +120,7 @@ class BlackjackView(discord.ui.View):
                 color = discord.Color.red()
 
             final_stand_embed = discord.Embed(
-                title=self.blackjack_title,
+                title=cog.blackjack_title,
                 description=(
                     f"**Your hand:** {', '.join(session['player_hand'])} ({player_value})\n"
                     f"**Dealer’s hand:** {', '.join(dealer_hand)} ({dealer_value})\n"
@@ -145,6 +143,8 @@ class Blackjack(commands.Cog):
         self.guild_object = guild_object
         
         self.sessions = {}
+        
+        blackjack_title = "🎮 Natty Games: Blackjack 🎮"
         
         # Blackjack slash command here
         self.bot.tree.add_command(self.blackjack, guild=self.guild_object)

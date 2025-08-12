@@ -52,6 +52,15 @@ class BlackjackView(discord.ui.View):
                 description=f"You lost **{self.bet}** NattyCoins.\nNew balance: **{new_balance}** NattyCoins",
                 color=discord.Color.red()
             )
+        elif outcome == "blackjack":
+            winnings = round(bet * 1.5)
+            await self.economy_cog.add_money_to_user(user_id, winnings)
+            new_balance = await self.economy_cog.get_balance(user_id)
+            result = discord.Embed(
+                title="🎉 You got Blackjack!",
+                description=f"You won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
+                color=discord.Color.green()
+            )
         await interaction.followup.send(embed=result, ephemeral=True)
         self.stop()
 
@@ -247,6 +256,19 @@ class Blackjack(commands.Cog):
             aces -= 1
         return value
     
+    @staticmethod
+    def initial_blackjack_check(hand):
+        if len(hand) != 2:
+            return False
+        
+        # Extract card ranks
+        ranks = [card[:-1] for card in hand]
+
+        has_ace = 'A' in ranks
+        has_ten_value = any(rank in ['10', 'J', 'Q', 'K'] for rank in ranks)
+
+        return has_ace and has_ten_value
+    
     # Blackjack game
     @app_commands.command(name="blackjack", description="Bet on a game of blackjack with your NattyCoins")
     async def blackjack(self, interaction: discord.Interaction, bet: int):
@@ -298,6 +320,16 @@ class Blackjack(commands.Cog):
                 view=view,
                 ephemeral=True
             )
+            
+            if self.initial_blackjack_check(player_hand):
+                for item in view.children:
+                    item.disabled = True
+                outcome = "blackjack"
+                await interaction.edit_original_response(view=view)
+                await view.bet_handler(interaction, outcome)
+                del self.sessions[user_id]
+                return
+                
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)

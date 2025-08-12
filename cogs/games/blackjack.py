@@ -295,7 +295,8 @@ class Blackjack(commands.Cog):
             
             await interaction.response.send_message(
                 embed=gamestart_embed,
-                view=view
+                view=view,
+                ephemeral=True
             )
         except Exception as e:
             traceback.print_exc()

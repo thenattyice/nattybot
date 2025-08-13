@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
 from cogs.lfg import LookingForGroup
-from cogs.shop import Shop
+from cogs.shop.shop import setup as setup_shop
+from cogs.shop.businesses import setup as setup_businesses
 from cogs.wordle import Wordle
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
@@ -58,12 +59,14 @@ class Client(commands.Bot):
                         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                         name TEXT UNIQUE NOT NULL,
                         description TEXT,
-                        price INTEGER NOT NULL
+                        price INTEGER NOT NULL,
+                        is_business BOOLEAN DEFAULT FALSE,
                     );
                     CREATE TABLE IF NOT EXISTS inventory (
                         user_id BIGINT REFERENCES users(user_id),
                         item_id INTEGER REFERENCES shop(id),
                         quantity INTEGER NOT NULL DEFAULT 1,
+                        is_business BOOLEAN REFERENCES shop(is_business),
                         PRIMARY KEY (user_id, item_id)
                     );
                     CREATE TABLE IF NOT EXISTS purchases (
@@ -132,9 +135,9 @@ async def setup_cogs():
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await client.add_cog(lfg_cog)
     
-    # Shop Cog
-    shop_cog = Shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
-    await client.add_cog(shop_cog)
+    # Shop Cogs
+    await setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
+    await setup_businesses(client)
     
     # Wordle Cog
     wordle_cog = Wordle(client, GUILD_OBJECT, WORDLE_APP_ID)

@@ -76,13 +76,13 @@ class Shop(commands.Cog):
         self.bot.tree.add_command(self.show_inventory, guild=self.guild_object)
     
     # Add an item to the shop table for purchase in the shop
-    async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
+    async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int, is_business: bool):
         async with self.bot.db_pool.acquire() as conn:
             status = await conn.execute("""
-                INSERT INTO shop (name, description, price)
-                VALUES ($1, $2, $3)
+                INSERT INTO shop (name, description, price, is_business)
+                VALUES ($1, $2, $3, $4)
                 ON CONFLICT (name) DO NOTHING
-            """, item_name, description, price)
+            """, item_name, description, price, is_business)
             if status.endswith("1"):
                 await interaction.response.send_message(f"{item_name} successfully added to the shop!")
             else:
@@ -193,16 +193,16 @@ class Shop(commands.Cog):
         
     # Command for dding an item to the shop
     @app_commands.command(name="additem", description="Add an item to the NattyShop")
-    async def shop_add_item(self, interaction: discord.Interaction, item_name: str, description: str, price: int):
+    async def shop_add_item(self, interaction: discord.Interaction, item_name: str, description: str, price: int, is_business: bool):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
             return
         try:
-            await self.add_item_to_shop(interaction, item_name, description, price)
+            await self.add_item_to_shop(interaction, item_name, description, price, is_business)
         except Exception as e:
             traceback.print_exc()
-            await interaction.followup.send("An error occurred while adding the item.", ephemeral=True)
+            await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)
             
     # Shop command for showing a player's inventory
     @app_commands.command(name="inventory", description="See items in your inventory from the NattyShop")
@@ -228,3 +228,10 @@ class Shop(commands.Cog):
         )
         
         await interaction.response.send_message(embed=inventory_embed)
+        
+async def setup(bot, guild_object, allowed_roles, purchase_log_channel):
+    try:
+        await bot.add_cog(Shop(bot, guild_object, allowed_roles, purchase_log_channel))
+        print("Shop cog loaded successfully!")
+    except:
+        traceback.print_exc(bot, guild_object)

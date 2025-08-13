@@ -234,4 +234,4 @@ async def setup(bot, guild_object, allowed_roles, purchase_log_channel):
         await bot.add_cog(Shop(bot, guild_object, allowed_roles, purchase_log_channel))
         print("Shop cog loaded successfully!")
     except:
-        traceback.print_exc(bot, guild_object)
+        traceback.print_exc(bot)

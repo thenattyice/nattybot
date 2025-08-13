@@ -5,12 +5,12 @@ from discord.ext import commands, tasks
 import datetime
 import pytz
 
-
+# Current business config
 business_details = {
         "mr_suds": {
-            "shop_id": 4,
+            "shop_id": 5, # Matches the item_id in the shop table
             "name":"Mr. Suds' Laundromat",
-            "daily_payout": 10
+            "daily_payout": 10 # Total of NattyCoins paid daily
         }
     }
 
@@ -55,7 +55,7 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=19, minute=0))
+    @tasks.loop(time=datetime.time(hour=20, minute=0)) # In UTC, which is +4 from Eastern
     async def daily_payout(self):
         try:
             await self.payout_execution()
@@ -67,4 +67,8 @@ class Businesses(commands.Cog):
         await self.bot.wait_until_ready()
         
 async def setup(bot):
-    await bot.add_cog(Businesses(bot))
+    try:
+        await bot.add_cog(Businesses(bot))
+        print("Businesses cog loaded successfully!")
+    except:
+        traceback.print_exc(bot)

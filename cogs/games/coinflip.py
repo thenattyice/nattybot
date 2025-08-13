@@ -46,7 +46,7 @@ class CoinFlipView(discord.ui.View):
                 color=discord.Color.red()
             )
 
-        await interaction.response.send_message(embed=result, ephemeral=True)
+        await interaction.followup.send(embed=result, ephemeral=True)
         self.stop()
         
     # Buttons defined for the UI

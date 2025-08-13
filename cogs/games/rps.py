@@ -28,7 +28,7 @@ class RPSView(discord.ui.View):
 
         # Win conditions
         if user_choice == bot_choice:
-            await interaction.response.send_message(f"It's a draw! Both picked {self.emoji_map[user_choice]} {user_choice}. You keep your {self.bet} NattyCoins.", ephemeral=True)
+            await interaction.followup.send(f"It's a draw! Both picked {self.emoji_map[user_choice]} {user_choice}. You keep your {self.bet} NattyCoins.", ephemeral=True)
             return
 
         win = self.wins_against[user_choice] == bot_choice

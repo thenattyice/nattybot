@@ -53,10 +53,16 @@ class CoinFlipView(discord.ui.View):
     @discord.ui.button(label="Heads", emoji="👤", style=discord.ButtonStyle.primary)
     async def heads_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.coinflip_result_handler(interaction, "heads")
+        
+        for item in self.children:
+            item.disabled = True
 
     @discord.ui.button(label="Tails", emoji="🍑", style=discord.ButtonStyle.success)
     async def tails_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.coinflip_result_handler(interaction, "tails")
+        
+        for item in self.children:
+            item.disabled = True
         
 class CoinFlip(commands.Cog):
     def __init__(self, bot, guild_object):

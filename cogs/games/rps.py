@@ -49,20 +49,32 @@ class RPSView(discord.ui.View):
                 color=discord.Color.red()
             )
 
-        await interaction.response.send_message(embed=result, ephemeral=True)
+        await interaction.followup.send(embed=result, ephemeral=True)
         self.stop()
 
     # Buttons defined for the UI
     @discord.ui.button(label="Rock", emoji="🪨", style=discord.ButtonStyle.primary)
     async def rock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for item in self.children:
+            item.disabled = True
+            
+        await interaction.response.edit_message(view=self) 
         await self.rps_result_handler(interaction, "rock")
 
     @discord.ui.button(label="Paper", emoji="📄", style=discord.ButtonStyle.success)
     async def paper_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for item in self.children:
+            item.disabled = True
+            
+        await interaction.response.edit_message(view=self) 
         await self.rps_result_handler(interaction, "paper")
 
     @discord.ui.button(label="Scissors", emoji="✂️", style=discord.ButtonStyle.danger)
     async def scissors_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for item in self.children:
+            item.disabled = True
+            
+        await interaction.response.edit_message(view=self) 
         await self.rps_result_handler(interaction, "scissors")
 
 # Class for all of the Games commands

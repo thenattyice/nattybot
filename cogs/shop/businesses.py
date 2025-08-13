@@ -56,7 +56,7 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=14, minute=0, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=15, minute=0, tzinfo=eastern))
     async def daily_payout(self):
         try:
             await self.payout_execution()

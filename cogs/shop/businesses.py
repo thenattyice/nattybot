@@ -2,15 +2,14 @@ import discord
 import traceback
 from discord import app_commands, Member
 from discord.ext import commands, tasks
+from zoneinfo import ZoneInfo
 import datetime
-import pytz
 
-eastern = pytz.timezone("US/Eastern")
+eastern = ZoneInfo("America/New_York")
 
 class Businesses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.daily_payout.start()
 
     def cog_unload(self):
         self.daily_payout.cancel()
@@ -48,9 +47,10 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=13, minute=0, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=13, minute=20, tzinfo=eastern))
     async def daily_payout(self):
         try:
+            print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")
             await self.payout_execution()
         except:
             traceback.print_exc()
@@ -58,10 +58,12 @@ class Businesses(commands.Cog):
     @daily_payout.before_loop
     async def before_daily_payout(self):
         await self.bot.wait_until_ready()
+        print("[DEBUG] daily_payout loop starting")
         
 async def setup(bot):
     try:
         await bot.add_cog(Businesses(bot))
         print("Businesses cog loaded successfully!")
+        cog.daily_payout.start()
     except:
         traceback.print_exc()

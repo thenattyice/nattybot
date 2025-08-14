@@ -25,6 +25,7 @@ GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 WORDLE_APP_ID = 1211781489931452447
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
+DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
 
 GAME_ROLES = {
     "rocket league": int(os.getenv("RL_ROLE")),
@@ -154,7 +155,7 @@ async def setup_cogs():
     
     # Shop Cogs
     await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL))
-    await load_cog("Businesses", setup_businesses(client))
+    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL))
     
     # Wordle Cog
     wordle_cog = Wordle(client, GUILD_OBJECT, WORDLE_APP_ID)

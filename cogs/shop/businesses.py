@@ -8,9 +8,10 @@ import datetime
 eastern = ZoneInfo("America/New_York")
 
 class Businesses(commands.Cog):
-    def __init__(self, bot, dailypayout_log_channel):
+    def __init__(self, bot, dailypayout_log_channel, guild_object):
         self.bot = bot
         self.dailypayout_log_channel = dailypayout_log_channel
+        self.guild_object = guild_object
 
     def cog_unload(self):
         self.daily_payout.cancel()
@@ -74,7 +75,7 @@ class Businesses(commands.Cog):
         await self.bot.wait_until_ready()
         print("[DEBUG] daily_payout loop starting")
         
-async def setup(bot, dailypayout_log_channel):
-    cog = Businesses(bot, dailypayout_log_channel)          
+async def setup(bot, dailypayout_log_channel, guild_object):
+    cog = Businesses(bot, dailypayout_log_channel, guild_object)          
     await bot.add_cog(cog)         
     cog.daily_payout.start()

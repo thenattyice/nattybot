@@ -62,7 +62,7 @@ class Businesses(commands.Cog):
         
         await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=16, minute=28, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=16, minute=34, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

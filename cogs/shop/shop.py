@@ -99,8 +99,10 @@ class Shop(commands.Cog):
     async def add_item_to_user(self, target_user_id: int, item_id: int):
         async with self.bot.db_pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO inventory (user_id, item_id, quantity)
-                VALUES ($1, $2, 1)
+                INSERT INTO inventory (user_id, item_id, quantity, is_business)
+                SELECT $1, s.id, 1, s.is_business
+                FROM shop s
+                WHERE s.id = $2
                 ON CONFLICT (user_id, item_id)
                 DO UPDATE SET quantity = inventory.quantity + 1;
             """, target_user_id, item_id)

@@ -47,7 +47,7 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=13, minute=20, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=13, minute=55, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")
@@ -62,8 +62,9 @@ class Businesses(commands.Cog):
         
 async def setup(bot):
     try:
-        await bot.add_cog(Businesses(bot))
+        cog = Businesses(bot)          
+        await bot.add_cog(cog)         
+        cog.daily_payout.start()  
         print("Businesses cog loaded successfully!")
-        cog.daily_payout.start()
     except:
         traceback.print_exc()

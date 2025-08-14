@@ -45,10 +45,23 @@ class Businesses(commands.Cog):
         
         payouts = await self.per_user_business_calc()
         
+        guild = self.bot.get_guild(self.guild_object.id)
+        log_channel = guild.get_channel(self.dailypayout_log_channel)
+        
+        description = ""
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
+            description += f"{user_id} was paid {payout} NattyCoins for their owned businesses!\n"
+        
+        embed = discord.Embed(
+            title="Daily Business Payout Report",
+            description=description,
+            color=discord.Color.gold()
+        )
+        
+        await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=14, minute=36, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=16, minute=28, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

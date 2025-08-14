@@ -3,6 +3,7 @@ import discord
 import asyncpg
 import asyncio
 import re
+import traceback
 from discord.ext import commands
 from discord import Member
 from dotenv import load_dotenv
@@ -125,29 +126,44 @@ async def f1_schedule(interaction: discord.Interaction):
         embed.add_field(name=race['name'], value=f"Date: {race['date']}\nTime: {race['time']} EST", inline=False)
     await interaction.response.send_message(embed=embed)
 
+async def load_cog(name: str, coro):
+    """
+    Runs a cog loading coroutine with logging.
+    name  = Display name for logging
+    coro  = The coroutine object to await
+    """
+    try:
+        await coro
+    except Exception:
+        print(f"[ERROR] Failed to load {name} cog:")
+        traceback.print_exc()
+    else:
+        print(f"[SUCCESS] {name} cog loaded.")
+
+
 # Setup the cogs
 async def setup_cogs():
     # Economy Cog
     economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
-    await client.add_cog(economy_cog)
+    await load_cog("Economy", client.add_cog(economy_cog))
     client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
     
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
-    await client.add_cog(lfg_cog)
+    await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
     # Shop Cogs
-    await setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL)
-    await setup_businesses(client)
+    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL))
+    await load_cog("Businesses", setup_businesses(client))
     
     # Wordle Cog
     wordle_cog = Wordle(client, GUILD_OBJECT, WORDLE_APP_ID)
-    await client.add_cog(wordle_cog)
+    await load_cog("Wordle", client.add_cog(wordle_cog))
     
     #Game Cogs
-    await setup_coinflip(client, GUILD_OBJECT)
-    await setup_rps(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
-    await setup_blackjack(client, GUILD_OBJECT)
+    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT))
+    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
+    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT))
 
 # Main method
 async def main():

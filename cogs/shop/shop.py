@@ -244,8 +244,4 @@ class Shop(commands.Cog):
         await interaction.response.send_message(embed=inventory_embed)
         
 async def setup(bot, guild_object, allowed_roles, purchase_log_channel):
-    try:
-        await bot.add_cog(Shop(bot, guild_object, allowed_roles, purchase_log_channel))
-        print("Shop cog loaded successfully!")
-    except:
-        traceback.print_exc(bot)
+    await bot.add_cog(Shop(bot, guild_object, allowed_roles, purchase_log_channel))

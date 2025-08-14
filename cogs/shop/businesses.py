@@ -5,19 +5,11 @@ from discord.ext import commands, tasks
 import datetime
 import pytz
 
-# Current business config
-business_details = {
-        "mr_suds": {
-            "shop_id": 5, # Matches the item_id in the shop table
-            "name":"Mr. Suds' Laundromat",
-            "daily_payout": 10 # Total of NattyCoins paid daily
-        }
-    }
+eastern = pytz.timezone("US/Eastern")
 
 class Businesses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.shop_payout_lookup = {info["shop_id"]: info["daily_payout"] for info in business_details.values()}
         self.daily_payout.start()
 
     def cog_unload(self):
@@ -27,23 +19,24 @@ class Businesses(commands.Cog):
     async def get_businesses_per_user(self):
         async with self.bot.db_pool.acquire() as conn:
             rows = await conn.fetch("""
-            SELECT user_id, item_id, quantity FROM inventory
-            WHERE is_business IS TRUE
-            GROUP BY user_id, item_id;
+            SELECT i.user_id, i.quantity, s.daily_payout FROM inventory i
+            JOIN shop s ON s.item_id = i.item_id 
+            WHERE s.is_business IS TRUE AND s.daily_payout > 0
+            ORDER BY i.user_id;
             """)
         return rows
     
     async def per_user_business_calc(self):
-        user_business = await self.get_businesses_per_user()
+        rows = await self.get_businesses_per_user()
         
         payouts = []
-        for row in user_business:
-            shop_id = row["item_id"]
+        for row in rows:
+            user_id = row["user_id"]
             quantity = row["quantity"]
+            daily_payout = row["daily_payout"]
             
-            if shop_id in self.shop_payout_lookup:
-                payout_amount = quantity * self.shop_payout_lookup[shop_id]
-                payouts.append((row["user_id"], payout_amount))
+            payout_amount = quantity * daily_payout
+            payouts.append((row["user_id"], payout_amount))
             
         return payouts
             
@@ -55,7 +48,7 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=20, minute=0)) # In UTC, which is +4 from Eastern
+    @tasks.loop(time=datetime.time(hour=13, minute=0, tzinfo=eastern))
     async def daily_payout(self):
         try:
             await self.payout_execution()
@@ -71,4 +64,4 @@ async def setup(bot):
         await bot.add_cog(Businesses(bot))
         print("Businesses cog loaded successfully!")
     except:
-        traceback.print_exc(bot)
+        traceback.print_exc()

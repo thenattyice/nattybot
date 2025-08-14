@@ -60,7 +60,8 @@ class Client(commands.Bot):
                         name TEXT UNIQUE NOT NULL,
                         description TEXT,
                         price INTEGER NOT NULL,
-                        is_business BOOLEAN DEFAULT FALSE
+                        is_business BOOLEAN DEFAULT FALSE,
+                        default_payout INTEGER
                     );
                     CREATE TABLE IF NOT EXISTS inventory (
                         user_id BIGINT REFERENCES users(user_id),

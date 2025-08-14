@@ -76,13 +76,20 @@ class Shop(commands.Cog):
         self.bot.tree.add_command(self.show_inventory, guild=self.guild_object)
     
     # Add an item to the shop table for purchase in the shop
-    async def add_item_to_shop(self, interaction: discord.Interaction, item_name: str, description: str, price: int, is_business: bool):
+    async def add_item_to_shop(self,
+                               interaction: discord.Interaction,
+                               item_name: str,
+                               description: str,
+                               price: int,
+                               is_business: bool,
+                               daily_payout: int | None):
         async with self.bot.db_pool.acquire() as conn:
             status = await conn.execute("""
-                INSERT INTO shop (name, description, price, is_business)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO shop (name, description, price, is_business, daily_payout)
+                VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (name) DO NOTHING
-            """, item_name, description, price, is_business)
+            """, item_name, description, price, is_business, daily_payout)
+            
             if status.endswith("1"):
                 await interaction.response.send_message(f"{item_name} successfully added to the shop!")
             else:
@@ -169,7 +176,7 @@ class Shop(commands.Cog):
         return rows
             
     # Command for presenting the shop
-    @app_commands.command(name="buy", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
+    @app_commands.command(name="shop", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
     async def shop_open(self, interaction: discord.Interaction):
         try:
             print("[DEBUG] /buy command invoked")
@@ -193,13 +200,20 @@ class Shop(commands.Cog):
         
     # Command for dding an item to the shop
     @app_commands.command(name="additem", description="Add an item to the NattyShop")
-    async def shop_add_item(self, interaction: discord.Interaction, item_name: str, description: str, price: int, is_business: bool):
+    async def shop_add_item(self,
+                            interaction: discord.Interaction,
+                            item_name: str,
+                            description: str,
+                            price: int,
+                            daily_payout: int | None = None):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
             return
+        
         try:
-            await self.add_item_to_shop(interaction, item_name, description, price, is_business)
+            is_business = daily_payout is not None and daily_payout > 0
+            await self.add_item_to_shop(interaction, item_name, description, price, is_business, daily_payout)
         except Exception as e:
             traceback.print_exc()
             await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)

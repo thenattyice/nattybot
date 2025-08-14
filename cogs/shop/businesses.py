@@ -63,5 +63,4 @@ class Businesses(commands.Cog):
 async def setup(bot):
     cog = Businesses(bot)          
     await bot.add_cog(cog)         
-    cog.daily_payout.start()  
-    print("Businesses cog loaded successfully!")
+    cog.daily_payout.start()

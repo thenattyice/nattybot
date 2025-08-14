@@ -19,7 +19,7 @@ class Businesses(commands.Cog):
         async with self.bot.db_pool.acquire() as conn:
             rows = await conn.fetch("""
             SELECT i.user_id, i.quantity, s.daily_payout FROM inventory i
-            JOIN shop s ON s.item_id = i.item_id 
+            JOIN shop s ON s.id = i.item_id 
             WHERE s.is_business IS TRUE AND s.daily_payout > 0
             ORDER BY i.user_id;
             """)
@@ -47,7 +47,7 @@ class Businesses(commands.Cog):
         for user_id, payout in payouts:
             await economy_cog.add_money_to_user(user_id, payout)
             
-    @tasks.loop(time=datetime.time(hour=13, minute=55, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=13, minute=59, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

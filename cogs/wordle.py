@@ -1,7 +1,7 @@
 import discord
 import traceback
 import re
-from discord import app_commands, Member
+from discord import app_commands, Member, TextChannel
 from discord.ext import commands
 
 class Wordle(commands.Cog):
@@ -66,6 +66,10 @@ class Wordle(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
+            # Ignore DMs
+            if not isinstance(message.channel, TextChannel):
+                return
+            
             economy_cog = self.bot.get_cog("Economy")
             if message.channel.name != 'wordle': # Filter for the 'wordle' channel
                 return

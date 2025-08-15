@@ -59,7 +59,7 @@ class Businesses(commands.Cog):
             total = data["total"]
             breakdown = data["breakdown"]
             
-            await economy_cog.add_money_to_user(user_id, payout)
+            await economy_cog.add_money_to_user(user_id, total)
             
             breakdown_str = ", ".join(f"{name} ({amount})" for name, amount in breakdown)
             description += f"<@{user_id}> was paid {payout} NattyCoins for their businesses: {breakdown_str}\n"

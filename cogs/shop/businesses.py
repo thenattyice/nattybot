@@ -3,6 +3,7 @@ import traceback
 from discord import app_commands, Member
 from discord.ext import commands, tasks
 from zoneinfo import ZoneInfo
+from collections import defaultdict
 import datetime
 
 eastern = ZoneInfo("America/New_York")
@@ -20,9 +21,11 @@ class Businesses(commands.Cog):
     async def get_businesses_per_user(self):
         async with self.bot.db_pool.acquire() as conn:
             rows = await conn.fetch("""
-            SELECT i.user_id, i.quantity, s.daily_payout FROM inventory i
+            SELECT i.user_id, s.name, s.daily_payout
+            FROM inventory i
             JOIN shop s ON s.id = i.item_id 
             WHERE s.is_business IS TRUE AND s.daily_payout > 0
+            GROUP BY i.user_id
             ORDER BY i.user_id;
             """)
         return rows
@@ -33,13 +36,15 @@ class Businesses(commands.Cog):
         payouts = []
         for row in rows:
             user_id = row["user_id"]
-            quantity = row["quantity"]
+            biz_name = row["name"]
             daily_payout = row["daily_payout"]
             
-            payout_amount = quantity * daily_payout
-            payouts.append((row["user_id"], payout_amount))
+            payouts_dict = defaultdict(lambda: {"total": 0, "breakdown": []})
             
-        return payouts
+            payouts_dict[user_id]["total"] += daily_payout
+            payouts_dict[user_id]["breakdown"].append((biz_name, daily_payout))
+            
+        return payouts_dict
             
     async def payout_execution(self):
         economy_cog = self.bot.get_cog('Economy')
@@ -51,8 +56,13 @@ class Businesses(commands.Cog):
         
         description = ""
         for user_id, payout in payouts:
+            total = data["total"]
+            breakdown = data["breakdown"]
+            
             await economy_cog.add_money_to_user(user_id, payout)
-            description += f"<@{user_id}> was paid {payout} NattyCoins for their owned businesses!\n"
+            
+            breakdown_str = ", ".join(f"{name} ({amount})" for name, amount in breakdown)
+            description += f"<@{user_id}> was paid {payout} NattyCoins for their businesses: {breakdown_str}\n"
         
         embed = discord.Embed(
             title="Daily Business Payout Report",
@@ -62,7 +72,7 @@ class Businesses(commands.Cog):
         
         await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=17, minute=21, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=20, minute=20, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

@@ -20,7 +20,7 @@ class ShopView(discord.ui.View):
             owned_ids = {row["item_id"] for row in owned_businesses}
             
             items = [
-                item for item in itemsif not (item["id"] in owned_ids and item.get("is_business"))
+                item for item in items if not (item["id"] in owned_ids and item.get("is_business"))
             ]
         
         # Builds the dropdown

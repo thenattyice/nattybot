@@ -7,6 +7,7 @@ from discord.ext import commands
 class ShopView(discord.ui.View):
     def __init__(self, user: discord.User, parent_cog):
         super().__init__()
+        self.user = user
         self.parent_cog = parent_cog
         
     async def shop_setup(self):

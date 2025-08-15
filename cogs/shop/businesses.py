@@ -43,13 +43,13 @@ class Businesses(commands.Cog):
     async def per_user_business_calc(self):
         rows = await self.get_businesses_per_user()
         
+        payouts_dict = defaultdict(lambda: {"total": 0, "breakdown": []})
+        
         payouts = []
         for row in rows:
             user_id = row["user_id"]
             biz_name = row["name"]
             daily_payout = row["daily_payout"]
-            
-            payouts_dict = defaultdict(lambda: {"total": 0, "breakdown": []})
             
             payouts_dict[user_id]["total"] += daily_payout
             payouts_dict[user_id]["breakdown"].append((biz_name, daily_payout))
@@ -65,7 +65,7 @@ class Businesses(commands.Cog):
         log_channel = guild.get_channel(self.dailypayout_log_channel)
         
         description = ""
-        for user_id, payout in payouts:
+        for user_id, payout in payouts.items():
             total = data["total"]
             breakdown = data["breakdown"]
             
@@ -82,7 +82,7 @@ class Businesses(commands.Cog):
         
         await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=23, minute=34, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=23, minute=39, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

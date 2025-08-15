@@ -64,6 +64,9 @@ class Businesses(commands.Cog):
         guild = self.bot.get_guild(self.guild_object.id)
         log_channel = guild.get_channel(self.dailypayout_log_channel)
         
+        if not payouts:
+            return
+        
         description = ""
         for user_id, data in payouts.items():
             total = data["total"]
@@ -72,7 +75,7 @@ class Businesses(commands.Cog):
             await economy_cog.add_money_to_user(user_id, total)
             
             breakdown_str = ", ".join(f"{name} ({amount})" for name, amount in breakdown)
-            description += f"<@{user_id}> was paid {payout} NattyCoins for their businesses: {breakdown_str}\n"
+            description += f"<@{user_id}> was paid {total} NattyCoins for their businesses: {breakdown_str}\n"
         
         embed = discord.Embed(
             title="Daily Business Payout Report",
@@ -82,7 +85,7 @@ class Businesses(commands.Cog):
         
         await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=23, minute=42, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=23, minute=47, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

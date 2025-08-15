@@ -65,7 +65,7 @@ class Businesses(commands.Cog):
         log_channel = guild.get_channel(self.dailypayout_log_channel)
         
         description = ""
-        for user_id, payout in payouts.items():
+        for user_id, data in payouts.items():
             total = data["total"]
             breakdown = data["breakdown"]
             
@@ -82,7 +82,7 @@ class Businesses(commands.Cog):
         
         await log_channel.send(embed=embed)
             
-    @tasks.loop(time=datetime.time(hour=23, minute=39, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=23, minute=42, tzinfo=eastern))
     async def daily_payout(self):
         try:
             print(f"[DEBUG] daily_payout triggered at {datetime.datetime.now(eastern)}")

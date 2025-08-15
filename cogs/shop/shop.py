@@ -10,7 +10,20 @@ class ShopView(discord.ui.View):
         self.parent_cog = parent_cog
         
     async def shop_setup(self):
+        # Get all the shop items
         items = await self.parent_cog.get_all_shop_items()
+        
+        # Filters out the dropdown so that owned business don't show up
+        business_cog = self.parent_cog.bot.get_cog("Businesses")
+        if business_cog:
+            owned_businesses = await business_cog.get_specific_users_businesses(self.user.id)
+            owned_ids = {row["item_id"] for row in owned_businesses}
+            
+            items = [
+                item for item in itemsif not (item["id"] in owned_ids and item.get("is_business"))
+            ]
+        
+        # Builds the dropdown
         self.clear_items()
         select = ShopSelect(items, self.parent_cog, self)
         self.add_item(select)
@@ -119,7 +132,7 @@ class Shop(commands.Cog):
     # Get all items for use in the shop dropdown
     async def get_all_shop_items(self):
         async with self.bot.db_pool.acquire() as conn:
-            rows = await conn.fetch("SELECT id, name, price FROM shop;")
+            rows = await conn.fetch("SELECT id, name, price, is_business FROM shop;")
         return rows
     
     # Get all details in a row for a specific item

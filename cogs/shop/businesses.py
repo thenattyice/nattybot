@@ -17,6 +17,18 @@ class Businesses(commands.Cog):
     def cog_unload(self):
         self.daily_payout.cancel()
     
+    # Gat all businesses for a specified user
+    async def get_specific_users_businesses(self, target_user_id: int):
+        async with self.bot.db_pool.acquire() as conn:
+            rows = await conn.fetch("""
+            SELECT s.id AS item_id, s.name
+            FROM inventory i
+            JOIN shop s ON s.id = i.item_id 
+            WHERE i.user_id = $1
+            AND i.is_business IS TRUE
+            """, target_user_id)
+        return rows
+    
     # Get all of the business licenses per user from the shop
     async def get_businesses_per_user(self):
         async with self.bot.db_pool.acquire() as conn:
@@ -25,8 +37,6 @@ class Businesses(commands.Cog):
             FROM inventory i
             JOIN shop s ON s.id = i.item_id 
             WHERE s.is_business IS TRUE AND s.daily_payout > 0
-            GROUP BY i.user_id
-            ORDER BY i.user_id;
             """)
         return rows
     

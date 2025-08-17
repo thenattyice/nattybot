@@ -16,6 +16,7 @@ from cogs.wordle import Wordle
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
+from cogs.games.freespin import setup as setup_freespin
 
 load_dotenv() #Load the env file
 
@@ -55,7 +56,8 @@ class Client(commands.Bot):
                     CREATE TABLE IF NOT EXISTS users (
                         user_id BIGINT PRIMARY KEY,
                         balance BIGINT NOT NULL DEFAULT 0,
-                        wordle_pts BIGINT NOT NULL DEFAULT 0
+                        wordle_pts BIGINT NOT NULL DEFAULT 0,
+                        daily_spin BOOLEAN DEFAULT FALSE
                     );
                     CREATE TABLE IF NOT EXISTS shop (
                         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -165,6 +167,7 @@ async def setup_cogs():
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT))
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT))
+    await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT))
 
 # Main method
 async def main():

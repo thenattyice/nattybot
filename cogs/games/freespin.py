@@ -85,9 +85,10 @@ class FreeDailySpin(commands.Cog):
             
             cycles = 2 # Number of full spins before stopping
             final_index = wheel_values.index(result)
+            total_ticks = cycles * len(wheel_values) + ((final_index - current_index) % len(wheel_values)) # Calculate total ticks to land exactly on result
             
-            # Calculate total ticks to land exactly on result
-            total_ticks = cycles * len(wheel_values) + ((final_index - current_index) % len(wheel_values))
+            fast_ticks = int(total_ticks * 0.7)  # First 70% of spins are fast
+            slow_ticks = total_ticks - fast_ticks  # Last 30% slow down
             
             embed.description = "Spinning the wheel..."
             
@@ -101,8 +102,12 @@ class FreeDailySpin(commands.Cog):
                 embed.description = f"The wheel shows: **{num}**"
                 await msg.edit(embed=embed)
                 
-                # Slows down as loop iterates
-                await asyncio.sleep(0.1 + (i * 0.03)) 
+                if i < fast_ticks:
+                    await asyncio.sleep(0.05)
+                else:
+                    # slow down linearly for remaining ticks
+                    t = (i - fast_ticks) / max(slow_ticks, 1)
+                    await asyncio.sleep(0.1 + 0.3 * t)  # starts at 0.1s, ends ~0.4s
                 
                 # Move forward one slot to land on the actual result
                 current_index = (current_index + 1) % len(wheel_values)

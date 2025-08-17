@@ -79,20 +79,36 @@ class FreeDailySpin(commands.Cog):
             wheel_values = list(range(1,21)) # 20 slots on the wheel
             result = random.choice(wheel_values) # Winning num picked randomly
             
+            current_index = random.randint(0, len(wheel_values) - 1)
+            
+            total_ticks = 30 # Number of ticks before landing
+            
+            cycles = 2 # Number of full spins before stopping
+            final_index = wheel_values.index(result)
+            
+            # Calculate total ticks to land exactly on result
+            total_ticks = cycles * len(wheel_values) + ((final_index - current_index) % len(wheel_values))
+            
             embed.description = "Spinning the wheel..."
             
             await interaction.response.send_message(embed=embed, ephemeral=True)
             msg = await interaction.original_response()
             
             # Simulate the spin with a slow down through a for loop
-            for i in range(30): # Number of ticks before landing
-                num = random.choice(wheel_values)
-                
+            for i in range(total_ticks): 
+                # During animation, just show random numbers
+                num = wheel_values[current_index]
                 embed.description = f"The wheel shows: **{num}**"
                 await msg.edit(embed=embed)
-                await asyncio.sleep(0.1 + (i * 0.03)) # Slows down as loop iterates
+                
+                # Slows down as loop iterates
+                await asyncio.sleep(0.1 + (i * 0.03)) 
+                
+                # Move forward one slot to land on the actual result
+                current_index = (current_index + 1) % len(wheel_values)
             
-            await self.economy_cog.add_money_to_user(user_id, result)
+            # Award coins and check new balance
+            await economy_cog.add_money_to_user(user_id, result)
             new_balance = await economy_cog.get_balance(user_id)
                 
             embed.description = f"🎉The wheel lands on: **{result}**\nYou won **{result}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins"

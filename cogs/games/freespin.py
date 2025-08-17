@@ -96,18 +96,17 @@ class FreeDailySpin(commands.Cog):
             msg = await interaction.original_response()
             
             # Simulate the spin with a slow down through a for loop
-            for i in range(total_ticks): 
+            for tick in range(total_ticks): 
                 # During animation, just show random numbers
                 num = wheel_values[current_index]
                 embed.description = f"The wheel shows: **{num}**"
                 await msg.edit(embed=embed)
                 
-                if i < fast_ticks:
-                    await asyncio.sleep(0.05)
-                else:
-                    # slow down linearly for remaining ticks
-                    t = (i - fast_ticks) / max(slow_ticks, 1)
-                    await asyncio.sleep(0.1 + 0.3 * t)  # starts at 0.1s, ends ~0.4s
+                # Slowdown based on remaining ticks
+                ticks_left = total_ticks - tick
+                # Fast at first, then slower as ticks_left decreases
+                sleep_time = max(0.02, 0.02 + 0.38 * (1 - ticks_left / total_ticks))
+                await asyncio.sleep(sleep_time)
                 
                 # Move forward one slot to land on the actual result
                 current_index = (current_index + 1) % len(wheel_values)

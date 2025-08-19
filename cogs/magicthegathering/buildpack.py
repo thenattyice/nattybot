@@ -149,7 +149,7 @@ class BuildBoosterPack(commands.Cog):
         else:
             return round(usd), False
         
-    async def add_set_to_db(self, set_code: str):
+    async def add_set_to_db(self, interaction: discord.Interaction, set_code: str):
         try:
             url = f"https://api.scryfall.com/sets/{set_code}"
             async with aiohttp.ClientSession() as session:
@@ -217,7 +217,7 @@ class BuildBoosterPack(commands.Cog):
             return
 
         try:
-            await self.add_set_to_db(set_code)
+            await self.add_set_to_db(interaction, set_code)
         except Exception as e:
             traceback.print_exc()
             await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)
@@ -231,7 +231,7 @@ class BuildBoosterPack(commands.Cog):
             users_packs = await self.owns_packs_validation(user_id)
             
             if not users_packs:
-                    await interaction.response.send_message("Yo have no packs to open.", ephemeral=True)
+                    await interaction.response.send_message("You have no packs to open.", ephemeral=True)
                     return
             
             view = OpenPackView(interaction.user, self)

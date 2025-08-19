@@ -56,7 +56,6 @@ class PackSelect(discord.ui.Select):
             await interaction.response.edit_message(view=self.parent_view)
             await interaction.followup.send(content=content, ephemeral=True)
             
-            await interaction.response.defer()
             await self.parent_cog.open_pack(interaction, set_code, user_id)
             
         except Exception as e:

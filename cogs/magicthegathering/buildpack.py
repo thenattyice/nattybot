@@ -75,6 +75,7 @@ class BuildBoosterPack(commands.Cog):
         
         # Register commands here
         self.bot.tree.add_command(self.add_set, guild=self.guild_object)
+        self.bot.tree.add_command(self.rip_a_pack, guild=self.guild_object)
     
     async def get_cards_from_set(self, set_code: str):
         url= f"https://api.scryfall.com/cards/search?q=set:{set_code}"
@@ -150,14 +151,14 @@ class BuildBoosterPack(commands.Cog):
             return round(usd), False
         
     async def add_set_to_db(self, set_code: str):
-        url = f"https://api.scryfall.com/sets/{set_code}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                set_data = await response.json()
-        
-        set_name = set_data["name"]
-        
         try:
+            url = f"https://api.scryfall.com/sets/{set_code}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    set_data = await response.json()
+            
+            set_name = set_data["name"]
+
             async with self.bot.db_pool.acquire() as conn:
                 await conn.execute("""
                     INSERT INTO mtg_sets (set_code, set_name)

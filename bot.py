@@ -85,7 +85,7 @@ class Client(commands.Bot):
                     CREATE TABLE IF NOT EXISTS mtg_sets (
                         id SERIAL PRIMARY KEY,
                         set_code TEXT UNIQUE NOT NULL,
-                        set_name TEXT UNIQUE NOT NULL,
+                        set_name TEXT UNIQUE NOT NULL
                     );
                 """)
             print("Database connection pool created and schema ensured.")

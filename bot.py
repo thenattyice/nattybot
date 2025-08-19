@@ -17,7 +17,7 @@ from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
-from magicthegathering.buildpack import setup as setup_openpack
+from cogs.magicthegathering.buildpack import setup as setup_openpack
 
 load_dotenv() #Load the env file
 

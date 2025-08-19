@@ -28,6 +28,7 @@ ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 WORDLE_APP_ID = 1211781489931452447
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
+PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
 
 GAME_ROLES = {
     "rocket league": int(os.getenv("RL_ROLE")),
@@ -176,7 +177,7 @@ async def setup_cogs():
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT))
     
     # MTG
-    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY))
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL))
 
 # Main method
 async def main():

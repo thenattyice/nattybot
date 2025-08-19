@@ -67,10 +67,11 @@ class PackSelect(discord.ui.Select):
                 await interaction.followup.send("An error occurred during pack selection.", ephemeral=True)
 
 class BuildBoosterPack(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles):
+    def __init__(self, bot, guild_object, allowed_roles, pack_opening_channel):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
+        self.pack_opening_channel = pack_opening_channel
         
         # Register commands here
         self.bot.tree.add_command(self.add_set, guild=self.guild_object)
@@ -227,6 +228,11 @@ class BuildBoosterPack(commands.Cog):
     @app_commands.command(name="openpack", description="Earn NattyCoins based on opening a pack!")
     async def rip_a_pack(self, interaction: discord.Interaction):
         try:
+            if interaction.channel.id != self.pack_opening_channel:
+                await interaction.response.send_message(
+                    "You can only use this command in the #pack-openings channel.", ephemeral=True)
+                return
+            
             user_id = interaction.user.id
             
             users_packs = await self.owns_packs_validation(user_id)
@@ -241,5 +247,5 @@ class BuildBoosterPack(commands.Cog):
         except Exception:
             traceback.print_exc()
 
-async def setup(bot, guild_object, allowed_roles):
-    await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles))
+async def setup(bot, guild_object, allowed_roles, pack_opening_channel):
+    await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles, pack_opening_channel))

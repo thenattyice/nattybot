@@ -15,6 +15,9 @@ class FreeDailySpin(commands.Cog):
         self.guild_object = guild_object
         
         self.bot.tree.add_command(self.daily_spin, guild=self.guild_object) # Command reg
+        
+    def cog_unload(self):
+        self.nightly_spin_status_reset.cancel()
     
     async def daily_spin_check(self, user_id: int):
         async with self.bot.db_pool.acquire() as conn:
@@ -53,6 +56,11 @@ class FreeDailySpin(commands.Cog):
         except:
             traceback.print_exc()
             print("[ERROR] Nightly free wheel spin reset FAILED!")
+            
+    @nightly_spin_status_reset.before_loop
+    async def before_nightly_spin_status_reset(self):
+        await self.bot.wait_until_ready()
+        print("[DEBUG] nightly_spin_status_reset loop starting")
         
     # Wheel spin game command 
     @app_commands.command(name="dailyspin", description="Take 1 free spin on the Natty Wheel for a random amount of NattyCoins between 1 and 20")
@@ -133,3 +141,4 @@ class FreeDailySpin(commands.Cog):
 # Cog setup method
 async def setup(bot, guild_object):
     await bot.add_cog(FreeDailySpin(bot, guild_object))
+    cog.nightly_spin_status_reset.start()

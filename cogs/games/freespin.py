@@ -140,5 +140,6 @@ class FreeDailySpin(commands.Cog):
                 
 # Cog setup method
 async def setup(bot, guild_object):
-    await bot.add_cog(FreeDailySpin(bot, guild_object))
+    cog = FreeDailySpin(bot, guild_object)
+    await bot.add_cog(cog) 
     cog.nightly_spin_status_reset.start()

@@ -166,9 +166,9 @@ class BuildBoosterPack(commands.Cog):
                 """, set_code, set_name)
                 
             if status.endswith("1"):
-                await interaction.response.send_message(f"{set_name} set successfully added!")
+                await interaction.followup.send(f"{set_name} set successfully added!")
             else:
-                await interaction.response.send_message(f"{set_name} already exists.")
+                await interaction.followup.send(f"{set_name} already exists.")
         except:
             traceback.print_exc()
             
@@ -217,6 +217,7 @@ class BuildBoosterPack(commands.Cog):
             return
 
         try:
+            await interaction.response.defer(thinking=True, ephemeral=True)
             await self.add_set_to_db(interaction, set_code)
         except Exception as e:
             traceback.print_exc()
@@ -239,7 +240,6 @@ class BuildBoosterPack(commands.Cog):
             await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
         except Exception:
             traceback.print_exc()
-
 
 async def setup(bot, guild_object, allowed_roles):
     await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles))

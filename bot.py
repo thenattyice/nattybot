@@ -17,6 +17,7 @@ from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
+from magicthegathering.buildpack import setup as setup_openpack
 
 load_dotenv() #Load the env file
 
@@ -80,6 +81,11 @@ class Client(commands.Bot):
                         item_id INTEGER REFERENCES shop(id),
                         quantity INTEGER NOT NULL DEFAULT 1,
                         purchase_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE TABLE IF NOT EXISTS mtg_sets (
+                        id SERIAL PRIMARY KEY,
+                        set_code TEXT UNIQUE NOT NULL,
+                        set_name TEXT UNIQUE NOT NULL,
                     );
                 """)
             print("Database connection pool created and schema ensured.")
@@ -168,6 +174,9 @@ async def setup_cogs():
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT))
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT))
+    
+    # MTG
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY))
 
 # Main method
 async def main():

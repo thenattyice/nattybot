@@ -35,11 +35,11 @@ class FreeDailySpin(commands.Cog):
             
         return daily_spin_status
     
-    @tasks.loop(time=datetime.time(hour=4, minute=0, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=0, minute=1, tzinfo=eastern))
     async def nightly_spin_status_reset(self):
         try:
             async with self.bot.db_pool.acquire() as conn:
-                rows = await conn.fetch("""
+                rows = await conn.execute("""
                                     WITH users_who_spun AS (
                                         SELECT user_id FROM users
                                         WHERE daily_spin = TRUE

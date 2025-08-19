@@ -93,9 +93,9 @@ class BuildBoosterPack(commands.Cog):
         
         pack= []
         
-        pack.extend(random.sample(commons, 10))
+        pack.extend(random.sample(commons, 9))
         pack.extend(random.sample(uncommons, 3))
-        pack.extend(random.sample(mythics_rares, 1))
+        pack.extend(random.sample(mythics_rares, 2))
         
         description=""
         
@@ -135,7 +135,7 @@ class BuildBoosterPack(commands.Cog):
         def parse_price(price_str):
             float_price = float(price_str)
             if float_price < 0.50:
-                return 0
+                return 1
             elif float_price >= 0.50 and float_price < 1.0:
                 return 1
             else:

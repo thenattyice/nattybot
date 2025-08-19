@@ -127,7 +127,7 @@ class BuildBoosterPack(commands.Cog):
         )
         
         await interaction.followup.send(embed=embed)
-        await interaction.followup.send(embed=money_embed)
+        await interaction.followup.send(embed=money_embed, ephemeral=True)
 
     def get_card_price(self, card):
         is_foil = random.random() < (1/6) # 1 in 6 chance for a foil card

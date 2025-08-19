@@ -160,10 +160,16 @@ class BuildBoosterPack(commands.Cog):
             set_name = set_data["name"]
 
             async with self.bot.db_pool.acquire() as conn:
-                await conn.execute("""
+                status = await conn.execute("""
                     INSERT INTO mtg_sets (set_code, set_name)
-                    VALUES ($1, $2);
+                    VALUES ($1, $2)
+                    ON CONFLICT (set_code) DO NOTHING;
                 """, set_code, set_name)
+                
+            if status.endswith("1"):
+                await interaction.response.send_message(f"{set_name} set successfully added!")
+            else:
+                await interaction.response.send_message(f"{set_name} already exists.")
         except:
             traceback.print_exc()
             
@@ -179,16 +185,15 @@ class BuildBoosterPack(commands.Cog):
     
     async def owns_packs_validation(self, target_user_id: int):
         async with self.bot.db_pool.acquire() as conn:
-            owns_packs = await conn.fetchrow("""SELECT s.item_name FROM inventory i
-                                             JOIN shop s ON s.id = i.item_id
-                                             WHERE user_id = $1
-                                             AND i.item_id = 'MTG Booster Pack'
-                                             AND i.quantity > 0;
+            owns_packs = await conn.fetchrow("""
+                                            SELECT s.name
+                                            FROM inventory i
+                                            JOIN shop s ON s.id = i.item_id
+                                            WHERE i.user_id = $1
+                                            AND s.name = 'MTG Booster Pack'
+                                            AND i.quantity > 0;
                                              """, target_user_id)
-        if owns_packs:
-            return True
-        else:
-            return False
+        return owns_packs is not None
         
     async def remove_pack_from_user_inventory(self, target_user_id: int):
         async with self.bot.db_pool.acquire() as conn:
@@ -235,10 +240,7 @@ class BuildBoosterPack(commands.Cog):
             await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
         except Exception:
             traceback.print_exc()
-            try:
-                await interaction.response.send_message("Something went wrong showing the shop.", ephemeral=True)
-            except discord.InteractionResponded:
-                await interaction.followup.send("Something went wrong showing the shop.", ephemeral=True)
+
 
 async def setup(bot, guild_object, allowed_roles):
     await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles))

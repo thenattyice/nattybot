@@ -1,6 +1,7 @@
 import discord
 import traceback
 import datetime
+import re
 from discord import app_commands, Member
 from discord.ext import commands, tasks
 from mcstatus import JavaServer
@@ -27,7 +28,11 @@ class MinecraftServerStatus(commands.Cog):
         
         # Make sure guild is ready before starting the server_ping task loop 
         if not self.server_ping.is_running():
-            self.server_ping.start()
+            try:
+                self.server_ping.start()
+                print("[DEBUG] server_ping loop started!")
+            except:
+                traceback.print_exc()
     
     def cog_unload(self):
         self.server_ping.cancel()
@@ -63,9 +68,13 @@ class MinecraftServerStatus(commands.Cog):
             status = await server.async_status()
             desc = status.description
             motd = desc.simplify() if hasattr(desc, "simplify") else str(desc)
+            
+            # Strip Minecraft formatting codes (e.g., §a, §r, etc.)
+            motd_clean = re.sub(r"§.", "", motd)
+            
             return {
                 "online": True,
-                "motd": motd,
+                "motd": motd_clean,
                 "players": f"{status.players.online}/{status.players.max}"
             }
         except Exception as e:

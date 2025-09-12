@@ -95,7 +95,7 @@ class Client(commands.Bot):
                         setup_status BOOLEAN DEFAULT FALSE,
                         category_id BIGINT,
                         status_channel_id BIGINT,
-                        playercount_channel_id BIGINT
+                        player_count_channel_id BIGINT
                     );
                 """)
             print("Database connection pool created and schema ensured.")

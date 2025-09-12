@@ -14,6 +14,7 @@ class MinecraftServerStatus(commands.Cog):
         self.category_cache = {}  # {category_id: category_object}
         
         # Register commands here
+        self.bot.tree.add_command(self.mcserver, guild=self.guild_object)
     
     def cog_unload(self):
         self.server_ping.cancel()

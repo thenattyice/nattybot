@@ -19,20 +19,20 @@ class MinecraftServerStatus(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        guild = self.bot.get_guild(self.guild_object.id)
-        # Make sure guild is ready before starting the cache load
-        if guild:
-            await self.load_channel_cache(guild)
-        else:
-            print("⚠️ Guild not found yet when on_ready fired")
-        
-        # Make sure guild is ready before starting the server_ping task loop 
-        if not self.server_ping.is_running():
-            try:
+        try:
+            guild = self.bot.get_guild(self.guild_object.id)
+            # Make sure guild is ready before starting the cache load
+            if guild:
+                await self.load_channel_cache()
+            else:
+                print("⚠️ Guild not found yet when on_ready fired")
+            
+            # Make sure guild is ready before starting the server_ping task loop 
+            if not self.server_ping.is_running():
                 self.server_ping.start()
                 print("[DEBUG] server_ping loop started!")
-            except:
-                traceback.print_exc()
+        except:
+            traceback.print_exc()
     
     def cog_unload(self):
         self.server_ping.cancel()
@@ -203,8 +203,11 @@ class MinecraftServerStatus(commands.Cog):
     async def server_ping(self):
         try:
             servers_data = await self.get_all_servers()
-            
+            server_count = 0
             for server_row in servers_data:
+                
+                server_count += 1
+                
                 ip_address = server_row["ip_address"]
                 category_id = server_row["category_id"]
                 status_channel_id = server_row["status_channel_id"]
@@ -248,6 +251,9 @@ class MinecraftServerStatus(commands.Cog):
                     await status_channel.edit(name=status_name)
                 if player_count_channel:
                     await player_count_channel.edit(name=player_count_name)
+                    
+                # Logging
+                print(f"[DEBUG] server_ping loop completed: {server_count} server(s) updated")
         except:
             traceback.print_exc()
             

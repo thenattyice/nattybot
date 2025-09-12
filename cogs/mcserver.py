@@ -280,7 +280,6 @@ class MinecraftServerStatus(commands.Cog):
                 
         
 async def setup(bot, guild_object, allowed_roles):
-    await bot.wait_until_ready()
     cog = MinecraftServerStatus(bot, guild_object, allowed_roles)          
     await bot.add_cog(cog) 
     await cog.load_channel_cache()       

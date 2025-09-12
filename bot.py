@@ -51,8 +51,16 @@ class Client(commands.Bot):
         self.db_pool = None #Stores the pool
     
     async def setup_hook(self):
-        await self.setup_db()
-        await setup_cogs()
+        await self.setup_db() # Setup the DB
+        await setup_cogs() # Load all cogs
+        
+        # Sync all commands after cogs load and bot initializes
+        try:
+            synced = await self.tree.sync(guild=GUILD_OBJECT)
+            print(f'Synced {len(synced)} commands to guild {GUILD_ID}')
+
+        except Exception as e:
+            print(f'Error syncing commands: {e}')
         
     # DB conenction details method
     async def setup_db(self):
@@ -112,12 +120,7 @@ class Client(commands.Bot):
         print(f'Logged on as {self.user}!')
         print("Successfully finished startup")
 
-        try:
-            synced = await self.tree.sync(guild=GUILD_OBJECT)
-            print(f'Synced {len(synced)} commands to guild {GUILD_ID}')
-
-        except Exception as e:
-            print(f'Error syncing commands: {e}')
+        
 
     # Event handler for voice state updates
     async def on_voice_state_update(self, member, before, after):

@@ -91,7 +91,7 @@ class Client(commands.Bot):
                     );
                     CREATE TABLE IF NOT EXISTS mc_server (
                         id SERIAL PRIMARY KEY,
-                        ip_address TEXT,
+                        ip_address TEXT UNIQUE NOT NULL,
                         setup_status BOOLEAN DEFAULT FALSE,
                         category_id BIGINT,
                         status_channel_id BIGINT,

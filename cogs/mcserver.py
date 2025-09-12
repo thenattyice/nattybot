@@ -237,6 +237,11 @@ class MinecraftServerStatus(commands.Cog):
         app_commands.Choice(name="List Servers", value="list")
     ])
     async def mcserver(self, interaction: discord.Interaction, action: app_commands.Choice[str], ip_address: str = None):
+        user_role_ids = [role.id for role in interaction.user.roles]
+        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            return
+        
         # Logic to add a server
         if action.value == "add":
             try:
@@ -275,6 +280,7 @@ class MinecraftServerStatus(commands.Cog):
                 
         
 async def setup(bot, guild_object, allowed_roles):
+    await bot.wait_until_ready()
     cog = MinecraftServerStatus(bot, guild_object, allowed_roles)          
     await bot.add_cog(cog) 
     await cog.load_channel_cache()       

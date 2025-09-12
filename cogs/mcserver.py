@@ -48,9 +48,11 @@ class MinecraftServerStatus(commands.Cog):
         server = JavaServer.lookup(ip_address)
         try:
             status = await server.async_status()
+            desc = status.description
+            motd = desc.simplify() if hasattr(desc, "simplify") else str(desc)
             return {
                 "online": True,
-                "motd": status.description.simplify(),
+                "motd": motd,
                 "players": f"{status.players.online}/{status.players.max}"
             }
         except Exception as e:

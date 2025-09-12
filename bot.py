@@ -120,8 +120,6 @@ class Client(commands.Bot):
         print(f'Logged on as {self.user}!')
         print("Successfully finished startup")
 
-        
-
     # Event handler for voice state updates
     async def on_voice_state_update(self, member, before, after):
         print(f"Voice state update detected for {member.name}")

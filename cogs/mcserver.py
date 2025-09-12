@@ -16,6 +16,19 @@ class MinecraftServerStatus(commands.Cog):
         # Register commands here
         self.bot.tree.add_command(self.mcserver, guild=self.guild_object)
     
+    @commands.Cog.listener()
+    async def on_ready(self):
+        guild = self.bot.get_guild(self.guild_object.id)
+        # Make sure guild is ready before starting the cache load
+        if guild:
+            await self.load_channel_cache(guild)
+        else:
+            print("⚠️ Guild not found yet when on_ready fired")
+        
+        # Make sure guild is ready before starting the server_ping task loop 
+        if not self.server_ping.is_running():
+            self.server_ping.start()
+    
     def cog_unload(self):
         self.server_ping.cancel()
     
@@ -281,6 +294,4 @@ class MinecraftServerStatus(commands.Cog):
         
 async def setup(bot, guild_object, allowed_roles):
     cog = MinecraftServerStatus(bot, guild_object, allowed_roles)          
-    await bot.add_cog(cog) 
-    await cog.load_channel_cache()       
-    cog.server_ping.start()
+    await bot.add_cog(cog)      

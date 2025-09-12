@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
 from cogs.economy import Economy
 from cogs.lfg import LookingForGroup
+from cogs.mcserver import setup as setup_mcserver
 from cogs.shop.shop import setup as setup_shop
 from cogs.shop.businesses import setup as setup_businesses
 from cogs.wordle import Wordle
@@ -87,6 +88,14 @@ class Client(commands.Bot):
                         id SERIAL PRIMARY KEY,
                         set_code TEXT UNIQUE NOT NULL,
                         set_name TEXT UNIQUE NOT NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS mc_server (
+                        id SERIAL PRIMARY KEY,
+                        ip_address TEXT,
+                        setup_status BOOLEAN DEFAULT FALSE,
+                        category_id BIGINT,
+                        status_channel_id BIGINT,
+                        playercount_channel_id BIGINT
                     );
                 """)
             print("Database connection pool created and schema ensured.")
@@ -178,7 +187,10 @@ async def setup_cogs():
     
     # MTG
     await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL))
-
+    
+    # MC Server Status
+    await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
+    
 # Main method
 async def main():
     await client.setup_db() #Connect to the DB first

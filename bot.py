@@ -49,6 +49,10 @@ class Client(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.db_pool = None #Stores the pool
+    
+    async def setup_hook(self):
+        await self.setup_db()
+        await setup_cogs()
         
     # DB conenction details method
     async def setup_db(self):
@@ -193,8 +197,6 @@ async def setup_cogs():
     
 # Main method
 async def main():
-    await client.setup_db() #Connect to the DB first
-    await setup_cogs()
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 # Run main

@@ -197,6 +197,13 @@ class MinecraftServerStatus(commands.Cog):
             # Remove the server from the DB
             async with self.bot.db_pool.acquire() as conn:
                 await conn.execute("DELETE FROM mc_server WHERE ip_address = $1", ip_address)
+                
+            # Reset the ID sequence if the mc_server table is empty in the DB
+            row_count = await conn.fetchval("SELECT COUNT(*) FROM mc_server;")
+            if row_count == 0:
+                # Reset sequence
+                await conn.execute("ALTER SEQUENCE mc_server_id_seq RESTART WITH 1;")
+                print("MC Server DB table empty — ID sequence reset to 1")
             
             return True    
         

@@ -37,15 +37,15 @@ class MinecraftServerStatus(commands.Cog):
     def cog_unload(self):
         self.server_ping.cancel()
     
-    # Method to get the ip address from the DB
-    async def get_server_ip(self, server_id: int):
+    # Method to get the server ID from the DB
+    async def get_server_id(self, ip_address: str):
         async with self.bot.db_pool.acquire() as conn:
             row = await conn.fetchrow("""
-                                SELECT ip_address FROM mc_server
-                                WHERE id = $1
-                            """, server_id)
-            ip_address = row["ip_address"]
-        return ip_address
+                                SELECT id FROM mc_server
+                                WHERE ip_address = $1
+                            """, ip_address)
+            server_id = row["id"]
+        return server_id
     
     # Method to add the server to DB
     async def insert_server(self, interaction: discord.Interaction, ip_address: str):
@@ -98,6 +98,7 @@ class MinecraftServerStatus(commands.Cog):
             """, ip_address, category_id, status_channel_id, player_count_channel_id)
                 
     async def setup_status_channels(self, ip_address: str):
+        server_id = await self.get_server_id(ip_address)
         results = await self.server_check(ip_address)
         guild = self.bot.get_guild(self.guild_object.id)
 
@@ -110,8 +111,9 @@ class MinecraftServerStatus(commands.Cog):
         players = results["players"]
 
         status_emoji = "🟢" if online else "🔴"
-        channel_name = f"{status_emoji} {motd or 'Offline'}"
+        channel_name = f"{status_emoji} {motd}"
         player_count_name = f"👥 {players} Players"
+        category_name = f"Minecraft Server {server_id}"
 
         category = await guild.create_category(motd or "Minecraft Server")
         status_channel = await guild.create_voice_channel(channel_name, category=category, overwrites=overwrites)
@@ -209,7 +211,6 @@ class MinecraftServerStatus(commands.Cog):
                 server_count += 1
                 
                 ip_address = server_row["ip_address"]
-                category_id = server_row["category_id"]
                 status_channel_id = server_row["status_channel_id"]
                 player_count_channel_id = server_row["player_count_channel_id"]
                 
@@ -221,17 +222,10 @@ class MinecraftServerStatus(commands.Cog):
                 
                 # 2. Stage the channel names and category name
                 status_emoji = "🟢" if online else "🔴"
-                status_name = f"{status_emoji} {motd or 'Offline'}"
+                status_name = f"{status_emoji} {motd}"
                 player_count_name = f"👥 {players} Players"
-                category_name = motd or "Minecraft Server"
                 
-                # 3. Try to get loaded channel/category IDs (fallback icluded)
-                category = self.category_cache.get(category_id)
-                if not category:
-                    category = self.bot.get_channel(category_id)
-                    if category:
-                        self.category_cache[category_id] = category
-                
+                # 3. Try to get loaded channel IDs (fallback icluded)
                 status_channel = self.channel_cache.get(status_channel_id)
                 if not status_channel:
                     status_channel = self.bot.get_channel(status_channel_id)
@@ -244,9 +238,7 @@ class MinecraftServerStatus(commands.Cog):
                     if player_count_channel:
                         self.channel_cache[player_count_channel_id] = player_count_channel
                 
-                # 4. Update the channel and category names
-                if category:
-                    await category.edit(name=category_name)
+                # 4. Update the channel names
                 if status_channel:
                     await status_channel.edit(name=status_name)
                 if player_count_channel:

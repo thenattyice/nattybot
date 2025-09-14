@@ -115,7 +115,7 @@ class MinecraftServerStatus(commands.Cog):
         player_count_name = f"👥 {players} Players"
         category_name = f"Minecraft Server {server_id}"
 
-        category = await guild.create_category(motd or "Minecraft Server")
+        category = await guild.create_category(category_name)
         status_channel = await guild.create_voice_channel(channel_name, category=category, overwrites=overwrites)
         player_count_channel = await guild.create_voice_channel(player_count_name, category=category, overwrites=overwrites)
 

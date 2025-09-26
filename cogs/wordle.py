@@ -120,7 +120,7 @@ class Wordle(commands.Cog):
             return False
     
     # Clear all wordle champ pts monthly
-    @tasks.loop(minutes=2)
+    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=eastern))
     async def monthly_wordle_champ_process(self):
         success = await self.wordle_champ_role()
         if success:

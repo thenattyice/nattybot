@@ -1,7 +1,7 @@
 import discord
 import traceback
 import re
-from datetime import date
+import datetime
 from zoneinfo import ZoneInfo
 from discord import app_commands, Member, TextChannel
 from discord.ext import commands, tasks

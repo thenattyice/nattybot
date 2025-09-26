@@ -223,7 +223,7 @@ class MinecraftServerStatus(commands.Cog):
                 # 1. Run the server check and init details from response
                 results = await self.server_check(ip_address)
                 online = results["online"]
-                motd = results["motd"]
+                motd = results["motd"] or ip_address
                 players = results["players"]
                 
                 # 2. Stage the channel names and category name
@@ -270,19 +270,33 @@ class MinecraftServerStatus(commands.Cog):
         
         # Logic to add a server
         if action.value == "add":
+            if not ip_address:
+                await interaction.response.send_message("IP address is required for adding a server.", ephemeral=True)
+                return
+                
             try:
-                success = await self.insert_server(interaction, ip_address) # Insert the server IP to DB
+                # Insert the server IP to DB
+                success = await self.insert_server(ip_address)
+                
                 if success:
-                    await self.setup_status_channels(ip_address) # Setup the status channels
+                    # Server was successfully added to DB, now setup channels
+                    await self.setup_status_channels(ip_address)
                     await interaction.response.send_message("Server successfully added!", ephemeral=True)
                 else:
+                    # Server IP already exists
                     await interaction.response.send_message("Server IP already exists.", ephemeral=True)
+                    
             except Exception as e:
                 traceback.print_exc()
                 print(f"Error adding server {ip_address}: {e}")
+                await interaction.response.send_message(f"Error adding server: {str(e)}", ephemeral=True)
         
         # Logic to remove a server
         if action.value == "remove":
+            if not ip_address:
+                await interaction.response.send_message("IP address is required for removing a server.", ephemeral=True)
+                return
+            
             try:
                 await self.remove_server(ip_address)
                 await interaction.response.send_message("Server successfully removed!", ephemeral=True)
@@ -308,7 +322,6 @@ class MinecraftServerStatus(commands.Cog):
                 
             await interaction.response.send_message(embed=embed, ephemeral=True)
                 
-        
 async def setup(bot, guild_object, allowed_roles):
     cog = MinecraftServerStatus(bot, guild_object, allowed_roles)          
     await bot.add_cog(cog)      

@@ -95,9 +95,12 @@ class Wordle(commands.Cog):
                 print(f"[WARN] Champion with ID {champ_id} not found in guild.")
                 return
             
-            # Get current month and year, set the role name
+            # Get PREVIOUS month and year for the role name
             now = datetime.datetime.now(eastern)
-            role_name = f"Wordle Champion - {now.strftime('%B %Y')}"
+            # Calculate first day of current month, then subtract 1 day to get last day of previous month
+            first_day_current = now.replace(day=1)
+            previous_month = first_day_current - datetime.timedelta(days=1)
+            role_name = f"Wordle Champion - {previous_month.strftime('%B %Y')}"
             
             # Create the role for current month/year
             # Check if role already exists

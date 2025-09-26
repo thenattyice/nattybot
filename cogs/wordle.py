@@ -1,9 +1,12 @@
 import discord
 import traceback
 import re
+from datetime import date
+from zoneinfo import ZoneInfo
 from discord import app_commands, Member, TextChannel
-from discord.ext import commands
+from discord.ext import commands, tasks
 
+eastern = ZoneInfo("America/New_York")
 class Wordle(commands.Cog):
     def __init__(self, bot, guild_object, wordle_app_id):
         self.bot = bot
@@ -61,6 +64,82 @@ class Wordle(commands.Cog):
         )
         
         return championship_embed
+        
+    # Determine championship winner
+    async def determine_champ(self):
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("""WITH ranked AS (
+                                            SELECT user_id, wordle_pts,
+                                                RANK() OVER (ORDER BY wordle_pts DESC) AS rnk
+                                            FROM users
+                                        )
+                                        SELECT user_id, wordle_pts
+                                        FROM ranked
+                                        WHERE rnk = 1;""")
+        champion = result["user_id"]
+        return champion
+    
+    # Create and assign the wordle champ role
+    async def wordle_champ_role(self):
+        try:
+            guild = self.bot.get_guild(self.guild_object.id)
+            
+            # Get champ details
+            champ_id = await self.determine_champ()
+            
+            champ = guild.get_member(champ_id)
+            if champ is None:
+                print(f"[WARN] Champion with ID {champ_id} not found in guild.")
+                return
+            
+            # Get current month and year, set the role name
+            now = datetime.datetime.now(eastern)
+            role_name = f"Wordle Champion - {now.strftime('%B %Y')}"
+            
+            # Create the role for current month/year
+            # Check if role already exists
+            existing_role = discord.utils.get(guild.roles, name=role_name)
+            if existing_role:
+                wordle_champ_role = existing_role
+            else:
+                wordle_champ_role = await guild.create_role(
+                    name=role_name,
+                    color=discord.Color.yellow(),
+                    reason="Monthly Wordle Champion role"
+                )
+            
+            # Assign it to the champ
+            await champ.add_roles(wordle_champ_role, reason="Awarded Wordle Champion")
+            print(f"[DEBUG] Assigned {role_name} to {champ.display_name}")
+            return True
+        except Exception:
+            traceback.print_exc()
+            return False
+    
+    # Clear all wordle champ pts monthly
+    @tasks.loop(minutes=2)
+    async def monthly_wordle_champ_process(self):
+        success = await self.wordle_champ_role()
+        if success:
+            # Clear the points
+            try:
+                async with self.bot.db_pool.acquire() as conn:
+                    rows = await conn.execute("""
+                                        WITH users_with_pts AS (
+                                            SELECT user_id FROM users
+                                            WHERE wordle_pts > 0
+                                        )
+                                        UPDATE users
+                                        SET wordle_pts = 0
+                                        FROM users_with_pts uwp
+                                        WHERE users.user_id = uwp.user_id
+                                    """)
+                print("[TASK] Monthly Wordle Championship Points reset completed!")
+            except:
+                traceback.print_exc()
+                print("[ERROR] Monthly Wordle Championship Points reset FAILED!")
+        else:
+            print("[ERROR] Failed to process the champion and their role")
     
     # Event listener for the Wordle channel, specifically tracking daily results
     @commands.Cog.listener()

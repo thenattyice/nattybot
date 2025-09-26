@@ -62,7 +62,7 @@ class MinecraftServerStatus(commands.Cog):
     async def server_check(self, ip_address: str):
         server = JavaServer.lookup(ip_address)
         try:
-            status = await server.async_status(timeout=10)
+            status = await server.async_status()
             desc = status.description
             motd = desc.simplify() if hasattr(desc, "simplify") else str(desc)
             

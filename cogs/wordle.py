@@ -15,6 +15,9 @@ class Wordle(commands.Cog):
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
+        
+    def cog_unload(self):
+        self.monthly_wordle_champ_process.cancel()
     
     # Method to insert the wordle_pts
     async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
@@ -140,6 +143,11 @@ class Wordle(commands.Cog):
                 print("[ERROR] Monthly Wordle Championship Points reset FAILED!")
         else:
             print("[ERROR] Failed to process the champion and their role")
+    
+    @monthly_wordle_champ_process.before_loop
+    async def before_monthly_wordle_champ_process(self):
+        await self.bot.wait_until_ready()
+        print("[DEBUG] monthly_wordle_champ_process loop starting")
     
     # Event listener for the Wordle channel, specifically tracking daily results
     @commands.Cog.listener()
@@ -308,3 +316,7 @@ class Wordle(commands.Cog):
         championship_embed = await self.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
+async def setup(bot, guild_object, wordle_app_id):
+    cog = Wordle(bot, guild_object, wordle_app_id)          
+    await bot.add_cog(cog) 
+    cog.monthly_wordle_champ_process.start()

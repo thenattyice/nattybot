@@ -13,7 +13,7 @@ from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
 from cogs.shop.shop import setup as setup_shop
 from cogs.shop.businesses import setup as setup_businesses
-from cogs.wordle import Wordle
+from cogs.wordle import setup as setup_wordle
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
@@ -181,8 +181,7 @@ async def setup_cogs():
     await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT))
     
     # Wordle Cog
-    wordle_cog = Wordle(client, GUILD_OBJECT, WORDLE_APP_ID)
-    await load_cog("Wordle", client.add_cog(wordle_cog))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID))
     
     #Game Cogs
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT))

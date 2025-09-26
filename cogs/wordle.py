@@ -122,6 +122,10 @@ class Wordle(commands.Cog):
     # Clear all wordle champ pts monthly
     @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=eastern))
     async def monthly_wordle_champ_process(self):
+        now = datetime.datetime.now(eastern)
+        if now.day != 1:  # Only run on the 1st of the month
+            return
+        
         success = await self.wordle_champ_role()
         if success:
             # Clear the points

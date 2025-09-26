@@ -48,7 +48,7 @@ class MinecraftServerStatus(commands.Cog):
         return server_id
     
     # Method to add the server to DB
-    async def insert_server(self, interaction: discord.Interaction, ip_address: str):
+    async def insert_server(self, ip_address: str):
         async with self.bot.db_pool.acquire() as conn:
             result = await conn.execute("""
                 INSERT INTO mc_server (ip_address)
@@ -56,21 +56,21 @@ class MinecraftServerStatus(commands.Cog):
                 ON CONFLICT (ip_address) DO NOTHING;
             """, ip_address)
             
-            if result == "INSERT 0 1":
-                await interaction.response.send_message("Server successfully added!", ephemeral=True)
-            else:
-                await interaction.response.send_message("Server IP already exists.", ephemeral=True)
-    
+            return result == "INSERT 0 1"
+
     # Check the status of the server via API and return values
     async def server_check(self, ip_address: str):
         server = JavaServer.lookup(ip_address)
         try:
-            status = await server.async_status()
+            status = await server.async_status(timeout=10)
             desc = status.description
             motd = desc.simplify() if hasattr(desc, "simplify") else str(desc)
             
             # Strip Minecraft formatting codes (e.g., §a, §r, etc.)
             motd_clean = re.sub(r"§.", "", motd)
+            
+            print(f"[DEBUG] Checking server: {ip_address}")
+            print(f"[DEBUG] Server lookup result: {server}")
             
             return {
                 "online": True,
@@ -107,7 +107,7 @@ class MinecraftServerStatus(commands.Cog):
         }
 
         online = results["online"]
-        motd = results["motd"]
+        motd = results["motd"] or ip_address
         players = results["players"]
 
         status_emoji = "🟢" if online else "🔴"
@@ -271,8 +271,12 @@ class MinecraftServerStatus(commands.Cog):
         # Logic to add a server
         if action.value == "add":
             try:
-                await self.insert_server(interaction, ip_address) # Insert the server IP to DB
-                await self.setup_status_channels(ip_address) # Setup the status channels
+                success = await self.insert_server(interaction, ip_address) # Insert the server IP to DB
+                if success:
+                    await self.setup_status_channels(ip_address) # Setup the status channels
+                    await interaction.response.send_message("Server successfully added!", ephemeral=True)
+                else:
+                    await interaction.response.send_message("Server IP already exists.", ephemeral=True)
             except Exception as e:
                 traceback.print_exc()
                 print(f"Error adding server {ip_address}: {e}")

@@ -114,7 +114,7 @@ class BuildBoosterPack(commands.Cog):
             description += f"{card['name']}{foil_tag} - ${price}\n"
             total += price
             
-        description += f"***GRAND TOTAL: {total}***\nPacked opened by: <@{target_user_id}>"
+        description += f"***GRAND TOTAL: {total}***\n\nPacked opened by: <@{target_user_id}>"
         
         embed.description = description
         

@@ -123,7 +123,7 @@ class BuildBoosterPack(commands.Cog):
         
         money_embed = discord.Embed(
             title="",
-            description=f"You have been paid **{total}** NattyCoins for your pack opening!\nNew balance: **{new_balance}** NattyCoins",
+            description=f"You have been paid **{total}** NattyCoins for your pack opening!\n\nNew balance: **{new_balance}** NattyCoins",
             color=discord.Color.gold()
         )
         

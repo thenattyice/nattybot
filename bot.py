@@ -68,39 +68,78 @@ class Client(commands.Bot):
             self.db_pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
             async with self.db_pool.acquire() as conn:
                 await conn.execute("""
+                    -- Users table
                     CREATE TABLE IF NOT EXISTS users (
                         user_id BIGINT PRIMARY KEY,
                         balance BIGINT NOT NULL DEFAULT 0,
                         wordle_pts BIGINT NOT NULL DEFAULT 0,
                         daily_spin BOOLEAN DEFAULT FALSE
                     );
-                    CREATE TABLE IF NOT EXISTS shop (
-                        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+                    -- Shop items table (item_type stored as text)
+                    CREATE TABLE IF NOT EXISTS shop_items (
+                        id SERIAL PRIMARY KEY,
                         name TEXT UNIQUE NOT NULL,
                         description TEXT,
-                        price INTEGER NOT NULL,
-                        is_business BOOLEAN DEFAULT FALSE,
-                        daily_payout INTEGER
+                        price INTEGER NOT NULL CHECK (price > 0),
+                        item_type TEXT NOT NULL CHECK (item_type IN ('consumable', 'bundle', 'business', 'collectible')),
+                        metadata JSONB DEFAULT '{}',
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- User inventory table
                     CREATE TABLE IF NOT EXISTS inventory (
-                        user_id BIGINT REFERENCES users(user_id),
-                        item_id INTEGER REFERENCES shop(id),
-                        quantity INTEGER NOT NULL DEFAULT 1,
-                        is_business BOOLEAN REFERENCES shop(is_business),
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE CASCADE,
+                        quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 0),
+                        metadata JSONB DEFAULT '{}',
+                        acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         PRIMARY KEY (user_id, item_id)
                     );
+
+                    -- Purchase history/log table
                     CREATE TABLE IF NOT EXISTS purchases (
                         id SERIAL PRIMARY KEY,
-                        user_id BIGINT REFERENCES users(user_id),
-                        item_id INTEGER REFERENCES shop(id),
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
                         quantity INTEGER NOT NULL DEFAULT 1,
+                        price_paid INTEGER NOT NULL,
                         purchase_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- Item usage log (for consumables, pack openings, etc.)
+                    CREATE TABLE IF NOT EXISTS item_usage (
+                        id SERIAL PRIMARY KEY,
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
+                        usage_type TEXT NOT NULL, -- 'purchase', 'consume', 'activate', 'daily_payout'
+                        quantity INTEGER DEFAULT 1,
+                        result_data JSONB, -- Store pack contents, payout amounts, etc.
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    -- MTG sets table (for pack opening feature)
                     CREATE TABLE IF NOT EXISTS mtg_sets (
                         id SERIAL PRIMARY KEY,
                         set_code TEXT UNIQUE NOT NULL,
-                        set_name TEXT UNIQUE NOT NULL
+                        set_name TEXT UNIQUE NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- Gambling stats table (for leaderboards)
+                    CREATE TABLE IF NOT EXISTS gambling_stats (
+                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+                        total_wagered INTEGER DEFAULT 0,
+                        total_won INTEGER DEFAULT 0,
+                        games_played INTEGER DEFAULT 0,
+                        biggest_win INTEGER DEFAULT 0,
+                        current_streak INTEGER DEFAULT 0,
+                        longest_streak INTEGER DEFAULT 0,
+                        last_game_timestamp TIMESTAMP
+                    );
+
+                    -- Minecraft server tracking
                     CREATE TABLE IF NOT EXISTS mc_server (
                         id SERIAL PRIMARY KEY,
                         ip_address TEXT UNIQUE NOT NULL,
@@ -109,6 +148,16 @@ class Client(commands.Bot):
                         status_channel_id BIGINT,
                         player_count_channel_id BIGINT
                     );
+
+                    -- Indexes for performance
+                    CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_timestamp ON purchases(purchase_time DESC);
+                    CREATE INDEX IF NOT EXISTS idx_item_usage_user_id ON item_usage(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_item_usage_timestamp ON item_usage(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
+                    CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active) WHERE is_active = TRUE;
+                    CREATE INDEX IF NOT EXISTS idx_gambling_stats_biggest_win ON gambling_stats(biggest_win DESC);
                 """)
             print("Database connection pool created and schema ensured.")
 
@@ -197,6 +246,12 @@ async def setup_cogs():
     
 # Main method
 async def main():
+    # Check if bot should run
+    if os.getenv("BOT_DISABLED") == "true":
+        print("Bot is disabled via BOT_DISABLED environment variable")
+        print("Remove or set to 'false' to re-enable")
+        return
+    
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 # Run main

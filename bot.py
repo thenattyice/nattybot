@@ -197,6 +197,12 @@ async def setup_cogs():
     
 # Main method
 async def main():
+    # Check if bot should run
+    if os.getenv("BOT_DISABLED") == "true":
+        print("Bot is disabled via BOT_DISABLED environment variable")
+        print("Remove or set to 'false' to re-enable")
+        return
+    
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 # Run main

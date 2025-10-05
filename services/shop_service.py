@@ -23,7 +23,12 @@ class ShopService():
             return {'success': False, 'error': 'Item not found'}
         
         # 2. Get the correct item handler
-        handler = self.handler_registry.get_handler(item['item_type'])   
+        handler = self.handler_registry.get_handler(
+            item['item_type'],
+            economy_service=self.economy_service,
+            item_service=self.item_service,
+            inventory_service=self.inventory_service
+        )  
         
         # 3. Check that user can buy/afford item
         can_afford = await self.validate_purchase(user_id, item_id)

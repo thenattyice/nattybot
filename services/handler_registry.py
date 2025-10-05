@@ -1,40 +1,63 @@
-from item_handlers.base_handler import BaseHandler
 from item_handlers.consumable_handler import ConsumableHandler
 from item_handlers.business_handler import BusinessHandler
 from item_handlers.bundle_handler import BundleHandler
 
 class ItemHandlerRegistry:
     def __init__(self):
-        self.handlers = {}
-    
-    def register_handler(self, item_type: str, handler):
-        # Register a handler for an item type
-        self.handlers[item_type] = handler
-    
-    def get_handler(self, item_type: str):
-        # Get the handler for an item type
-        if item_type not in self.handlers:
-            raise ValueError(f"No handler registered for item type: {item_type}")
-        return self.handlers[item_type]
-    
-    def is_supported(self, item_type: str) -> bool:
-        # Check if an item type has a registered handler
-        return item_type in self.handlers
-    
-    def list_supported_types(self) -> list[str]:
-        # Get all registered item types
-        return list(self.handlers.keys())
+        self.handler_factories = {}
+        self._handler_cache = {}
 
-# -----------------------------
-# Default global registry
-# -----------------------------
+    #Register a factory function for an item type
+    def register_handler(self, item_type: str, factory):
+        
+        self.handler_factories[item_type] = factory
+        # Clear cache if re-registering
+        if item_type in self._handler_cache:
+            del self._handler_cache[item_type]
+    
+    #Return a cached handler instance, or create it if missing
+    def get_handler(self, item_type: str, **kwargs):
+        
+        if item_type in self._handler_cache:
+            return self._handler_cache[item_type]
+
+        if item_type not in self.handler_factories:
+            raise ValueError(f"No handler registered for item type: {item_type}")
+
+        handler = self.handler_factories[item_type](**kwargs)
+        self._handler_cache[item_type] = handler
+        return handler
+
+    def is_supported(self, item_type: str) -> bool:
+        return item_type in self.handler_factories
+
+    def list_supported_types(self) -> list[str]:
+        return list(self.handler_factories.keys())
+
+# ------------------------------------
+# Default global registry setup
+# ------------------------------------
 _default_registry = ItemHandlerRegistry()
 
 def get_default_registry() -> ItemHandlerRegistry:
     return _default_registry
 
-
-# Pre-register your handlers
-_default_registry.register_handler("consumable", ConsumableHandler())
-_default_registry.register_handler("business", BusinessHandler())
-_default_registry.register_handler("bundle", BundleHandler())
+# Register handler factories (not instances)
+_default_registry.register_handler(
+    "consumable",
+    lambda economy_service, item_service, inventory_service: ConsumableHandler(
+        economy_service, item_service, inventory_service
+    )
+)
+_default_registry.register_handler(
+    "business",
+    lambda economy_service, item_service, inventory_service: BusinessHandler(
+        economy_service, item_service, inventory_service
+    )
+)
+_default_registry.register_handler(
+    "bundle",
+    lambda economy_service, item_service, inventory_service: BundleHandler(
+        economy_service, item_service, inventory_service
+    )
+)

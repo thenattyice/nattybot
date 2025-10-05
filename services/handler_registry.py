@@ -1,4 +1,4 @@
-from item_handlers.base_handler import BaseItemHandler
+from item_handlers.base_handler import BaseHandler
 from item_handlers.consumable_handler import ConsumableHandler
 from item_handlers.business_handler import BusinessHandler
 from item_handlers.bundle_handler import BundleHandler

@@ -19,6 +19,11 @@ from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
 from cogs.magicthegathering.buildpack import setup as setup_openpack
+from services.item_service import ItemService
+from services.inventory_service import InventoryService
+from services.shop_service import ShopService
+from services.economy_service import EconomyService
+from services.handler_registry import get_default_registry
 
 load_dotenv() #Load the env file
 
@@ -113,7 +118,7 @@ class Client(commands.Bot):
                         id SERIAL PRIMARY KEY,
                         user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
                         item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
-                        usage_type TEXT NOT NULL, -- 'purchase', 'consume', 'activate', 'daily_payout'
+                        usage_type TEXT NOT NULL, -- 'consume', 'activate', 'daily_payout'
                         quantity INTEGER DEFAULT 1,
                         result_data JSONB, -- Store pack contents, payout amounts, etc.
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -216,6 +221,28 @@ async def load_cog(name: str, coro):
 
 # Setup the cogs
 async def setup_cogs():
+    # 1. Build core services
+    economy_service = EconomyService(client.db_pool)
+    item_service = ItemService(client.db_pool)
+    inventory_service = InventoryService(client.db_pool)
+
+    # 2. Get the handler registry
+    handler_registry = get_default_registry()
+
+    # 3. Build shop service with registry
+    shop_service = ShopService(
+        db_pool=client.db_pool,
+        economy_service=economy_service,
+        item_service=item_service,
+        inventory_service=inventory_service,
+        handler_registry=handler_registry
+    )
+    
+    # 4. Load cogs that need services
+    # Shop Cogs
+    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service))
+    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT))
+    
     # Economy Cog
     economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
     await load_cog("Economy", client.add_cog(economy_cog))
@@ -224,10 +251,6 @@ async def setup_cogs():
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
-    
-    # Shop Cogs
-    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL))
-    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT))
     
     # Wordle Cog
     await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID))

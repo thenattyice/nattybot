@@ -1,3 +1,5 @@
+import traceback
+
 class ShopService():
     def __init__(self, db_pool, economy_service, item_service, inventory_service, handler_registry):
         self.db_pool = db_pool
@@ -39,12 +41,18 @@ class ShopService():
         
         if not can_buy:
             return {'success': False, 'error': 'Unable to purchase'} 
-            
-        # 5. Take the money from the user
-        await self.economy_service.remove_money_from_user(user_id, item['price'])
 
-        # 6. Process the item via the handler
-        result = await handler.on_purchase(user_id, item)
+        # 5. Process the item via the handler
+        try:
+            result = await handler.on_purchase(user_id, item)
+        except Exception as e:
+            # If handler fails, don't take money
+            print(f"Purchase handler failed: {e}")
+            traceback.print_exc()
+            return {'success': False, 'error': 'Purchase failed'}
+        
+        # 6. Take the money from the user
+        await self.economy_service.remove_money_from_user(user_id, item['price'])
              
         # 7. Log the transaction
         await self.log_item_purchase(user_id, item_id, item['price'])

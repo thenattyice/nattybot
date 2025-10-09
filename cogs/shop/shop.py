@@ -84,6 +84,17 @@ class Shop(commands.Cog):
     @app_commands.command(name="shop", description="Welcome to the NattyShop!")
     async def shop_open(self, interaction: discord.Interaction):
         try:
+            # Get available items first to check if shop is empty
+            items = await self.shop_service.get_available_items(interaction.user.id)
+            
+            # Check if shop is empty
+            if not items:
+                await interaction.response.send_message(
+                    "The shop is currently empty. Check back later!", 
+                    ephemeral=True
+                )
+                return
+            
             # Create view with shop_service
             view = ShopView(interaction.user, self.shop_service)
             await view.shop_setup()

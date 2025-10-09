@@ -24,7 +24,7 @@ class EconomyService:
         
         current_balance = await self.get_balance(target_user_id)
         
-        if current_balance > 0:
+        if current_balance < 0:
             await self.set_user_money(target_user_id, 0)
             
     # Method for removing money from users in DB

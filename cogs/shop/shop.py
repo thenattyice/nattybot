@@ -5,10 +5,12 @@ from discord.ext import commands
 
 # Class for the shop buying dropdown UX
 class ShopView(discord.ui.View):
-    def __init__(self, user: discord.User, shop_service):
+    def __init__(self, user: discord.User, shop_service, bot, purchase_log_channel):
         super().__init__()
         self.user = user
         self.shop_service = shop_service
+        self.bot = bot
+        self.purchase_log_channel = purchase_log_channel
         
     async def shop_setup(self):
         # Get available items for this user
@@ -16,13 +18,15 @@ class ShopView(discord.ui.View):
         
         # Build dropdown
         self.clear_items()
-        select = ShopSelect(items, self.shop_service, self)
+        select = ShopSelect(items, self.shop_service, self, self.bot, self.purchase_log_channel)
         self.add_item(select)
 
 class ShopSelect(discord.ui.Select):
-    def __init__(self, items, shop_service, parent_view):
+    def __init__(self, items, shop_service, parent_view, bot, purchase_log_channel):
         self.shop_service = shop_service
         self.parent_view = parent_view
+        self.bot = bot
+        self.purchase_log_channel = purchase_log_channel
         
         options = [
             discord.SelectOption(
@@ -51,7 +55,20 @@ class ShopSelect(discord.ui.Select):
             await interaction.response.edit_message(view=self.parent_view)
             
             if result['success']:
-                await interaction.followup.send(result['message'], ephemeral=True)
+                # Get item details for logging
+                item = await self.shop_service.item_service.get_item_by_id(item_id)
+                
+                # Log to Discord channel
+                log_channel = self.bot.get_channel(self.purchase_log_channel)
+                if log_channel:
+                    await log_channel.send(
+                        f"📦 **Purchase Log**\n"
+                        f"User: <@{user_id}>\n"
+                        f"Item: {item['name']}\n"
+                        f"Price: {item['price']} NattyCoins"
+                    )
+                
+                await interaction.followup.send("Purchase successful!", ephemeral=True)
             else:
                 await interaction.followup.send(result['error'], ephemeral=True)
             
@@ -95,8 +112,8 @@ class Shop(commands.Cog):
                 )
                 return
             
-            # Create view with shop_service
-            view = ShopView(interaction.user, self.shop_service)
+            # Create view with shop_service, bot, and log channel
+            view = ShopView(interaction.user, self.shop_service, self.bot, self.purchase_log_channel)
             await view.shop_setup()
             
             await interaction.response.send_message(

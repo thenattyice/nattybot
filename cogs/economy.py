@@ -91,8 +91,7 @@ class Economy(commands.Cog):
 
         target_user_id = user.id
         
-        result = await self.economy_service.get_balance(target_user_id)
-        current_balance = result["balance"] if result else 0
+        current_balance = await self.economy_service.get_balance(target_user_id)
         
         if current_balance < amount:
             await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)

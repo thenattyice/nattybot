@@ -58,7 +58,10 @@ class InventoryService:
     async def get_user_inventory(self, user_id: int) -> list[dict]:
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("""
-                SELECT * FROM inventory
-                WHERE user_id = $1;
+                SELECT items.name, inventory.quantity
+                FROM inventory
+                JOIN items ON inventory.item_id = items.item_id
+                WHERE inventory.user_id = $1
+                ORDER BY items.name;
             """, user_id)
         return [dict(row) for row in rows]

@@ -27,7 +27,7 @@ class ItemService:
         return [dict(row) for row in rows]
     
     # Get all items in the shop - no filters
-    async def get_all_active_items(self) -> list[dict]:
+    async def get_all_items(self) -> list[dict]:
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM shop_items;")
         return [dict(row) for row in rows]

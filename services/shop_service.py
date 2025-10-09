@@ -72,7 +72,7 @@ class ShopService():
     async def get_available_items(self, user_id: int) -> list[dict]:
         
         # Get all items
-        all_items = await self.item_service.get_all_items()
+        all_items = await self.item_service.get_all_active_items()
         
         available = []
         for item in all_items:

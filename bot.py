@@ -23,7 +23,9 @@ from services.item_service import ItemService
 from services.inventory_service import InventoryService
 from services.shop_service import ShopService
 from services.economy_service import EconomyService
+from services.mtg_service import MtgService
 from services.handler_registry import get_default_registry
+from services.business_service import BusinessService
 
 load_dotenv() #Load the env file
 
@@ -225,6 +227,8 @@ async def setup_cogs():
     economy_service = EconomyService(client.db_pool)
     item_service = ItemService(client.db_pool)
     inventory_service = InventoryService(client.db_pool)
+    mtg_service = MtgService(client.db_pool, inventory_service, item_service)
+    business_service = BusinessService(client.db_pool, economy_service)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -241,7 +245,7 @@ async def setup_cogs():
     # 4. Load cogs that need services
     # Shop Cogs
     await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service))
-    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT))
+    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT, business_service))
     
     # Economy Cog
     economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
@@ -253,16 +257,16 @@ async def setup_cogs():
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
     # Wordle Cog
-    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
     
     #Game Cogs
-    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT))
-    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
-    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT))
-    await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT))
+    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service))
+    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service))
+    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service))
+    await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
     
     # MTG
-    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL))
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service))
     
     # MC Server Status
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))

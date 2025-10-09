@@ -7,13 +7,13 @@ from discord.ext import commands
 from .utils import bet_validation
 
 class BlackjackView(discord.ui.View):
-    def __init__(self, cog, bot, user_id, bet: int, economy_cog):
+    def __init__(self, cog, bot, user_id, bet: int, economy_service):
         super().__init__(timeout=300)  # 5 min timeout
         self.cog = cog
         self.bot = cog.bot
         self.user_id = user_id
         self.bet = bet
-        self.economy_cog = economy_cog
+        self.economy_service = economy_service
         
     # Only allow the player who started the game to use the buttons
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -29,8 +29,8 @@ class BlackjackView(discord.ui.View):
         
         if outcome == "win":
             winnings = bet * 2
-            await self.economy_cog.add_money_to_user(user_id, winnings)
-            new_balance = await self.economy_cog.get_balance(user_id)
+            await self.economy_service.add_money_to_user(user_id, winnings)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="🎉 You Win!",
                 description=f"You won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
@@ -38,15 +38,15 @@ class BlackjackView(discord.ui.View):
             )
         elif outcome == "push":
             winnings = bet
-            await self.economy_cog.add_money_to_user(user_id, winnings)
-            new_balance = await self.economy_cog.get_balance(user_id)
+            await self.economy_service.add_money_to_user(user_id, winnings)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="You Tied",
                 description=f"You get your bet back.\nBalance: **{new_balance}** NattyCoins",
                 color=discord.Color.red()
             )
         elif outcome == "loss":
-            new_balance = await self.economy_cog.get_balance(user_id)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="😢 You Lose!",
                 description=f"You lost **{self.bet}** NattyCoins.\nNew balance: **{new_balance}** NattyCoins",
@@ -54,8 +54,8 @@ class BlackjackView(discord.ui.View):
             )
         elif outcome == "blackjack":
             winnings = round(bet * 1.5)
-            await self.economy_cog.add_money_to_user(user_id, winnings)
-            new_balance = await self.economy_cog.get_balance(user_id)
+            await self.economy_service.add_money_to_user(user_id, winnings)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="🎉 You got Blackjack!",
                 description=f"You won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
@@ -205,9 +205,10 @@ class Blackjack(commands.Cog):
     
     blackjack_title = "🎮 Natty Games: Blackjack 🎮"
     
-    def __init__(self, bot, guild_object):
+    def __init__(self, bot, guild_object, economy_service):
         self.bot = bot
         self.guild_object = guild_object
+        self.economy_service = economy_service
         
         self.sessions = {}
         
@@ -273,11 +274,10 @@ class Blackjack(commands.Cog):
     @app_commands.command(name="blackjack", description="Bet on a game of blackjack with your NattyCoins")
     async def blackjack(self, interaction: discord.Interaction, bet: int):
         try:
-            economy_cog = self.bot.get_cog('Economy') # Connect to the Economy Cog to use economy functions: get_balance and add_money_to_user
             user_id = interaction.user.id
             
             # Bet validation
-            if not await bet_validation(interaction, economy_cog, user_id, bet):
+            if not await bet_validation(interaction, self.economy_service, user_id, bet):
                 return
             
             # Validate that user isn't already in a session
@@ -291,7 +291,7 @@ class Blackjack(commands.Cog):
             session = self.sessions[user_id]
             
             try:
-                await economy_cog.remove_money_from_user(user_id, bet)
+                await self.economy_service.remove_money_from_user(user_id, bet)
             except:
                 del self.sessions[user_id]
                 raise
@@ -299,7 +299,7 @@ class Blackjack(commands.Cog):
             player_hand = session['player_hand']
             dealer_hand = session['dealer_hand']
 
-            view = BlackjackView(self, self.bot, user_id, bet, economy_cog)
+            view = BlackjackView(self, self.bot, user_id, bet, self.economy_service)
             
             player_hand_value = self.calculate_hand_value(player_hand)
             
@@ -335,4 +335,4 @@ class Blackjack(commands.Cog):
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
         
 async def setup(bot, guild_object):
-    await bot.add_cog(Blackjack(bot, guild_object))
+    await bot.add_cog(Blackjack(bot, guild_object, economy_service))

@@ -6,8 +6,8 @@ from discord import app_commands, Member
 from discord.ext import commands
 
 # Bet validation method
-async def bet_validation(interaction, economy_cog, target_user_id: int, bet: int):
-    current_balance = await economy_cog.get_balance(target_user_id)
+async def bet_validation(interaction, economy_service, user_id: int, bet: int):
+    current_balance = await self.economy_service.get_balance(user_id)
     
     # Bet amount validations
     if bet > current_balance:

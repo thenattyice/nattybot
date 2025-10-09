@@ -7,12 +7,12 @@ from discord.ext import commands
 from .utils import bet_validation
 
 class CoinFlipView(discord.ui.View):
-    def __init__(self, user: discord.User, bet: int, emoji_map, economy_cog, timeout=15):
+    def __init__(self, user: discord.User, bet: int, emoji_map, economy_service, timeout=15):
         super().__init__(timeout=timeout)
         self.user = user
         self.bet = bet
         self.emoji_map = emoji_map
-        self.economy_cog = economy_cog
+        self.economy_service = economy_service
         self.choice = None
         self.result_sent = False
     
@@ -30,16 +30,16 @@ class CoinFlipView(discord.ui.View):
 
         if win:
             winnings = self.bet
-            await self.economy_cog.add_money_to_user(user_id, winnings)
-            new_balance = await self.economy_cog.get_balance(user_id)
+            await self.economy_service.add_money_to_user(user_id, winnings)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="🎉 You Win!",
                 description=f"The bot flipped... {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
                 color=discord.Color.green()
             )
         else:
-            await self.economy_cog.remove_money_from_user(user_id, self.bet)
-            new_balance = await self.economy_cog.get_balance(user_id)
+            await self.economy_service.remove_money_from_user(user_id, self.bet)
+            new_balance = await self.economy_service.get_balance(user_id)
             result = discord.Embed(
                 title="😢 You Lose!",
                 description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} loses to {self.emoji_map[bot_choice]} {bot_choice.capitalize()}...\nYou lost **{self.bet}** NattyCoins.\nNew balance: **{new_balance}** NattyCoins",
@@ -69,16 +69,16 @@ class CoinFlipView(discord.ui.View):
         
         
 class CoinFlip(commands.Cog):
-    def __init__(self, bot, guild_object):
+    def __init__(self, bot, guild_object, economy_service):
         self.bot = bot
         self.guild_object = guild_object
+        self.economy_service = economy_service
         
         self.bot.tree.add_command(self.coinflip, guild=self.guild_object)
         
     # Coin flip game
     @app_commands.command(name="coinflip", description="Bet on a coin flip with your NattyCoins")
     async def coinflip(self, interaction: discord.Interaction, bet: int):
-        economy_cog = self.bot.get_cog('Economy') # Connect to the Economy Cog to use economy functions: get_balance and add_money_to_user
         
         emoji_map = {
             'heads': '👤',
@@ -88,7 +88,7 @@ class CoinFlip(commands.Cog):
         user_id = interaction.user.id
         
         # Bet validation
-        if not await bet_validation(interaction, economy_cog, user_id, bet):
+        if not await bet_validation(interaction, self.economy_service, user_id, bet):
                 return
             
         # Prompt the user to pick
@@ -99,8 +99,8 @@ class CoinFlip(commands.Cog):
         )
         
         user = interaction.user
-        view = CoinFlipView(user, bet, emoji_map, economy_cog)
+        view = CoinFlipView(user, bet, emoji_map, self.economy_service)
         await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
         
-async def setup(bot, guild_object):
-    await bot.add_cog(CoinFlip(bot, guild_object))
+async def setup(bot, guild_object, economy_service):
+    await bot.add_cog(CoinFlip(bot, guild_object, economy_service))

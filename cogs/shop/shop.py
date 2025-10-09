@@ -157,7 +157,7 @@ class Shop(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-async def setup(bot, guild_object, allowed_roles):
+async def setup(bot, guild_object, allowed_roles, shop_service, inventory_service):
     await bot.add_cog(Shop(
         bot, 
         guild_object, 

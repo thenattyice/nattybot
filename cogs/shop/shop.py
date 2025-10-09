@@ -166,26 +166,29 @@ class Shop(commands.Cog):
             
     @app_commands.command(name="inventory", description="View your inventory")
     async def show_inventory(self, interaction: discord.Interaction):
-        user_id = interaction.user.id
-        inventory_list = await self.inventory_service.get_user_inventory(user_id)
-        
-        if not inventory_list:
-            await interaction.response.send_message(
-                "Your inventory is empty.", ephemeral=True
+        try:
+            user_id = interaction.user.id
+            inventory_list = await self.inventory_service.get_user_inventory(user_id)
+            
+            if not inventory_list:
+                await interaction.response.send_message(
+                    "Your inventory is empty.", ephemeral=True
+                )
+                return
+            
+            description = '\n'.join(
+                f"{row['name']}: {row['quantity']}" for row in inventory_list
             )
-            return
-        
-        description = '\n'.join(
-            f"{row['name']}: {row['quantity']}" for row in inventory_list
-        )
-        
-        embed = discord.Embed(
-            title="Your Inventory",
-            description=description,
-            color=discord.Color.blue()
-        )
-        
-        await interaction.response.send_message(embed=embed)
+            
+            embed = discord.Embed(
+                title="Your Inventory",
+                description=description,
+                color=discord.Color.blue()
+            )
+            
+            await interaction.response.send_message(embed=embed)
+        except Exception:
+            traceback.print_exc()
 
 async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
     await bot.add_cog(Shop(

@@ -77,7 +77,7 @@ class MtgService:
             owns_packs = await conn.fetchrow("""
                                             SELECT s.name
                                             FROM inventory i
-                                            JOIN shop s ON s.id = i.item_id
+                                            JOIN shop_items s ON s.id = i.item_id
                                             WHERE i.user_id = $1
                                             AND s.name = 'MTG Booster Pack'
                                             AND i.quantity > 0;

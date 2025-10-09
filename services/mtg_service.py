@@ -35,7 +35,11 @@ class MtgService:
                     ON CONFLICT (set_code) DO NOTHING;
                 """, set_code, set_name)
             
-            return {'success': True, 'message': 'Set added successfully!'}
+            # status will look like "INSERT 0 1" or "INSERT 0 0"
+            if status.endswith("1"):
+                return {'success': True, 'message': f"Set `{set_name}` ({set_code}) added successfully!"}
+            else:
+                return {'success': False, 'error': f"Set `{set_name}` ({set_code}) already exists."}
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}

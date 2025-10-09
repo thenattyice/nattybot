@@ -125,10 +125,12 @@ class BuildBoosterPack(commands.Cog):
 
         try:
             await interaction.response.defer(thinking=True, ephemeral=True)
-            add_set = await self.mtg_service.add_set_to_db(set_code)
-            
-            if add_set['success']:
-                await interaction.response.send_message(f"{add_set['message']}", ephemeral=True)
+            result = await self.mtg_service.add_set_to_db(set_code)
+
+            if result['success']:
+                await interaction.followup.send(result['message'], ephemeral=True)
+            else:
+                await interaction.followup.send(result['error'], ephemeral=True)
         except Exception as e:
             traceback.print_exc()
             await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)

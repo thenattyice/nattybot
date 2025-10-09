@@ -168,8 +168,8 @@ class Wordle(commands.Cog):
             if message.channel.name != 'wordle': # Filter for the 'wordle' channel
                 return
             
-            if message.author.id != self.wordle_app_id: # Filter for only messages by the Wordle app
-                return
+            #if message.author.id != self.wordle_app_id: # Filter for only messages by the Wordle app
+                #return
             
             if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
                 return
@@ -270,6 +270,8 @@ class Wordle(commands.Cog):
                 if not matched_user_ids:
                     print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")
 
+            economy_cog = self.bot.get_cog("Economy")
+            
             for user_id, score in user_rewards.items():
                 reward = self.calculate_wordle_reward(score)
                 await economy_service.add_money_to_user(user_id, reward)
@@ -297,7 +299,7 @@ class Wordle(commands.Cog):
             await message.channel.send(embed=championship_embed)
             
             # Display the NattyCoin leaderboard
-            leaderboard_embed = await economy_cog.leaderboard_pull()
+            leaderboard_embed = await economy_cog.build_leaderboard()
             await message.channel.send(embed=leaderboard_embed)
 
             await self.bot.process_commands(message)

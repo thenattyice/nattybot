@@ -47,7 +47,7 @@ class EconomyService:
         return [dict(row) for row in rows]
     
     # Bet validation method
-    async def bet_validation(target_user_id: int, bet: int) -> bool:
+    async def bet_validation(self, target_user_id: int, bet: int) -> bool:
         current_balance = await self.get_balance(target_user_id)
         
         # Bet amount validations

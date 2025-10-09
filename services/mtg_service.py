@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+from typing import Tuple, List, Dict
 
 class MtgService:
     def __init__(self, db_pool, inventory_service, item_service):

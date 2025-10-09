@@ -122,7 +122,7 @@ class Shop(commands.Cog):
             import json
             metadata_dict = json.loads(metadata)
             
-            await self.shop_service.create_item(
+            await self.item_service.add_shop_item(
                 name, description, price, item_type, is_active, metadata_dict
             )
             

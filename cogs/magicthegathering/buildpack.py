@@ -20,7 +20,7 @@ class OpenPackView(discord.ui.View):
         
         # Builds the dropdown
         self.clear_items()
-        select = PackSelect(sets, self.parent_cog, self)
+        select = PackSelect(sets, self.parent_cog, self, self.mtg_service)
         self.add_item(select)
         
 class PackSelect(discord.ui.Select):
@@ -147,7 +147,7 @@ class BuildBoosterPack(commands.Cog):
                     await interaction.response.send_message("You have no packs to open.", ephemeral=True)
                     return
             
-            view = OpenPackView(interaction.user, self)
+            view = OpenPackView(interaction.user, self, self.mtg_service)
             await view.open_pack_setup()
             await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
         except Exception:

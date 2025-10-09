@@ -68,13 +68,14 @@ class ShopSelect(discord.ui.Select):
                 )
 
 class Shop(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service):
+    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
         self.purchase_log_channel = purchase_log_channel
         self.shop_service = shop_service
         self.inventory_service = inventory_service
+        self.item_service = item_service
         
         self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
         self.bot.tree.add_command(self.shop_add_item, guild=self.guild_object)
@@ -158,12 +159,13 @@ class Shop(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service):
+async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
     await bot.add_cog(Shop(
         bot, 
         guild_object, 
         allowed_roles,
         purchase_log_channel,
         shop_service,
-        inventory_service
+        inventory_service,
+        item_service
     ))

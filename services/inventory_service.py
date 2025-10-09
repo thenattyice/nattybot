@@ -25,28 +25,35 @@ class InventoryService:
     # Add item to inventory quantity. Handles quantity becoming zero for use in remove quantity method
     async def add_item_to_inventory(self, user_id: int, item_id: int, quantity: int):
         async with self.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO inventory (user_id, item_id, quantity)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id, item_id)
-                DO UPDATE SET quantity = inventory.quantity + $3;
-            """, user_id, item_id, quantity)
-            
-            # Get updated quantity - must be inside the same connection block
+            # Check if the item exists in inventory
             result = await conn.fetchrow("""
                 SELECT quantity FROM inventory
                 WHERE user_id = $1 AND item_id = $2
             """, user_id, item_id)
             
             current_quantity = result['quantity'] if result else 0
+            new_quantity = current_quantity + quantity
             
-            # Delete if quantity is zero or negative
-            if current_quantity <= 0:
+            if new_quantity <= 0:
+                # Delete if quantity would be zero or negative
                 await conn.execute("""
                     DELETE FROM inventory
-                    WHERE user_id = $1
-                    AND item_id = $2 
+                    WHERE user_id = $1 AND item_id = $2 
                 """, user_id, item_id)
+            elif result:
+                # Update existing record
+                await conn.execute("""
+                    UPDATE inventory
+                    SET quantity = quantity + $3
+                    WHERE user_id = $1 AND item_id = $2
+                """, user_id, item_id, quantity)
+            else:
+                # Insert new record (only if quantity is positive)
+                if quantity > 0:
+                    await conn.execute("""
+                        INSERT INTO inventory (user_id, item_id, quantity)
+                        VALUES ($1, $2, $3)
+                    """, user_id, item_id, quantity)
             
     # Remove item from inventory quantity
     async def remove_item_from_inventory(self, user_id: int, item_id: int, quantity: int):

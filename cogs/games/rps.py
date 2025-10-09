@@ -4,7 +4,6 @@ import asyncio
 import traceback
 from discord import app_commands, Member
 from discord.ext import commands
-from .utils import bet_validation
 
 class RPSView(discord.ui.View):
     def __init__(self, user: discord.User, bet: int, economy_service, emoji_map, wins_against, timeout=15):
@@ -106,7 +105,7 @@ class RockPaperScissors(commands.Cog):
         
         user_id = interaction.user.id # Identify and store the user who ran the command
         try:
-            if not await bet_validation(interaction, self.economy_service, user_id, bet):
+            if not await self.economy_service.bet_validation(user_id, bet):
                 return
             
             # Prompt the user to pick

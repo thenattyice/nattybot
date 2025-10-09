@@ -4,7 +4,6 @@ import asyncio
 import traceback
 from discord import app_commands, Member
 from discord.ext import commands
-from .utils import bet_validation
 
 class CoinFlipView(discord.ui.View):
     def __init__(self, user: discord.User, bet: int, emoji_map, economy_service, timeout=15):
@@ -88,8 +87,8 @@ class CoinFlip(commands.Cog):
         user_id = interaction.user.id
         
         # Bet validation
-        if not await bet_validation(interaction, self.economy_service, user_id, bet):
-                return
+        if not await self.economy_service.bet_validation(user_id, bet):
+            return
             
         # Prompt the user to pick
         prompt_embed = discord.Embed(

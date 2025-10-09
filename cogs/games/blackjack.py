@@ -4,7 +4,6 @@ import asyncio
 import traceback
 from discord import app_commands, Member
 from discord.ext import commands
-from .utils import bet_validation
 
 class BlackjackView(discord.ui.View):
     def __init__(self, cog, bot, user_id, bet: int, economy_service):
@@ -277,7 +276,7 @@ class Blackjack(commands.Cog):
             user_id = interaction.user.id
             
             # Bet validation
-            if not await bet_validation(interaction, self.economy_service, user_id, bet):
+            if not await self.economy_service.bet_validation(user_id, bet):
                 return
             
             # Validate that user isn't already in a session

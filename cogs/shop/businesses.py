@@ -54,7 +54,7 @@ class Businesses(commands.Cog):
         await self.bot.wait_until_ready()
         print("[DEBUG] daily_payout loop starting")
         
-async def setup(bot, dailypayout_log_channel, guild_object):
-    cog = Businesses(bot, dailypayout_log_channel, guild_object)          
+async def setup(bot, dailypayout_log_channel, guild_object, business_service):
+    cog = Businesses(bot, dailypayout_log_channel, guild_object, business_service)          
     await bot.add_cog(cog)         
     cog.daily_payout.start()

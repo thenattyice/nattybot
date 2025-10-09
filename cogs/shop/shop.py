@@ -162,6 +162,6 @@ async def setup(bot, guild_object, allowed_roles, shop_service, inventory_servic
         bot, 
         guild_object, 
         allowed_roles,
-        bot.shop_service,
-        bot.inventory_service
+        shop_service,
+        inventory_service
     ))

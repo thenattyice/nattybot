@@ -81,7 +81,7 @@ class MtgService:
                                             WHERE i.user_id = $1
                                             AND s.name = 'MTG Booster Pack'
                                             AND i.quantity > 0;
-                                             """, target_user_id)
+                                             """, user_id)
         return owns_packs is not None
     
     # Remove the pack from user

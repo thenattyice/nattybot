@@ -146,6 +146,15 @@ class BuildBoosterPack(commands.Cog):
             if not users_packs:
                     await interaction.response.send_message("You have no packs to open.", ephemeral=True)
                     return
+                
+            # Check if there are any sets available
+            sets = await self.mtg_service.get_all_sets()
+            if not sets:
+                await interaction.response.send_message(
+                    "No MTG sets are currently available. Please contact an admin.", 
+                    ephemeral=True
+                )
+                return
             
             view = OpenPackView(interaction.user, self, self.mtg_service)
             await view.open_pack_setup()

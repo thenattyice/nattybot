@@ -23,7 +23,7 @@ class BusinessService():
             rows = await conn.fetch("""
             SELECT i.user_id, s.name, (s.metadata->>'daily_payout')::int AS daily_payout
             FROM inventory i
-            JOIN item_shop s ON s.id = i.item_id 
+            JOIN shop_items s ON s.id = i.item_id 
             WHERE s.item_type = 'business'
             AND s.metadata->>'daily_payout' IS NOT NULL
             AND (s.metadata->>'daily_payout')::int > 0

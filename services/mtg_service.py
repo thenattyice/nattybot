@@ -1,5 +1,7 @@
 import aiohttp
 import asyncio
+import random
+import traceback
 from typing import Tuple, List, Dict
 
 class MtgService:
@@ -10,7 +12,7 @@ class MtgService:
     
     # Get all cards from a set
     async def get_cards_from_set(self, set_code: str):
-        url= f"https://api.scryfall.com/cards/search?q=set:{set_code}"
+        url = f"https://api.scryfall.com/cards/search?q=set:{set_code}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
@@ -33,7 +35,7 @@ class MtgService:
                     ON CONFLICT (set_code) DO NOTHING;
                 """, set_code, set_name)
             
-            return {'success': True, 'error': 'Set added successfully!'}
+            return {'success': True, 'message': 'Set added successfully!'}
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}
@@ -42,17 +44,17 @@ class MtgService:
     async def get_all_sets(self):
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT id, set_name, set_code FROM mtg_sets;")
-        return rows
+        return [dict(row) for row in rows]  # Convert to list of dicts
     
     # Get specific set by code
     async def get_set_by_code(self, set_code: str):
         async with self.db_pool.acquire() as conn:
             row = await conn.fetchrow("SELECT set_name FROM mtg_sets WHERE set_code = $1;", set_code)
-        return row
+        return dict(row) if row else None
     
     # Get price of cards 
-    async def get_card_price(self, card):
-        is_foil = random.random() < (1/6) # 1 in 6 chance for a foil card
+    def get_card_price(self, card):  # Not async - no await needed
+        is_foil = random.random() < (1/6)  # 1 in 6 chance for a foil card
         
         def parse_price(price_str):
             float_price = float(price_str)
@@ -75,13 +77,13 @@ class MtgService:
     async def owns_packs_validation(self, user_id: int) -> bool:
         async with self.db_pool.acquire() as conn:
             owns_packs = await conn.fetchrow("""
-                                            SELECT s.name
-                                            FROM inventory i
-                                            JOIN shop_items s ON s.id = i.item_id
-                                            WHERE i.user_id = $1
-                                            AND s.name = 'MTG Booster Pack'
-                                            AND i.quantity > 0;
-                                             """, user_id)
+                SELECT s.name
+                FROM inventory i
+                JOIN shop_items s ON s.id = i.item_id
+                WHERE i.user_id = $1
+                AND s.name = 'MTG Booster Pack'
+                AND i.quantity > 0;
+            """, user_id)
         return owns_packs is not None
     
     # Remove the pack from user
@@ -90,7 +92,7 @@ class MtgService:
         
         pack_item_id = item['id']
         
-        await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id)
+        await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id, 1)
     
     # Open a pack and pay the user    
     async def open_pack(self, set_code: str) -> Tuple[List[Dict], float]:
@@ -98,9 +100,9 @@ class MtgService:
         
         commons = [card for card in cards if card["rarity"] == "common"]
         uncommons = [card for card in cards if card["rarity"] == "uncommon"]
-        mythics_rares = [card for card in cards if card["rarity"] in ["rare","mythic"]]
+        mythics_rares = [card for card in cards if card["rarity"] in ["rare", "mythic"]]
         
-        pack= []
+        pack = []
         
         pack.extend(random.sample(commons, 9))
         pack.extend(random.sample(uncommons, 3))
@@ -110,7 +112,7 @@ class MtgService:
         pack_with_prices = []
         
         for card in pack:
-            price, foil = self.get_card_price(card)
+            price, foil = self.get_card_price(card)  # No await - it's not async
             card_info = {
                 "name": card["name"],
                 "price": price,

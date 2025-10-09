@@ -47,7 +47,7 @@ class ShopService():
         result = await handler.on_purchase(user_id, item)
              
         # 7. Log the transaction
-        await self.log_item_purchase(user_id, item_id)
+        await self.log_item_purchase(user_id, item_id, item['price'])
         
         return {"success": True, "result": result}
         

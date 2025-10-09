@@ -334,5 +334,5 @@ class Blackjack(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
         
-async def setup(bot, guild_object):
+async def setup(bot, guild_object, economy_service):
     await bot.add_cog(Blackjack(bot, guild_object, economy_service))

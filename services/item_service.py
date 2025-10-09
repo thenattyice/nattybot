@@ -1,5 +1,6 @@
-# Item Service Layer
+import json
 
+# Item Service Layer
 class ItemService:
     def __init__(self, db_pool):
         self.db_pool = db_pool
@@ -41,12 +42,18 @@ class ItemService:
             metadata = {}
         
         async with self.db_pool.acquire() as conn:
-            row = await conn.execute("""
+            # Convert dict to JSON string
+            metadata_json = json.dumps(metadata)
+            
+            row = await conn.fetchrow("""
                 INSERT INTO shop_items (name, description, price, item_type, is_active, metadata)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (name) DO NOTHING
-            """, name, description, price, item_type, is_active, metadata)
-            return dict(row)
+                RETURNING *;
+            """, name, description, price, item_type, is_active, metadata_json)
+            
+            # Return the row as a dict, or empty dict if conflict occurred
+            return dict(row) if row else {}
         
     # Log items as they're used
     async def log_item_usage(self, user_id: int, item_id: int, usage_type: str, result_data: dict | None = None):

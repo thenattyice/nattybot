@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord import Member
 from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
-from cogs.economy import Economy
+from cogs.economy import setup as setup_economy
 from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
 from cogs.shop.shop import setup as setup_shop
@@ -248,9 +248,7 @@ async def setup_cogs():
     await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT, business_service))
     
     # Economy Cog
-    economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
-    await load_cog("Economy", client.add_cog(economy_cog))
-    client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
+    await load_cog("Economy", setup_economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, economy_service))
     
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)

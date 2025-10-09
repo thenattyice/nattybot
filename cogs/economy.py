@@ -4,10 +4,11 @@ from discord import app_commands, Member
 from discord.ext import commands
 
 class Economy(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles):
+    def __init__(self, bot, guild_object, allowed_roles, economy_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
+        self.economy_service = economy_service
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.balance_check, guild=self.guild_object)
@@ -16,6 +17,8 @@ class Economy(commands.Cog):
         self.bot.tree.add_command(self.leaderboard, guild=self.guild_object)
     
     
+    async def build_leaderboard(self):
+        rows = await self.economy_service.get_leaderboard()
         
         description = '' # Init the field
         for row in rows:
@@ -52,7 +55,7 @@ class Economy(commands.Cog):
     async def balance_check(self, interaction: discord.Interaction):
         user_id = interaction.user.id
 
-        balance = await self.get_balance(user_id)
+        balance = await self.economy_service.get_balance(user_id)
         
         await interaction.response.send_message(f"Your balance is {balance} NattyCoins.", ephemeral=True)
         
@@ -70,7 +73,7 @@ class Economy(commands.Cog):
 
         target_user_id = user.id
         
-        await self.add_money_to_user(target_user_id, amount)
+        await self.economy_service.add_money_to_user(target_user_id, amount)
 
         await interaction.response.send_message(f"Added {amount} coins to {user.mention}'s balance.", ephemeral=True)
         
@@ -88,15 +91,14 @@ class Economy(commands.Cog):
 
         target_user_id = user.id
         
-        async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("SELECT balance FROM users WHERE user_id = $1", target_user_id)
-            current_balance = result["balance"] if result else 0
-            
-            if current_balance < amount:
-                await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
-                return
+        result = await self.economy_service.get_balance(target_user_id)
+        current_balance = result["balance"] if result else 0
+        
+        if current_balance < amount:
+            await interaction.response.send_message(f"The balance removal cannot be larger than the user's current balance. {user.mention}'s current balance: {current_balance} NattyCoins.", ephemeral=True)
+            return
 
-        await self.remove_money_from_user(target_user_id, amount)
+        await self.economy_service.remove_money_from_user(target_user_id, amount)
 
         await interaction.response.send_message(f"Removed {amount} coins from {user.mention}'s balance.", ephemeral=True)
         
@@ -105,10 +107,13 @@ class Economy(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:
-            leaderboard_embed = await self.leaderboard_pull()
+            leaderboard_embed = await self.build_leaderboard()
                 
             await interaction.followup.send(embed=leaderboard_embed)
             
         except Exception as e:
             traceback.print_exc()
             await interaction.followup.send("An error occurred while fetching the leaderboard.", ephemeral=True)
+            
+async def setup(bot, guild_object, allowed_roles, economy_service):
+    await bot.add_cog(Economy(bot, guild_object, allowed_roles, economy_service))

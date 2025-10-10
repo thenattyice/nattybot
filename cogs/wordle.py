@@ -8,10 +8,11 @@ from discord.ext import commands, tasks
 
 eastern = ZoneInfo("America/New_York")
 class Wordle(commands.Cog):
-    def __init__(self, bot, guild_object, wordle_app_id):
+    def __init__(self, bot, guild_object, wordle_app_id, economy_service):
         self.bot = bot
         self.guild_object = guild_object
         self.wordle_app_id = wordle_app_id
+        self.economy_service = economy_service
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
@@ -164,7 +165,6 @@ class Wordle(commands.Cog):
             if not isinstance(message.channel, TextChannel):
                 return
             
-            economy_cog = self.bot.get_cog("Economy")
             if message.channel.name != 'wordle': # Filter for the 'wordle' channel
                 return
             
@@ -270,9 +270,11 @@ class Wordle(commands.Cog):
                 if not matched_user_ids:
                     print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")
 
+            economy_cog = self.bot.get_cog("Economy")
+            
             for user_id, score in user_rewards.items():
                 reward = self.calculate_wordle_reward(score)
-                await economy_cog.add_money_to_user(user_id, reward)
+                await self.economy_service.add_money_to_user(user_id, reward)
                 
                 points = self.calculate_wordle_pts(score)
                 await self.add_wordle_pts_to_user(user_id, points)
@@ -297,7 +299,7 @@ class Wordle(commands.Cog):
             await message.channel.send(embed=championship_embed)
             
             # Display the NattyCoin leaderboard
-            leaderboard_embed = await economy_cog.leaderboard_pull()
+            leaderboard_embed = await economy_cog.build_leaderboard()
             await message.channel.send(embed=leaderboard_embed)
 
             await self.bot.process_commands(message)
@@ -323,7 +325,7 @@ class Wordle(commands.Cog):
         championship_embed = await self.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
-async def setup(bot, guild_object, wordle_app_id):
-    cog = Wordle(bot, guild_object, wordle_app_id)          
+async def setup(bot, guild_object, wordle_app_id, economy_service):
+    cog = Wordle(bot, guild_object, wordle_app_id, economy_service)          
     await bot.add_cog(cog) 
     cog.monthly_wordle_champ_process.start()

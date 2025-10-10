@@ -10,9 +10,10 @@ from discord.ext import commands, tasks
 eastern = ZoneInfo("America/New_York")
 
 class FreeDailySpin(commands.Cog):
-    def __init__(self, bot, guild_object):
+    def __init__(self, bot, guild_object, economy_service):
         self.bot = bot
         self.guild_object = guild_object
+        self.economy_service = economy_service
         
         self.bot.tree.add_command(self.daily_spin, guild=self.guild_object) # Command reg
         
@@ -65,7 +66,6 @@ class FreeDailySpin(commands.Cog):
     # Wheel spin game command 
     @app_commands.command(name="dailyspin", description="Take 1 free spin on the Natty Wheel for a random amount of NattyCoins between 1 and 20")
     async def daily_spin(self, interaction: discord.Interaction):
-        economy_cog = self.bot.get_cog('Economy') # Connect to the Economy Cog to use economy functions: get_balance and add_money_to_user
         
         user_id = interaction.user.id
         
@@ -120,8 +120,8 @@ class FreeDailySpin(commands.Cog):
                 current_index = (current_index + 1) % len(wheel_values)
             
             # Award coins and check new balance
-            await economy_cog.add_money_to_user(user_id, result)
-            new_balance = await economy_cog.get_balance(user_id)
+            await self.economy_service.add_money_to_user(user_id, result)
+            new_balance = await self.economy_service.get_balance(user_id)
                 
             embed.description = f"🎉The wheel lands on: **{result}**\nYou won **{result}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins"
             embed.color = discord.Color.green()
@@ -139,7 +139,7 @@ class FreeDailySpin(commands.Cog):
                 traceback.print_exc()
                 
 # Cog setup method
-async def setup(bot, guild_object):
-    cog = FreeDailySpin(bot, guild_object)
+async def setup(bot, guild_object, economy_service):
+    cog = FreeDailySpin(bot, guild_object, economy_service)
     await bot.add_cog(cog) 
     cog.nightly_spin_status_reset.start()

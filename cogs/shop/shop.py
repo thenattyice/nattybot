@@ -5,39 +5,34 @@ from discord.ext import commands
 
 # Class for the shop buying dropdown UX
 class ShopView(discord.ui.View):
-    def __init__(self, user: discord.User, parent_cog):
+    def __init__(self, user: discord.User, shop_service, bot, purchase_log_channel):
         super().__init__()
         self.user = user
-        self.parent_cog = parent_cog
+        self.shop_service = shop_service
+        self.bot = bot
+        self.purchase_log_channel = purchase_log_channel
         
     async def shop_setup(self):
-        # Get all the shop items
-        items = await self.parent_cog.get_all_shop_items()
+        # Get available items for this user
+        items = await self.shop_service.get_available_items(self.user.id)
         
-        # Filters out the dropdown so that owned business don't show up
-        business_cog = self.parent_cog.bot.get_cog("Businesses")
-        if business_cog:
-            owned_businesses = await business_cog.get_specific_users_businesses(self.user.id)
-            owned_ids = {row["item_id"] for row in owned_businesses}
-            
-            items = [
-                item for item in items if not (item["id"] in owned_ids and item.get("is_business"))
-            ]
-        
-        # Builds the dropdown
+        # Build dropdown
         self.clear_items()
-        select = ShopSelect(items, self.parent_cog, self)
+        select = ShopSelect(items, self.shop_service, self, self.bot, self.purchase_log_channel)
         self.add_item(select)
-        
+
 class ShopSelect(discord.ui.Select):
-    def __init__(self, items, parent_cog, parent_view):
-        self.parent_cog = parent_cog
+    def __init__(self, items, shop_service, parent_view, bot, purchase_log_channel):
+        self.shop_service = shop_service
         self.parent_view = parent_view
+        self.bot = bot
+        self.purchase_log_channel = purchase_log_channel
+        
         options = [
             discord.SelectOption(
                 label=item['name'],
                 description=f"Price: {item['price']} coins",
-                value=str(item['id'])  # value must be a string
+                value=str(item['id'])
             )
             for item in items
         ]
@@ -48,216 +43,160 @@ class ShopSelect(discord.ui.Select):
             item_id = int(self.values[0])
             user_id = interaction.user.id
             
-            # Call the process_transaction method to hndle the purchase from the select
-            item_row = await self.parent_cog.get_shop_item_by_id(item_id)
-            price = item_row['price']
+            # Call shop service directly
+            result = await self.shop_service.process_transaction(user_id, item_id)
             
-            success = await self.parent_cog.process_transaction(interaction, user_id, item_id, price)
-            
-            # Disable the dropdown after selection
+            # Disable dropdown
             self.disabled = True
-            self.parent_view.clear_items() # Remove all existing items
-            self.parent_view.add_item(self) # Add back the now-disabled version
+            self.parent_view.clear_items()
+            self.parent_view.add_item(self)
             
-            # Feedback message to replace the dropdown
-            content = (
-                f"You bought **{item_row['name']}** for {price} NattyCoins"
-                if success else
-                    "You don't have enough NattyCoins for that purchase."
-            )
-            
+            # Send response
             await interaction.response.edit_message(view=self.parent_view)
-            await interaction.followup.send(content=content, ephemeral=True)
+            
+            if result['success']:
+                # Get item details for logging
+                item = await self.shop_service.item_service.get_item_by_id(item_id)
+                
+                # Log to Discord channel
+                log_channel = self.bot.get_channel(self.purchase_log_channel)
+                if log_channel:
+                    await log_channel.send(
+                        f"📦 **Purchase Log**\n"
+                        f"User: <@{user_id}>\n"
+                        f"Item: {item['name']}\n"
+                        f"Price: {item['price']} NattyCoins"
+                    )
+                
+                await interaction.followup.send("Purchase successful!", ephemeral=True)
+            else:
+                await interaction.followup.send(result['error'], ephemeral=True)
             
         except Exception as e:
             print("Error in ShopSelect callback:")
             traceback.print_exc()
             try:
-                await interaction.response.send_message("An error occurred during purchase.", ephemeral=True)
+                await interaction.response.send_message(
+                    "An error occurred during purchase.", ephemeral=True
+                )
             except discord.InteractionResponded:
-                await interaction.followup.send("An error occurred during purchase.", ephemeral=True)
-# Class for all of the Shop commands
+                await interaction.followup.send(
+                    "An error occurred during purchase.", ephemeral=True
+                )
+
 class Shop(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel):
+    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
         self.purchase_log_channel = purchase_log_channel
+        self.shop_service = shop_service
+        self.inventory_service = inventory_service
+        self.item_service = item_service
         
-        # Register commands to my specific guild/server
         self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
         self.bot.tree.add_command(self.shop_add_item, guild=self.guild_object)
         self.bot.tree.add_command(self.show_inventory, guild=self.guild_object)
     
-    # Add an item to the shop table for purchase in the shop
-    async def add_item_to_shop(self,
-                               interaction: discord.Interaction,
-                               item_name: str,
-                               description: str,
-                               price: int,
-                               is_business: bool,
-                               daily_payout: int | None):
-        async with self.bot.db_pool.acquire() as conn:
-            status = await conn.execute("""
-                INSERT INTO shop (name, description, price, is_business, daily_payout)
-                VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (name) DO NOTHING
-            """, item_name, description, price, is_business, daily_payout)
-            
-            if status.endswith("1"):
-                await interaction.response.send_message(f"{item_name} successfully added to the shop!")
-            else:
-                await interaction.response.send_message(f"{item_name} already exists in the shop.")
-        
-    # Directly add an item to a user's inventory
-    async def add_item_to_user(self, target_user_id: int, item_id: int):
-        async with self.bot.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO inventory (user_id, item_id, quantity, is_business)
-                SELECT $1, s.id, 1, s.is_business
-                FROM shop s
-                WHERE s.id = $2
-                ON CONFLICT (user_id, item_id)
-                DO UPDATE SET quantity = inventory.quantity + 1;
-            """, target_user_id, item_id)
-    
-    # Get an item name by the given ID
-    async def get_item_name_by_id(self, item_id: int) -> str | None:
-        async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("""
-                SELECT name FROM shop WHERE id = $1;
-            """, item_id)
-
-        return result["name"] if result else None
-    
-    # Get all items for use in the shop dropdown
-    async def get_all_shop_items(self):
-        async with self.bot.db_pool.acquire() as conn:
-            rows = await conn.fetch("SELECT id, name, price, is_business FROM shop;")
-        return rows
-    
-    # Get all details in a row for a specific item
-    async def get_shop_item_by_id(self, item_id: int) -> dict | None:
-        async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("""
-                SELECT * FROM shop WHERE id = $1;
-            """, item_id)
-        return dict(result) if result else None
-        
-    # Function to log all of the purchases to DB and text channel
-    async def log_item_purchase(self, target_user_id: int, item_id: int):
-        async with self.bot.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO purchases (user_id, item_id, quantity)
-                VALUES ($1, $2, $3);
-            """, target_user_id, item_id, 1)
-            
-        item_name = await self.get_item_name_by_id(item_id) # Get the item ID
-        
-        purchase_embed = discord.Embed(
-            title="NattyShop Purchase",
-            description=f"<@{target_user_id}> purchased {item_name}!",
-            color=discord.Color.green()
-        )
-        
-        guild = self.bot.get_guild(self.guild_object.id)
-        log_channel = guild.get_channel(self.purchase_log_channel)
-        await log_channel.send(embed=purchase_embed)
-    
-    async def process_transaction(self, interaction, target_user_id: int, item_id: int, price: int) -> bool:
-        economy_cog = self.bot.get_cog("Economy")
-        balance = await economy_cog.get_balance(target_user_id)
-        
-        # Balance check
-        if balance < price:
-            await interaction.response.send_message("You do not have enough NattyCoins to purchase this item.", ephemeral=True)
-            return False
-        else:
-            await economy_cog.remove_money_from_user(target_user_id, price)
-            await self.add_item_to_user(target_user_id, item_id)
-            await self.log_item_purchase(target_user_id, item_id)
-            return True
-    
-    # Method to pull a player's inventory
-    async def get_inventory(self, target_user_id: int):
-        async with self.bot.db_pool.acquire() as conn:
-            rows = await conn.fetch("""
-                SELECT s.name, i.quantity
-                FROM inventory i
-                JOIN shop s ON
-                s.id = i.item_id
-                WHERE i.user_id = $1
-                ORDER BY i.quantity DESC
-            """, target_user_id)
-        return rows
-            
-    # Command for presenting the shop
-    @app_commands.command(name="shop", description="Welcome to the NattyShop! Spend your NattyCoins wisely.")
+    @app_commands.command(name="shop", description="Welcome to the NattyShop!")
     async def shop_open(self, interaction: discord.Interaction):
         try:
-            print("[DEBUG] /buy command invoked")
-
-            items = await self.get_all_shop_items()
-            print(f"[DEBUG] Retrieved {len(items)} items")
-
+            # Get available items first to check if shop is empty
+            items = await self.shop_service.get_available_items(interaction.user.id)
+            
+            # Check if shop is empty
             if not items:
-                await interaction.response.send_message("The shop is currently empty.", ephemeral=True)
+                await interaction.response.send_message(
+                    "The shop is currently empty. Check back later!", 
+                    ephemeral=True
+                )
                 return
-
-            view = ShopView(interaction.user, self)
+            
+            # Create view with shop_service, bot, and log channel
+            view = ShopView(interaction.user, self.shop_service, self.bot, self.purchase_log_channel)
             await view.shop_setup()
-            await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
+            
+            await interaction.response.send_message(
+                "Select an item to purchase:", view=view, ephemeral=True
+            )
         except Exception:
             traceback.print_exc()
-            try:
-                await interaction.response.send_message("Something went wrong showing the shop.", ephemeral=True)
-            except discord.InteractionResponded:
-                await interaction.followup.send("Something went wrong showing the shop.", ephemeral=True)
+            await interaction.response.send_message(
+                "Something went wrong.", ephemeral=True
+            )
         
-    # Command for dding an item to the shop
-    @app_commands.command(name="additem", description="Add an item to the NattyShop")
+    @app_commands.command(name="additem", description="Add an item to the shop")
+    @app_commands.choices(item_type=[
+        app_commands.Choice(name="Consumable", value="consumable"),
+        app_commands.Choice(name="Bundle", value="bundle"),
+        app_commands.Choice(name="Business", value="business")
+    ])
     async def shop_add_item(self,
                             interaction: discord.Interaction,
-                            item_name: str,
+                            name: str,
                             description: str,
                             price: int,
-                            daily_payout: int | None = None):
+                            item_type: str,
+                            is_active: bool = True,
+                            metadata: str = "{}"):  # JSON string
+        # Check permissions
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
-            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            await interaction.response.send_message(
+                "You don't have permission.", ephemeral=True
+            )
             return
         
         try:
-            is_business = daily_payout is not None and daily_payout > 0
-            await self.add_item_to_shop(interaction, item_name, description, price, is_business, daily_payout)
+            import json
+            metadata_dict = json.loads(metadata)
+            
+            await self.item_service.add_shop_item(
+                name, description, price, item_type, is_active, metadata_dict
+            )
+            
+            await interaction.response.send_message(
+                f"Added {name} to the shop!", ephemeral=True
+            )
         except Exception as e:
             traceback.print_exc()
-            await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)
+            await interaction.response.send_message(
+                "An error occurred while adding the item.", ephemeral=True
+            )
             
-    # Shop command for showing a player's inventory
-    @app_commands.command(name="inventory", description="See items in your inventory from the NattyShop")
+    @app_commands.command(name="inventory", description="View your inventory")
     async def show_inventory(self, interaction: discord.Interaction):
-        user_id = interaction.user.id
-        inventory_list = await self.get_inventory(user_id)
-        
-        if not inventory_list:
-            await interaction.response.send_message("You don't have any items in your inventory yet.", ephemeral=True)
-            return
-        
-        description = ''
-        for row in inventory_list:
-            item_name = row['name']
-            quantity = row['quantity']
+        try:
+            user_id = interaction.user.id
+            inventory_list = await self.inventory_service.get_user_inventory(user_id)
             
-            description += f"{item_name}: {quantity}\n"
-        
-        inventory_embed = discord.Embed(
-            title="**Your Inventory**",
-            description=description,
-            color=discord.Color.blue()
-        )
-        
-        await interaction.response.send_message(embed=inventory_embed)
-        
-async def setup(bot, guild_object, allowed_roles, purchase_log_channel):
-    await bot.add_cog(Shop(bot, guild_object, allowed_roles, purchase_log_channel))
+            if not inventory_list:
+                await interaction.response.send_message(
+                    "Your inventory is empty.", ephemeral=True
+                )
+                return
+            
+            description = '\n'.join(
+                f"{row['name']}: {row['quantity']}" for row in inventory_list
+            )
+            
+            embed = discord.Embed(
+                title="Your Inventory",
+                description=description,
+                color=discord.Color.blue()
+            )
+            
+            await interaction.response.send_message(embed=embed)
+        except Exception:
+            traceback.print_exc()
+
+async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
+    await bot.add_cog(Shop(
+        bot, 
+        guild_object, 
+        allowed_roles,
+        purchase_log_channel,
+        shop_service,
+        inventory_service,
+        item_service
+    ))

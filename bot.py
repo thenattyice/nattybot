@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord import Member
 from dotenv import load_dotenv
 from f1_schedule_data import schedule_2025
-from cogs.economy import Economy
+from cogs.economy import setup as setup_economy
 from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
 from cogs.shop.shop import setup as setup_shop
@@ -19,6 +19,13 @@ from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
 from cogs.magicthegathering.buildpack import setup as setup_openpack
+from services.item_service import ItemService
+from services.inventory_service import InventoryService
+from services.shop_service import ShopService
+from services.economy_service import EconomyService
+from services.mtg_service import MtgService
+from services.handler_registry import get_default_registry
+from services.business_service import BusinessService
 
 load_dotenv() #Load the env file
 
@@ -68,39 +75,78 @@ class Client(commands.Bot):
             self.db_pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
             async with self.db_pool.acquire() as conn:
                 await conn.execute("""
+                    -- Users table
                     CREATE TABLE IF NOT EXISTS users (
                         user_id BIGINT PRIMARY KEY,
                         balance BIGINT NOT NULL DEFAULT 0,
                         wordle_pts BIGINT NOT NULL DEFAULT 0,
                         daily_spin BOOLEAN DEFAULT FALSE
                     );
-                    CREATE TABLE IF NOT EXISTS shop (
-                        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+                    -- Shop items table (item_type stored as text)
+                    CREATE TABLE IF NOT EXISTS shop_items (
+                        id SERIAL PRIMARY KEY,
                         name TEXT UNIQUE NOT NULL,
                         description TEXT,
-                        price INTEGER NOT NULL,
-                        is_business BOOLEAN DEFAULT FALSE,
-                        daily_payout INTEGER
+                        price INTEGER NOT NULL CHECK (price > 0),
+                        item_type TEXT NOT NULL CHECK (item_type IN ('consumable', 'bundle', 'business', 'collectible')),
+                        metadata JSONB DEFAULT '{}',
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- User inventory table
                     CREATE TABLE IF NOT EXISTS inventory (
-                        user_id BIGINT REFERENCES users(user_id),
-                        item_id INTEGER REFERENCES shop(id),
-                        quantity INTEGER NOT NULL DEFAULT 1,
-                        is_business BOOLEAN REFERENCES shop(is_business),
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE CASCADE,
+                        quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 0),
+                        metadata JSONB DEFAULT '{}',
+                        acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         PRIMARY KEY (user_id, item_id)
                     );
+
+                    -- Purchase history/log table
                     CREATE TABLE IF NOT EXISTS purchases (
                         id SERIAL PRIMARY KEY,
-                        user_id BIGINT REFERENCES users(user_id),
-                        item_id INTEGER REFERENCES shop(id),
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
                         quantity INTEGER NOT NULL DEFAULT 1,
+                        price_paid INTEGER NOT NULL,
                         purchase_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- Item usage log (for consumables, pack openings, etc.)
+                    CREATE TABLE IF NOT EXISTS item_usage (
+                        id SERIAL PRIMARY KEY,
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
+                        usage_type TEXT NOT NULL, -- 'consume', 'activate', 'daily_payout'
+                        quantity INTEGER DEFAULT 1,
+                        result_data JSONB, -- Store pack contents, payout amounts, etc.
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    -- MTG sets table (for pack opening feature)
                     CREATE TABLE IF NOT EXISTS mtg_sets (
                         id SERIAL PRIMARY KEY,
                         set_code TEXT UNIQUE NOT NULL,
-                        set_name TEXT UNIQUE NOT NULL
+                        set_name TEXT UNIQUE NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    -- Gambling stats table (for leaderboards)
+                    CREATE TABLE IF NOT EXISTS gambling_stats (
+                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+                        total_wagered INTEGER DEFAULT 0,
+                        total_won INTEGER DEFAULT 0,
+                        games_played INTEGER DEFAULT 0,
+                        biggest_win INTEGER DEFAULT 0,
+                        current_streak INTEGER DEFAULT 0,
+                        longest_streak INTEGER DEFAULT 0,
+                        last_game_timestamp TIMESTAMP
+                    );
+
+                    -- Minecraft server tracking
                     CREATE TABLE IF NOT EXISTS mc_server (
                         id SERIAL PRIMARY KEY,
                         ip_address TEXT UNIQUE NOT NULL,
@@ -109,6 +155,16 @@ class Client(commands.Bot):
                         status_channel_id BIGINT,
                         player_count_channel_id BIGINT
                     );
+
+                    -- Indexes for performance
+                    CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_timestamp ON purchases(purchase_time DESC);
+                    CREATE INDEX IF NOT EXISTS idx_item_usage_user_id ON item_usage(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_item_usage_timestamp ON item_usage(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
+                    CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active) WHERE is_active = TRUE;
+                    CREATE INDEX IF NOT EXISTS idx_gambling_stats_biggest_win ON gambling_stats(biggest_win DESC);
                 """)
             print("Database connection pool created and schema ensured.")
 
@@ -167,30 +223,48 @@ async def load_cog(name: str, coro):
 
 # Setup the cogs
 async def setup_cogs():
+    # 1. Build core services
+    economy_service = EconomyService(client.db_pool)
+    item_service = ItemService(client.db_pool)
+    inventory_service = InventoryService(client.db_pool)
+    mtg_service = MtgService(client.db_pool, inventory_service, item_service)
+    business_service = BusinessService(client.db_pool, economy_service)
+
+    # 2. Get the handler registry
+    handler_registry = get_default_registry()
+
+    # 3. Build shop service with registry
+    shop_service = ShopService(
+        db_pool=client.db_pool,
+        economy_service=economy_service,
+        item_service=item_service,
+        inventory_service=inventory_service,
+        handler_registry=handler_registry
+    )
+    
+    # 4. Load cogs that need services
+    # Shop Cogs
+    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service, inventory_service, item_service))
+    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT, business_service))
+    
     # Economy Cog
-    economy_cog = Economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY)
-    await load_cog("Economy", client.add_cog(economy_cog))
-    client.add_money_to_user = economy_cog.add_money_to_user #Pulls this in from the economy cog
+    await load_cog("Economy", setup_economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, economy_service))
     
     # LFG Cog
     lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
-    # Shop Cogs
-    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL))
-    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT))
-    
     # Wordle Cog
-    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
     
     #Game Cogs
-    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT))
-    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
-    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT))
-    await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT))
+    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service))
+    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service))
+    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service))
+    await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
     
     # MTG
-    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL))
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service))
     
     # MC Server Status
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))

@@ -59,7 +59,7 @@ class ShopSelect(discord.ui.Select):
                 item = await self.shop_service.item_service.get_item_by_id(item_id)
                 
                 log_embed = discord.Embed(
-                    title=f"📦 **NattyShop Purchase**\n",
+                    title=f"**NattyShop Purchase**\n",
                     description=f"User: <@{user_id}>\nItem: {item['name']}\nPrice: {item['price']} NattyCoins",
                     color=discord.Color.green()
                 )

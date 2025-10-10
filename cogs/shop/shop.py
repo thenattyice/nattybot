@@ -58,15 +58,16 @@ class ShopSelect(discord.ui.Select):
                 # Get item details for logging
                 item = await self.shop_service.item_service.get_item_by_id(item_id)
                 
+                log_embed = discord.Embed(
+                    title=f"📦 **NattyShop Purchase**\n",
+                    description=f"User: <@{user_id}>\nUser: <@{user_id}>\nPrice: {item['price']} NattyCoins",
+                    color=discord.Color.green()
+                )
+                
                 # Log to Discord channel
                 log_channel = self.bot.get_channel(self.purchase_log_channel)
                 if log_channel:
-                    await log_channel.send(
-                        f"📦 **Purchase Log**\n"
-                        f"User: <@{user_id}>\n"
-                        f"Item: {item['name']}\n"
-                        f"Price: {item['price']} NattyCoins"
-                    )
+                    await log_channel.send(embed=log_embed)
                 
                 await interaction.followup.send("Purchase successful!", ephemeral=True)
             else:

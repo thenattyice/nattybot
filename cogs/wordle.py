@@ -274,7 +274,7 @@ class Wordle(commands.Cog):
             
             for user_id, score in user_rewards.items():
                 reward = self.calculate_wordle_reward(score)
-                await economy_service.add_money_to_user(user_id, reward)
+                await self.economy_service.add_money_to_user(user_id, reward)
                 
                 points = self.calculate_wordle_pts(score)
                 await self.add_wordle_pts_to_user(user_id, points)

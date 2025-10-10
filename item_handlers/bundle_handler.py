@@ -1,3 +1,4 @@
+import json
 from item_handlers.base_handler import BaseHandler
 
 class BundleHandler(BaseHandler):
@@ -12,6 +13,14 @@ class BundleHandler(BaseHandler):
     async def on_purchase(self, user_id: int, item: dict) -> dict:
         # Get the bundle contents
         metadata = item.get('metadata', {})
+        
+        # Parse metadata if it's a JSON string
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                metadata = {}
+        
         contents = metadata.get('bundle_contents', [])
         
         if not contents:

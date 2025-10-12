@@ -26,6 +26,7 @@ from services.economy_service import EconomyService
 from services.mtg_service import MtgService
 from services.handler_registry import get_default_registry
 from services.business_service import BusinessService
+from services.game_service import GameService
 
 load_dotenv() #Load the env file
 
@@ -134,15 +135,23 @@ class Client(commands.Bot):
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
 
-                    -- Gambling stats table (for leaderboards)
+                    -- Game stats table (for leaderboards)
                     CREATE TABLE IF NOT EXISTS gambling_stats (
+                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+                        game TEXT NOT NULL,
+                        result TEXT NOT NULL,
+                        wager INTEGER DEFAULT 0,
+                        balance change INTEGER DEFAULT 0,
+                        game_timestamp TIMESTAMP
+                    );
+                    
+                    -- Game stats table (for leaderboards)
+                    CREATE TABLE IF NOT EXISTS game_stats (
                         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                         total_wagered INTEGER DEFAULT 0,
                         total_won INTEGER DEFAULT 0,
                         games_played INTEGER DEFAULT 0,
                         biggest_win INTEGER DEFAULT 0,
-                        current_streak INTEGER DEFAULT 0,
-                        longest_streak INTEGER DEFAULT 0,
                         last_game_timestamp TIMESTAMP
                     );
 
@@ -229,6 +238,7 @@ async def setup_cogs():
     inventory_service = InventoryService(client.db_pool)
     mtg_service = MtgService(client.db_pool, inventory_service, item_service)
     business_service = BusinessService(client.db_pool, economy_service)
+    game_service = GameService(client.db_pool)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -258,7 +268,7 @@ async def setup_cogs():
     await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
     
     #Game Cogs
-    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service))
+    await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service))
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))

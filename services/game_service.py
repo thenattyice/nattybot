@@ -13,7 +13,7 @@ class GameService:
     # Total user's wins
     async def get_total_wins(self, user_id: int):
         async with self.db_pool.acquire() as conn:
-            win_count = await conn.fetch("""
+            win_count = await conn.fetchval("""
                 SELECT count(user_id) FROM game_stats
                 WHERE user_id = $1
                 AND result = 'win';
@@ -23,7 +23,7 @@ class GameService:
     # Total user's losses
     async def get_total_losses(self, user_id: int):
         async with self.db_pool.acquire() as conn:
-            loss_count = await conn.fetch("""
+            loss_count = await conn.fetchval("""
                 SELECT count(user_id) FROM game_stats
                 WHERE user_id = $1
                 AND result = 'loss';
@@ -32,24 +32,17 @@ class GameService:
     
     # Calculate win ratio
     async def calc_win_ratio(self, user_id: int):
-        win_count_record = await self.get_total_wins(user_id)
-        loss_count_record = await self.get_total_losses(user_id)
-
-        win_count = win_count_record[0]['count'] if win_count_record and win_count_record[0]['count'] is not None else 0
-        loss_count = loss_count_record[0]['count'] if loss_count_record and loss_count_record[0]['count'] is not None else 0
-
-        games_played = win_count + loss_count
-        if games_played == 0:
+        win_count = await self.get_total_wins(user_id)
+        loss_count = await self.get_total_losses(user_id)
+        total = win_count + loss_count
+        if total == 0:
             return 0.0
-
-        win_percentage = win_count / games_played
-        
-        return win_percentage
+        return win_count / total
         
     # Total user's amount wagered
     async def get_amount_wagered(self, user_id: int):
         async with self.db_pool.acquire() as conn:
-            total_wagered = await conn.fetch("""
+            total_wagered = await conn.fetchval("""
                 SELECT sum(wager) FROM game_stats
                 WHERE user_id = $1
                 """, user_id)
@@ -58,7 +51,7 @@ class GameService:
     # Get user's wordle stats
     async def get_user_wordle_stats(self, user_id: int) -> int:
         async with self.db_pool.acquire() as conn:
-            wordle_pts = await conn.fetch("""
+            wordle_pts = await conn.fetchval("""
                 SELECT wordle_pts FROM users
                 WHERE user_id = $1;
                 """, user_id)
@@ -67,7 +60,7 @@ class GameService:
     # Get user's total games played
     async def get_total_games(self, user_id: int) -> int:
         async with self.db_pool.acquire() as conn:
-            total_games = await conn.fetch("""
+            total_games = await conn.fetchval("""
                 SELECT count(user_id) FROM game_stats
                 WHERE user_id = $1;
                 """, user_id)

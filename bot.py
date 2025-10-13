@@ -143,7 +143,7 @@ class Client(commands.Bot):
                         game TEXT NOT NULL,
                         result TEXT NOT NULL,
                         wager INTEGER DEFAULT 0,
-                        balance change INTEGER DEFAULT 0,
+                        balance_change INTEGER DEFAULT 0,
                         game_timestamp TIMESTAMP
                     );
                     

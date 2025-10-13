@@ -35,15 +35,15 @@ class Stats(commands.Cog):
             embed.set_thumbnail(url=user.display_avatar.url)
             
             # Add fields for each stat
-            embed.add_field(name="💰 Balance", value=f"{user_stats.balance:,} NattyCoins", inline=True)
-            embed.add_field(name="📝 Wordle Points", value=f"{user_stats.wordle_points:,}", inline=True)
-            embed.add_field(name="🎲 Total Wagered", value=f"{user_stats.total_wagered:,}", inline=True)
-            embed.add_field(name="🎮 Total Games", value=f"{user_stats.total_games:,}", inline=True)
-            embed.add_field(name="⭐ Favorite Game", value=user_stats.favorite_game or "None", inline=True)
-            embed.add_field(name="🏆 Win Ratio", value=f"{user_stats.win_ratio:.1%}", inline=True)
+            embed.add_field(name="💰 Balance", value=f"{user_stats.balance:,} NattyCoins", inline=False)
+            embed.add_field(name="📝 Wordle Points", value=f"{user_stats.wordle_points:,}", inline=False)
+            embed.add_field(name="🎲 Total Wagered", value=f"{user_stats.total_wagered:,}", inline=False)
+            embed.add_field(name="🎮 Total Games", value=f"{user_stats.total_games:,}", inline=False)
+            embed.add_field(name="⭐ Favorite Game", value=user_stats.favorite_game or "None", inline=False)
+            embed.add_field(name="🏆 Win Ratio", value=f"{user_stats.win_ratio:.1%}", inline=False)
             
             # Send the embed
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception:
             traceback.print_exc()
         

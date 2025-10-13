@@ -77,4 +77,5 @@ class GameService:
                 ORDER BY play_count DESC
                 LIMIT 1;
                 """, user_id)
-        return fav_game
+        fav_game_name = fav_game["game"]
+        return fav_game_name

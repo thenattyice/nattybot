@@ -11,6 +11,7 @@ from f1_schedule_data import schedule_2025
 from cogs.economy import setup as setup_economy
 from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
+from cogs.stats import setup as setup_stats
 from cogs.shop.shop import setup as setup_shop
 from cogs.shop.businesses import setup as setup_businesses
 from cogs.wordle import setup as setup_wordle
@@ -27,6 +28,7 @@ from services.mtg_service import MtgService
 from services.handler_registry import get_default_registry
 from services.business_service import BusinessService
 from services.game_service import GameService
+from services.user_service import UserService
 
 load_dotenv() #Load the env file
 
@@ -136,7 +138,7 @@ class Client(commands.Bot):
                     );
 
                     -- Game stats table (for leaderboards)
-                    CREATE TABLE IF NOT EXISTS gambling_stats (
+                    CREATE TABLE IF NOT EXISTS game_stats (
                         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                         game TEXT NOT NULL,
                         result TEXT NOT NULL,
@@ -146,7 +148,7 @@ class Client(commands.Bot):
                     );
                     
                     -- Game stats table (for leaderboards)
-                    CREATE TABLE IF NOT EXISTS game_stats (
+                    CREATE TABLE IF NOT EXISTS gambling_stats (
                         user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                         total_wagered INTEGER DEFAULT 0,
                         total_won INTEGER DEFAULT 0,
@@ -173,7 +175,6 @@ class Client(commands.Bot):
                     CREATE INDEX IF NOT EXISTS idx_item_usage_timestamp ON item_usage(timestamp DESC);
                     CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
                     CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active) WHERE is_active = TRUE;
-                    CREATE INDEX IF NOT EXISTS idx_gambling_stats_biggest_win ON gambling_stats(biggest_win DESC);
                 """)
             print("Database connection pool created and schema ensured.")
 
@@ -239,6 +240,7 @@ async def setup_cogs():
     mtg_service = MtgService(client.db_pool, inventory_service, item_service)
     business_service = BusinessService(client.db_pool, economy_service)
     game_service = GameService(client.db_pool)
+    user_service = 
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -266,6 +268,9 @@ async def setup_cogs():
     
     # Wordle Cog
     await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
+    
+    # User Stats Cog
+    await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service))
     
     #Game Cogs
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))

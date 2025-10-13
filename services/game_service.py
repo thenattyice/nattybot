@@ -32,15 +32,20 @@ class GameService:
     
     # Calculate win ratio
     async def calc_win_ratio(self, user_id: int):
-        win_count = int(self.get_total_wins)
-        loss_count = int(self.get_total_losses)
-        
+        win_count_record = await self.get_total_wins(user_id)
+        loss_count_record = await self.get_total_losses(user_id)
+
+        win_count = win_count_record[0]['count'] if win_count_record and win_count_record[0]['count'] is not None else 0
+        loss_count = loss_count_record[0]['count'] if loss_count_record and loss_count_record[0]['count'] is not None else 0
+
         games_played = win_count + loss_count
-        
+        if games_played == 0:
+            return 0.0
+
         win_percentage = win_count / games_played
         
         return win_percentage
-    
+        
     # Total user's amount wagered
     async def get_amount_wagered(self, user_id: int):
         async with self.db_pool.acquire() as conn:

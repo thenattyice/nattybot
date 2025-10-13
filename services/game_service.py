@@ -32,8 +32,8 @@ class GameService:
     
     # Calculate win ratio
     async def calc_win_ratio(self, user_id: int):
-        win_count = self.get_total_wins
-        loss_count = self.get_total_losses
+        win_count = int(self.get_total_wins)
+        loss_count = int(self.get_total_losses)
         
         games_played = win_count + loss_count
         

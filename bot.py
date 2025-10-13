@@ -139,12 +139,13 @@ class Client(commands.Bot):
 
                     -- Game stats table (for leaderboards)
                     CREATE TABLE IF NOT EXISTS game_stats (
-                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+                        id SERIAL PRIMARY KEY,  -- Add an auto-incrementing ID
+                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
                         game TEXT NOT NULL,
                         result TEXT NOT NULL,
                         wager INTEGER DEFAULT 0,
                         balance_change INTEGER DEFAULT 0,
-                        game_timestamp TIMESTAMP
+                        game_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                     
                     -- Game stats table (for leaderboards)

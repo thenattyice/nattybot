@@ -36,7 +36,11 @@ class CoinFlipView(discord.ui.View):
             new_balance = await self.economy_service.get_balance(user_id)
             
             # Log the game results
-            await self.game_service.log_game_result(user_id, game, 'win', self.bet, winnings)
+            try:
+                await self.game_service.log_game_result(user_id, game, 'win', self.bet, winnings)
+            except Exception as e:
+                print(f"[CoinFlip] Error logging win: {e}")
+                traceback.print_exc()
             
             result = discord.Embed(
                 title="🎉 You Win!",
@@ -48,7 +52,11 @@ class CoinFlipView(discord.ui.View):
             new_balance = await self.economy_service.get_balance(user_id)
             
             # Log the game results
-            await self.game_service.log_game_result(user_id, game, 'loss', self.bet, -self.bet)
+            try:
+                await self.game_service.log_game_result(user_id, game, 'loss', self.bet, -self.bet)
+            except Exception as e:
+                print(f"[CoinFlip] Error logging loss: {e}")
+                traceback.print_exc()
             
             result = discord.Embed(
                 title="😢 You Lose!",

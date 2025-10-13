@@ -79,10 +79,11 @@ class CoinFlipView(discord.ui.View):
         
         
 class CoinFlip(commands.Cog):
-    def __init__(self, bot, guild_object, economy_service):
+    def __init__(self, bot, guild_object, economy_service, game_service):
         self.bot = bot
         self.guild_object = guild_object
         self.economy_service = economy_service
+        self.game_service = game_service
         
         self.bot.tree.add_command(self.coinflip, guild=self.guild_object)
         
@@ -109,7 +110,7 @@ class CoinFlip(commands.Cog):
         )
         
         user = interaction.user
-        view = CoinFlipView(user, bet, emoji_map, self.economy_service)
+        view = CoinFlipView(user, bet, emoji_map, self.economy_service, self.game_service)
         await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
         
 async def setup(bot, guild_object, economy_service, game_service):

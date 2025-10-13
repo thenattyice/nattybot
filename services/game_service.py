@@ -69,13 +69,16 @@ class GameService:
     # Get user's fav game
     async def get_fav_game(self, user_id: int):
         async with self.db_pool.acquire() as conn:
-            fav_game = await conn.fetch("""
-                SELECT game, COUNT(*) as play_count
-                FROM game_stats
-                WHERE user_id = $1
-                GROUP BY game
-                ORDER BY play_count DESC
-                LIMIT 1;
-                """, user_id)
-        fav_game_name = fav_game["game"]
-        return fav_game_name
+        fav_game = await conn.fetchrow("""
+            SELECT game, COUNT(*) AS play_count
+            FROM game_stats
+            WHERE user_id = $1
+            GROUP BY game
+            ORDER BY play_count DESC
+            LIMIT 1;
+        """, user_id)
+
+        if fav_game is None:
+            return "None"
+
+        return fav_game["game"]

@@ -4,7 +4,7 @@ from services.user_service import UserStats
 from discord import app_commands, Member
 from discord.ext import commands
 
-class StatsCog(commands.Cog):
+class Stats(commands.Cog):
     def __init__(self, bot, guild_object, allowed_roles, user_service):
         self.bot = bot
         self.guild_object = guild_object
@@ -44,7 +44,7 @@ class StatsCog(commands.Cog):
         await interaction.response.send_message(embed=embed)
         
 async def setup(bot, guild_object, allowed_roles, user_service):
-    await bot.add_cog(Shop(
+    await bot.add_cog(Stats(
         bot, 
         guild_object, 
         allowed_roles,

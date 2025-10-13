@@ -31,7 +31,7 @@ class GameService:
         return loss_count
     
     # Calculate win ratio
-    async def calc_win_ratio(self):
+    async def calc_win_ratio(self, user_id: int):
         win_count = await self.get_total_wins
         loss_count = await self.get_total_losses
         

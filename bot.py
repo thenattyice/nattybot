@@ -240,7 +240,7 @@ async def setup_cogs():
     mtg_service = MtgService(client.db_pool, inventory_service, item_service)
     business_service = BusinessService(client.db_pool, economy_service)
     game_service = GameService(client.db_pool)
-    user_service = UserService(client.db_pool)
+    user_service = UserService(client.db_pool, economy_service, game_service)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()

@@ -6,13 +6,14 @@ from discord import app_commands, Member
 from discord.ext import commands
 
 class BlackjackView(discord.ui.View):
-    def __init__(self, cog, bot, user_id, bet: int, economy_service):
+    def __init__(self, cog, bot, user_id, bet: int, economy_service, game_service):
         super().__init__(timeout=300)  # 5 min timeout
         self.cog = cog
         self.bot = cog.bot
         self.user_id = user_id
         self.bet = bet
         self.economy_service = economy_service
+        self.game_service = game_service
         
     # Only allow the player who started the game to use the buttons
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -334,7 +335,7 @@ class Blackjack(commands.Cog):
             player_hand = session['player_hand']
             dealer_hand = session['dealer_hand']
 
-            view = BlackjackView(self, self.bot, user_id, bet, self.economy_service)
+            view = BlackjackView(self, self.bot, user_id, bet, self.economy_service, self.game_service)
             
             player_hand_value = self.calculate_hand_value(player_hand)
             

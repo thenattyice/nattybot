@@ -86,3 +86,16 @@ class GameService:
             return "None"
 
         return fav_game["game"]
+    
+    # Gambling leaderboard
+    async def get_gambling_leaderboard(self) -> list[dict]:
+        async with self.db_pool.acquire() as conn:
+            rows = await conn.fetch("""
+            SELECT
+                user_id,
+                SUM(wager) AS total_wagered,
+                RANK() OVER (ORDER BY SUM(wager) DESC) AS rank
+            FROM game_stats
+            GROUP BY user_id
+            ORDER BY total_wagered DESC;""")
+        return [dict(row) for row in rows]

@@ -134,7 +134,7 @@ class RockPaperScissors(commands.Cog):
             )
             
             user = interaction.user
-            view = RPSView(user, bet, self.economy_service, emoji_map, wins_against)
+            view = RPSView(user, bet, self.economy_service, self.game_service, emoji_map, wins_against)
             await interaction.response.send_message(embed=prompt_embed, view=view, ephemeral=True)
         except Exception as e:
             traceback.print_exc()

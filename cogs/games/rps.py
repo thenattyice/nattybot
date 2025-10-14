@@ -35,6 +35,14 @@ class RPSView(discord.ui.View):
         if win:
             winnings = self.bet
             await self.economy_service.add_money_to_user(user_id, winnings)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'win', self.bet, winnings)
+            except Exception as e:
+                print(f"[Blackjack] Error logging win: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="🎉 You Win!",
                 description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} beats {self.emoji_map[bot_choice]} {bot_choice.capitalize()}!\nYou won **{winnings}** NattyCoins!",
@@ -42,6 +50,14 @@ class RPSView(discord.ui.View):
             )
         else:
             await self.economy_service.remove_money_from_user(user_id, self.bet)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'loss', self.bet, -self.bet)
+            except Exception as e:
+                print(f"[Blackjack] Error logging loss: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="😢 You Lose!",
                 description=f"{self.emoji_map[user_choice]} {user_choice.capitalize()} loses to {self.emoji_map[bot_choice]} {bot_choice.capitalize()}...\nYou lost **{self.bet}** NattyCoins.",

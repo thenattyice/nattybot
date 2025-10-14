@@ -49,7 +49,7 @@ class Stats(commands.Cog):
         
         return leaderboard_embed
     
-    @app_commands.command(name="stats", description="View the gambling leaderboard!")
+    @app_commands.command(name="gamba", description="View the gambling leaderboard!")
     async def gamba_leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:

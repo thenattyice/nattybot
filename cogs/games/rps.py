@@ -25,6 +25,8 @@ class RPSView(discord.ui.View):
         self.user_choice = user_choice
         bot_choice = random.choice(list(self.wins_against.keys()))
         user_id = self.user.id
+        
+        game = "Rock-Paper-Scissors"
 
         # Win conditions
         if user_choice == bot_choice:

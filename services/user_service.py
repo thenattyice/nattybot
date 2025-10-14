@@ -10,6 +10,7 @@ class UserService:
             stats = await conn.fetchrow("""
                 SELECT
                     u.user_id,
+                    u.balance,
                     COALESCE(SUM(CASE WHEN g.result = 'win' THEN 1 ELSE 0 END), 0) AS wins,
                     COALESCE(SUM(CASE WHEN g.result = 'loss' THEN 1 ELSE 0 END), 0) AS losses,
                     COALESCE(SUM(CASE WHEN g.result = 'draw' THEN 1 ELSE 0 END), 0) AS draws,
@@ -45,6 +46,7 @@ class UserService:
 
         return {
             "wins": stats["wins"],
+            "balance": stats["balance"],
             "losses": stats["losses"],
             "draws": stats["draws"],
             "total_games": stats["total_games"],

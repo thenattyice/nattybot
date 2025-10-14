@@ -95,11 +95,12 @@ class RPSView(discord.ui.View):
 
 # Class for all of the Games commands
 class RockPaperScissors(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles, economy_service):
+    def __init__(self, bot, guild_object, allowed_roles, economy_service, game_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
         self.economy_service = economy_service
+        self.game_service = game_service
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.rock_paper_scissors, guild=self.guild_object)

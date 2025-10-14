@@ -6,11 +6,12 @@ from discord import app_commands, Member
 from discord.ext import commands
 
 class RPSView(discord.ui.View):
-    def __init__(self, user: discord.User, bet: int, economy_service, emoji_map, wins_against, timeout=15):
+    def __init__(self, user: discord.User, bet: int, economy_service, game_service, emoji_map, wins_against, timeout=15):
         super().__init__(timeout=timeout)
         self.user = user
         self.bet = bet
         self.economy_service = economy_service
+        self.game_service = game_service
         self.emoji_map = emoji_map
         self.wins_against = wins_against
         self.choice = None
@@ -138,5 +139,5 @@ class RockPaperScissors(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
             
-async def setup(bot, guild_object, allowed_roles, economy_service):
-    await bot.add_cog(RockPaperScissors(bot, guild_object, allowed_roles, economy_service))
+async def setup(bot, guild_object, allowed_roles, economy_service, game_service):
+    await bot.add_cog(RockPaperScissors(bot, guild_object, allowed_roles, economy_service, game_service))

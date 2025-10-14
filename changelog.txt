@@ -1,0 +1,41 @@
+**Degen Bot v1.1 - 8/4/2025**
+- Updated winning/losing message for bets to include the user's updated balance
+- Removed the /test command
+- Refactored the building of the NattyCoin leaderboard to be modular for use in other cogs easily
+- NattyCoin leaderboard now auto-runs with every daily Wordle Result run
+- Renamed primary py file from main.py to bot.py
+- Added Wordle Championship points! Points are scored based on your performance daily. Winner gets a 3d printed trophy from Muf
+- Added /championship - Shows the Wordle points championship leaderboard
+
+**Degen Bot v1.2 - 8/11/2025**
+- Added /blackjack game that can be bet on!
+
+**Degen Bot v1.3 - 8/12/2025**
+- Blackjack now will instantly give the win with a x1.5 multiplier if your starting hand is an Ace with another card with a value of 10 (10, J, Q, K)
+
+**Degen Bot v1.4 - 8/13/2025**
+- Disabled the buttons for RPS and Coinflip after they're selected
+
+**Degen Bot v1.5 - 8/14/2025**
+- Added ability to buy businesses with daily NattyCoin rewards! Rewards are given out at 4am daily for each business owned
+- Enhanced logging of cog loading with try/except handling for each
+- Removed the obnoxious and bad message logging from Wordle cog
+- Changed NattyShop command from /buy to **/shop**
+- Added log chanel for the daily payouts in a single report embed
+
+**Degen Bot v1.5 - 8/17/2025**
+- Added a free wheel spin for NattyCoins that can be spun once per day for 1-20 NattyCoins: /dailyspin
+
+**Degen Bot v1.6 - 8/18/2025**
+- Fixed bug for the daily free spin reset
+- Added MTG Booster packs to the shop! Open them with /openpack to get NattyCoins from card value
+
+**Natty Bot v2.0 - 10/9/2025**
+- Refactored bot to have a service layer and handlers for modularity
+- Added bundle item "MTG Booster Box" that gives 30 packs in 1 purchase
+- Added killswitch on the backend
+
+**Natty Bot v2.1 - 10/14/2025**
+- Added /stats for users to view their own and others' Natty stats
+- Added /gamba to display the gambling leaderboard
+- Updated the purchase log messaging

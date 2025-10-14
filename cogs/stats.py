@@ -70,7 +70,7 @@ class Stats(commands.Cog):
             # Get the stats
             user_stats = await self.user_service.get_full_user_game_stats(user_id)
             
-            if not stats:
+            if not user_stats:
                 await interaction.response.send_message("No stats found for this user", ephemeral=True)
             
             # Build the embed

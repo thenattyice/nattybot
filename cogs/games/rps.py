@@ -30,6 +30,13 @@ class RPSView(discord.ui.View):
 
         # Win conditions
         if user_choice == bot_choice:
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'draw', self.bet, 0)
+            except Exception as e:
+                print(f"[Blackjack] Error logging win: {e}")
+                traceback.print_exc()
+            
             await interaction.followup.send(f"It's a draw! Both picked {self.emoji_map[user_choice]} {user_choice}. You keep your {self.bet} NattyCoins.", ephemeral=True)
             return
 

@@ -26,10 +26,20 @@ class BlackjackView(discord.ui.View):
         
         bet = session['current_bet']
         
+        game = "Blackjack"
+        
         if outcome == "win":
             winnings = bet * 2
             await self.economy_service.add_money_to_user(user_id, winnings)
             new_balance = await self.economy_service.get_balance(user_id)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'win', self.bet, winnings)
+            except Exception as e:
+                print(f"[Blackjack] Error logging win: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="🎉 You Win!",
                 description=f"You won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
@@ -39,6 +49,14 @@ class BlackjackView(discord.ui.View):
             winnings = bet
             await self.economy_service.add_money_to_user(user_id, winnings)
             new_balance = await self.economy_service.get_balance(user_id)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'draw', self.bet, 0)
+            except Exception as e:
+                print(f"[Blackjack] Error logging win: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="You Tied",
                 description=f"You get your bet back.\nBalance: **{new_balance}** NattyCoins",
@@ -46,15 +64,32 @@ class BlackjackView(discord.ui.View):
             )
         elif outcome == "loss":
             new_balance = await self.economy_service.get_balance(user_id)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'loss', self.bet, -self.bet)
+            except Exception as e:
+                print(f"[Blackjack] Error logging loss: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="😢 You Lose!",
                 description=f"You lost **{self.bet}** NattyCoins.\nNew balance: **{new_balance}** NattyCoins",
                 color=discord.Color.red()
             )
+            
         elif outcome == "blackjack":
             winnings = round(bet * 1.5)
             await self.economy_service.add_money_to_user(user_id, winnings)
             new_balance = await self.economy_service.get_balance(user_id)
+            
+            # Log the game results
+            try:
+                await self.game_service.log_game_result(user_id, game, 'win', self.bet, winnings)
+            except Exception as e:
+                print(f"[Blackjack] Error logging win: {e}")
+                traceback.print_exc()
+            
             result = discord.Embed(
                 title="🎉 You got Blackjack!",
                 description=f"You won **{winnings}** NattyCoins!\nNew balance: **{new_balance}** NattyCoins",
@@ -204,10 +239,11 @@ class Blackjack(commands.Cog):
     
     blackjack_title = "🎮 Natty Games: Blackjack 🎮"
     
-    def __init__(self, bot, guild_object, economy_service):
+    def __init__(self, bot, guild_object, economy_service, game_service):
         self.bot = bot
         self.guild_object = guild_object
         self.economy_service = economy_service
+        self.game_service = game_service
         
         self.sessions = {}
         
@@ -333,5 +369,5 @@ class Blackjack(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send("An error occurred while running the game.", ephemeral=True)
         
-async def setup(bot, guild_object, economy_service):
-    await bot.add_cog(Blackjack(bot, guild_object, economy_service))
+async def setup(bot, guild_object, economy_service, game_service):
+    await bot.add_cog(Blackjack(bot, guild_object, economy_service, game_service))

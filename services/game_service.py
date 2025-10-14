@@ -9,83 +9,6 @@ class GameService:
                 INSERT INTO game_stats (user_id, game, result, wager, balance_change)
                 VALUES ($1, $2, $3, $4, $5)
             """, user_id, game, result, wager, balance_change)
-            
-    # Total user's wins
-    async def get_total_wins(self, user_id: int):
-        async with self.db_pool.acquire() as conn:
-            win_count = await conn.fetchval("""
-                SELECT count(user_id) FROM game_stats
-                WHERE user_id = $1
-                AND result = 'win';
-                """, user_id)
-        return win_count
-    
-    # Total user's losses
-    async def get_total_losses(self, user_id: int):
-        async with self.db_pool.acquire() as conn:
-            loss_count = await conn.fetchval("""
-                SELECT count(user_id) FROM game_stats
-                WHERE user_id = $1
-                AND result = 'loss';
-                """, user_id)
-        return loss_count
-    
-    # Calculate win ratio
-    async def calc_win_ratio(self, user_id: int):
-        win_count = await self.get_total_wins(user_id)
-        loss_count = await self.get_total_losses(user_id)
-        total = win_count + loss_count
-        if total == 0:
-            return 0.0
-        return win_count / total
-        
-    # Total user's amount wagered
-    async def get_amount_wagered(self, user_id: int):
-        async with self.db_pool.acquire() as conn:
-            total_wagered = await conn.fetchval("""
-                SELECT sum(wager) FROM game_stats
-                WHERE user_id = $1
-                """, user_id)
-            
-        if total_wagered is None:
-            return 0
-        
-        return total_wagered
-    
-    # Get user's wordle stats
-    async def get_user_wordle_stats(self, user_id: int) -> int:
-        async with self.db_pool.acquire() as conn:
-            wordle_pts = await conn.fetchval("""
-                SELECT wordle_pts FROM users
-                WHERE user_id = $1;
-                """, user_id)
-        return wordle_pts
-    
-    # Get user's total games played
-    async def get_total_games(self, user_id: int) -> int:
-        async with self.db_pool.acquire() as conn:
-            total_games = await conn.fetchval("""
-                SELECT count(user_id) FROM game_stats
-                WHERE user_id = $1;
-                """, user_id)
-        return total_games
-    
-    # Get user's fav game
-    async def get_fav_game(self, user_id: int):
-        async with self.db_pool.acquire() as conn:
-            fav_game = await conn.fetchrow("""
-                SELECT game, COUNT(*) AS play_count
-                FROM game_stats
-                WHERE user_id = $1
-                GROUP BY game
-                ORDER BY play_count DESC
-                LIMIT 1;
-            """, user_id)
-
-        if fav_game is None:
-            return "None"
-
-        return fav_game["game"]
     
     # Gambling leaderboard
     async def get_gambling_leaderboard(self) -> list[dict]:
@@ -99,3 +22,55 @@ class GameService:
             GROUP BY user_id
             ORDER BY total_wagered DESC;""")
         return [dict(row) for row in rows]
+    
+    # One method to rule them all
+    async def get_full_user_game_stats(self, user_id: int):
+        async with self.db_pool.acquire() as conn:
+            stats = await conn.fetchrow("""
+                SELECT
+                    u.user_id,
+                    COALESCE(SUM(CASE WHEN g.result = 'win' THEN 1 ELSE 0 END), 0) AS wins,
+                    COALESCE(SUM(CASE WHEN g.result = 'loss' THEN 1 ELSE 0 END), 0) AS losses,
+                    COALESCE(SUM(CASE WHEN g.result = 'draw' THEN 1 ELSE 0 END), 0) AS draws,
+                    COALESCE(COUNT(g.*), 0) AS total_games,
+                    COALESCE(SUM(g.wager), 0) AS total_wagered,
+                    COALESCE(SUM(g.balance_change), 0) AS net_winnings,
+                    CASE
+                        WHEN SUM(CASE WHEN g.result IN ('win','loss') THEN 1 ELSE 0 END) = 0 THEN 0
+                        ELSE ROUND(
+                            (SUM(CASE WHEN g.result = 'win' THEN 1 ELSE 0 END)::numeric
+                            /
+                            SUM(CASE WHEN g.result IN ('win','loss') THEN 1 ELSE 0 END)) * 100, 2
+                        )
+                    END AS win_ratio,
+                    COALESCE((
+                        SELECT game
+                        FROM game_stats
+                        WHERE user_id = u.user_id
+                        GROUP BY game
+                        ORDER BY COUNT(*) DESC
+                        LIMIT 1
+                    ), 'None') AS most_played_game,
+                    DENSE_RANK() OVER (ORDER BY COALESCE(SUM(g.wager), 0) DESC) AS wager_rank,
+                    u.wordle_pts
+                FROM users u
+                LEFT JOIN game_stats g ON u.user_id = g.user_id
+                WHERE u.user_id = $1
+                GROUP BY u.user_id, u.wordle_pts;
+            """, user_id)
+
+        if not stats:
+            return None
+
+        return {
+            "wins": stats["wins"],
+            "losses": stats["losses"],
+            "draws": stats["draws"],
+            "total_games": stats["total_games"],
+            "total_wagered": stats["total_wagered"],
+            "net_winnings": stats["net_winnings"],
+            "win_ratio": float(stats["win_ratio"]),
+            "most_played_game": stats["most_played_game"],
+            "wager_rank": stats["wager_rank"],
+            "wordle_pts": stats["wordle_pts"] or 0
+        }

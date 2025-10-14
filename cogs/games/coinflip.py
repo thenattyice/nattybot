@@ -28,7 +28,7 @@ class CoinFlipView(discord.ui.View):
         # Win conditions
         win = self.user_choice == bot_choice
         
-        game = 'coinflip'
+        game = "Coinflip"
 
         if win:
             winnings = self.bet

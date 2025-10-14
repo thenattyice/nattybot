@@ -276,7 +276,7 @@ async def setup_cogs():
     #Game Cogs
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service))
-    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service))
+    await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
     
     # MTG

@@ -46,6 +46,10 @@ class GameService:
                 SELECT sum(wager) FROM game_stats
                 WHERE user_id = $1
                 """, user_id)
+            
+        if total_wagered is None:
+            return 0
+        
         return total_wagered
     
     # Get user's wordle stats

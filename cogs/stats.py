@@ -1,6 +1,5 @@
 import discord
 import traceback
-from services.user_service import UserStats
 from discord import app_commands, Member
 from discord.ext import commands
 

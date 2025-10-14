@@ -271,7 +271,7 @@ async def setup_cogs():
     await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
     
     # User Stats Cog
-    await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service))
+    await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service, game_service))
     
     #Game Cogs
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))

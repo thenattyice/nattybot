@@ -239,6 +239,11 @@ class BuildBoosterPack(commands.Cog):
             if not users_packs:
                     await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
                     return
+            
+            # Validate that the user has entered a count > 0
+            if requested_open_count == 0:
+                await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
+                return
                 
             # Check if there are any sets available
             sets = await self.mtg_service.get_all_sets()

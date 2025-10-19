@@ -90,6 +90,18 @@ class MtgService:
             """, user_id)
         return owns_packs is not None
     
+    async def multi_pack_validation(self, user_id: int, requested_open_count: int):
+        async with self.db_pool.acquire() as conn:
+            owns_packs = await conn.fetchrow("""
+                SELECT s.name, i.quantity
+                FROM inventory i
+                JOIN shop_items s ON s.id = i.item_id
+                WHERE i.user_id = $1
+                AND s.name = 'MTG Booster Pack'
+                AND i.quantity >= $2;
+            """, user_id, requested_open_count)
+        return owns_packs is not None
+    
     # Remove the pack from user
     async def remove_pack_from_user(self, target_user_id: int):
         item = await self.item_service.get_item_by_name("MTG Booster Pack")
@@ -97,6 +109,14 @@ class MtgService:
         pack_item_id = item['id']
         
         await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id, 1)
+    
+    # Remove multiple packs from user
+    async def remove_multiple_packs_from_user(self, target_user_id: int, quantity: int):
+        item = await self.item_service.get_item_by_name("MTG Booster Pack")
+        
+        pack_item_id = item['id']
+        
+        await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id, quantity)
     
     # Open a pack and pay the user    
     async def open_pack(self, set_code: str) -> Tuple[List[Dict], float]:

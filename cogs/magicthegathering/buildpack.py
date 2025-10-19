@@ -8,11 +8,12 @@ from discord.ext import commands
 
 # Class for the shop buying dropdown UX
 class OpenPackView(discord.ui.View):
-    def __init__(self, user: discord.User, parent_cog, mtg_service):
+    def __init__(self, user: discord.User, parent_cog, mtg_service, pack_count: int = 1):
         super().__init__()
         self.user = user
         self.parent_cog = parent_cog
         self.mtg_service = mtg_service
+        self.pack_count = pack_count  # Track how many packs to open
         
     async def open_pack_setup(self):
         # Get all the shop items
@@ -41,24 +42,33 @@ class PackSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         try:
             user_id = interaction.user.id
-            
             set_code = self.values[0]
             set_row = await self.mtg_service.get_set_by_code(set_code)
+            pack_count = self.parent_view.pack_count
             
-            await self.mtg_service.remove_pack_from_user(user_id)
+            # Remove the appropriate number of packs
+            if pack_count == 1:
+                await self.mtg_service.remove_pack_from_user(user_id)
+            else:
+                await self.mtg_service.remove_multiple_packs_from_user(user_id, pack_count)
             
             # Disable the dropdown after selection
             self.disabled = True
-            self.parent_view.clear_items() # Remove all existing items
-            self.parent_view.add_item(self) # Add back the now-disabled version
+            self.parent_view.clear_items()
+            self.parent_view.add_item(self)
             
-            # Feedback message to replace the dropdown
-            content = (f"You are opening a **{set_row['set_name']}** pack!")
+            # Feedback message
+            pack_text = "pack" if pack_count == 1 else f"{pack_count} packs"
+            content = f"You are opening {pack_text} from **{set_row['set_name']}**!"
             
             await interaction.response.edit_message(view=self.parent_view)
             await interaction.followup.send(content=content, ephemeral=True)
             
-            await self.parent_cog.open_pack(interaction, set_code, user_id)
+            # Call the appropriate method based on pack count
+            if pack_count == 1:
+                await self.parent_cog.open_pack(interaction, set_code, user_id)
+            else:
+                await self.parent_cog.open_multiple_packs(interaction, set_code, user_id, pack_count)
             
         except Exception as e:
             print("Error in PackSelect callback:")
@@ -80,6 +90,7 @@ class BuildBoosterPack(commands.Cog):
         # Register commands here
         self.bot.tree.add_command(self.add_set, guild=self.guild_object)
         self.bot.tree.add_command(self.rip_a_pack, guild=self.guild_object)
+        self.bot.tree.add_command(self.rip_packs, guild=self.guild_object)
     
     async def open_pack(self, interaction: discord.Interaction, set_code: str, target_user_id: int):
         # Get pack data from service layer
@@ -114,10 +125,53 @@ class BuildBoosterPack(commands.Cog):
         # Send responses
         await interaction.followup.send(embed=embed)
         await interaction.followup.send(embed=money_embed, ephemeral=True)
+        
+    async def open_multiple_packs(self, interaction: discord.Interaction, set_code: str, target_user_id: int, pack_count: int):
+        total_earnings = 0
+        all_pack_results = []
+        
+        # Open each pack and collect results
+        for i in range(pack_count):
+            pack_cards, pack_value = await self.mtg_service.open_pack(set_code)
+            total_earnings += pack_value
+            all_pack_results.append((pack_cards, pack_value))
+        
+        # Build combined description
+        description = f"Opening {pack_count} packs!\n\n"
+        for i, (pack_cards, pack_value) in enumerate(all_pack_results, 1):
+            description += f"**Pack {i}** (${pack_value}):\n"
+            for card in pack_cards:
+                foil_tag = " ✨" if card["foil"] else ""
+                description += f"  • {card['name']}{foil_tag} - ${card['price']}\n"
+            description += "\n"
+        
+        description += f"***GRAND TOTAL: ${total_earnings}***\n\nPacks opened by: <@{target_user_id}>"
+        
+        # Create pack embed
+        embed = discord.Embed(
+            title=f"MTG Booster Packs x{pack_count}",
+            description=description,
+            color=discord.Color.blue()
+        )
+        
+        # Update user balance
+        await self.economy_service.add_money_to_user(target_user_id, total_earnings)
+        new_balance = await self.economy_service.get_balance(target_user_id)
+        
+        # Create money embed
+        money_embed = discord.Embed(
+            title="",
+            description=f"You have been paid **{total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **{new_balance}** NattyCoins",
+            color=discord.Color.gold()
+        )
+        
+        # Send responses
+        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=money_embed, ephemeral=True)
 
     # Command for adding an item to the shop
     @app_commands.command(name="addmtgset", description="Add an MTG set for pack openings")
-    async def add_set(self, interaction: discord.Interaction,set_code: str):
+    async def add_set(self, interaction: discord.Interaction, set_code: str):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
@@ -161,9 +215,43 @@ class BuildBoosterPack(commands.Cog):
                 )
                 return
             
-            view = OpenPackView(interaction.user, self, self.mtg_service)
+            view = OpenPackView(interaction.user, self, self.mtg_service, pack_count=1)
             await view.open_pack_setup()
-            await interaction.response.send_message("Select an item to purchase:", view=view, ephemeral=True)
+            await interaction.response.send_message("Select a set to open:", view=view, ephemeral=True)
+        except Exception:
+            traceback.print_exc()
+            
+            
+    # Command for opening multiple packs
+    @app_commands.command(name="openpacks", description="Earn NattyCoins based on opening multiple packs all at once!")
+    async def rip_packs(self, interaction: discord.Interaction, requested_open_count: int):
+        try:
+            if interaction.channel.id != self.pack_opening_channel:
+                await interaction.response.send_message(
+                    "You can only use this command in the #pack-openings channel.", ephemeral=True)
+                return
+            
+            user_id = interaction.user.id
+            
+            # Validate that they own packs and that the entered number isnt greater than their total pack count in inventory
+            users_packs = await self.mtg_service.multi_pack_validation(user_id, requested_open_count)
+            
+            if not users_packs:
+                    await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
+                    return
+                
+            # Check if there are any sets available
+            sets = await self.mtg_service.get_all_sets()
+            if not sets:
+                await interaction.response.send_message(
+                    "No MTG sets are currently available. Please contact an admin.", 
+                    ephemeral=True
+                )
+                return
+            
+            view = OpenPackView(interaction.user, self, self.mtg_service, pack_count=requested_open_count)
+            await view.open_pack_setup()
+            await interaction.response.send_message(f"Select a set to open {requested_open_count} packs from:", view=view, ephemeral=True)
         except Exception:
             traceback.print_exc()
 

@@ -39,3 +39,6 @@
 - Added /stats for users to view their own and others' Natty stats
 - Added /gamba to display the gambling leaderboard
 - Updated the purchase log messaging
+
+**Natty Bot v2.2 - 10/19/2025**
+- Added /openpacks for opening multiple MTG packs at a time

@@ -128,45 +128,42 @@ class BuildBoosterPack(commands.Cog):
         
     async def open_multiple_packs(self, interaction: discord.Interaction, set_code: str, target_user_id: int, pack_count: int):
         total_earnings = 0
-        all_pack_results = []
         
-        # Open each pack and collect results
+        # Open and send each pack individually
         for i in range(pack_count):
             pack_cards, pack_value = await self.mtg_service.open_pack(set_code)
             total_earnings += pack_value
-            all_pack_results.append((pack_cards, pack_value))
-        
-        # Build combined description
-        description = f"Opening {pack_count} packs!\n\n"
-        for i, (pack_cards, pack_value) in enumerate(all_pack_results, 1):
-            description += f"**Pack {i}** (${pack_value}):\n"
+            
+            # Build description for this pack
+            description = ""
             for card in pack_cards:
-                foil_tag = " ✨" if card["foil"] else ""
-                description += f"  • {card['name']}{foil_tag} - ${card['price']}\n"
-            description += "\n"
+                foil_tag = " (Foil)✨" if card["foil"] else ""
+                description += f"{card['name']}{foil_tag} - ${card['price']}\n"
+            
+            description += f"***PACK TOTAL: ${pack_value}***\n\nPack {i+1} of {pack_count} opened by: <@{target_user_id}>"
+            
+            # Create pack embed
+            embed = discord.Embed(
+                title=f"MTG Booster Pack #{i+1}",
+                description=description,
+                color=discord.Color.blue()
+            )
+            
+            # Send this pack's embed
+            await interaction.followup.send(embed=embed)
         
-        description += f"***GRAND TOTAL: ${total_earnings}***\n\nPacks opened by: <@{target_user_id}>"
-        
-        # Create pack embed
-        embed = discord.Embed(
-            title=f"MTG Booster Packs x{pack_count}",
-            description=description,
-            color=discord.Color.blue()
-        )
-        
-        # Update user balance
+        # Update user balance after all packs are opened
         await self.economy_service.add_money_to_user(target_user_id, total_earnings)
         new_balance = await self.economy_service.get_balance(target_user_id)
         
-        # Create money embed
+        # Create final summary money embed
         money_embed = discord.Embed(
             title="",
             description=f"You have been paid **{total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **{new_balance}** NattyCoins",
             color=discord.Color.gold()
         )
         
-        # Send responses
-        await interaction.followup.send(embed=embed)
+        # Send final summary
         await interaction.followup.send(embed=money_embed, ephemeral=True)
 
     # Command for adding an item to the shop
@@ -239,11 +236,6 @@ class BuildBoosterPack(commands.Cog):
             if not users_packs:
                     await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
                     return
-            
-            # Validate that the user has entered a count > 0
-            if requested_open_count == 0:
-                await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
-                return
                 
             # Check if there are any sets available
             sets = await self.mtg_service.get_all_sets()

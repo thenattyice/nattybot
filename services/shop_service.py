@@ -1,4 +1,5 @@
 import traceback
+import json
 
 class ShopService():
     def __init__(self, db_pool, economy_service, item_service, inventory_service, mtg_service, handler_registry):
@@ -19,11 +20,22 @@ class ShopService():
         else:
             return False
         
-    async def process_transaction(self, user_id: int, item_id: int):
+    async def process_transaction(self, user_id: int, item_id: int, price_override: int = None, quantity_override: int = None):
         # 1. Get the item
         item = await self.item_service.get_item_by_id(item_id)
         if not item:
             return {'success': False, 'error': 'Item not found'}
+        
+        # Override price if provided
+        actual_price = price_override if price_override is not None else item['price']
+        
+        # Override quantity in metadata if provided
+        if quantity_override is not None:
+            metadata = item['metadata']
+            if isinstance(metadata, str):
+                metadata = json.loads(metadata)
+            metadata['quantity'] = quantity_override
+            item['metadata'] = metadata
         
         # 2. Get the correct item handler
         handler = self.handler_registry.get_handler(
@@ -54,10 +66,10 @@ class ShopService():
             return {'success': False, 'error': 'Purchase failed'}
         
         # 6. Take the money from the user
-        await self.economy_service.remove_money_from_user(user_id, item['price'])
+        await self.economy_service.remove_money_from_user(user_id, actual_price)
              
         # 7. Log the transaction
-        await self.log_item_purchase(user_id, item_id, item['price'])
+        await self.log_item_purchase(user_id, item_id, actual_price)
         
         return {"success": True, "result": result}
         

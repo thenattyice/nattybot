@@ -93,22 +93,13 @@ class ItemService:
             """, item_id)
             
     # Get item by metadata set_code
-    async def get_items_by_set_code(self, set_code: str) -> int:
+    async def get_item_by_set_code(self, set_code: str) -> dict:
         async with self.db_pool.acquire() as conn:
-            rows = await conn.fetch("""
-            SELECT id, name, price, metadata, metadata->>'product_type' as product_type
+            row = await conn.fetchrow("""
+            SELECT id, name, price, metadata
             FROM shop_items
             WHERE item_type = 'collectible'
             AND metadata->>'set_code' = $1
             AND is_active = TRUE
-            ORDER BY (metadata->>'product_type')
         """, set_code)
-            
-        items = {'pack': None, 'box': None}
-        
-        for row in rows:
-            product_type = row['product_type']
-            
-            if product_type in ['pack', 'box']:
-                items[product_type] = dict(row)
-        return items
+        return dict(row) if row else None

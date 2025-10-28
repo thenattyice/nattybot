@@ -46,10 +46,12 @@ class CardShopSelect(discord.ui.Select):
             set_code = self.values[0]
             user_id = interaction.user.id
             
-            items = await self.item_service.get_items_by_set_code(set_code)
+            set_info = await self.mtg_service.get_set_by_code(set_code)
+            
+            item = await self.item_service.get_item_by_set_code(set_code)
         
-            if not items['pack'] or not items['box']:
-                await interaction.response.send_message("Error: Set items not found in shop", ephemeral=True)
+            if not item:
+                await interaction.response.send_message("Error: Set item not found in shop", ephemeral=True)
                 return
             
             # Disable dropdown
@@ -59,8 +61,8 @@ class CardShopSelect(discord.ui.Select):
             
             # Show Pack/Box buttons
             button_view = PackOrBoxView(
-                items['pack'], 
-                items['box'], 
+                item, 
+                set_info, 
                 self.shop_service, 
                 self.bot, 
                 self.purchase_log_channel,
@@ -68,7 +70,7 @@ class CardShopSelect(discord.ui.Select):
             )
             
             await interaction.response.edit_message(
-                content=f"Select pack or box for {items['pack']['name'].replace(' - Pack', '')}:",
+                content=f"Select pack or box for {set_info['set_name']}:",
                 view=button_view
             )
             
@@ -85,10 +87,10 @@ class CardShopSelect(discord.ui.Select):
                 )
 
 class PackOrBoxView(discord.ui.View):
-    def __init__(self, pack_item, box_item, shop_service, bot, log_channel, user):
+    def __init__(self, item, set_info, shop_service, bot, log_channel, user):
         super().__init__()
-        self.pack_item = pack_item
-        self.box_item = box_item
+        self.item = item
+        self.set_info = set_info
         self.shop_service = shop_service
         self.bot = bot
         self.log_channel = log_channel
@@ -96,14 +98,14 @@ class PackOrBoxView(discord.ui.View):
         
         # Create buttons with dynamic labels
         pack_button = discord.ui.Button(
-            label=f"Buy Pack ({pack_item['price']} NattyCoins)",
+            label=f"Buy Pack ({set_info['pack_price']} NattyCoins)",
             style=discord.ButtonStyle.green,
             custom_id="buy_pack"
         )
         pack_button.callback = self.buy_pack
         
         box_button = discord.ui.Button(
-            label=f"Buy Box - 30 packs ({box_item['price']} NattyCoins)",
+            label=f"Buy Box - 30 packs ({set_info['box_price']} NattyCoins)",
             style=discord.ButtonStyle.blurple,
             custom_id="buy_box"
         )
@@ -117,7 +119,7 @@ class PackOrBoxView(discord.ui.View):
             user_id = interaction.user.id
             
             # Use shop service to process transaction
-            result = await self.shop_service.process_transaction(user_id, self.pack_item['id'])
+            result = await self.shop_service.process_transaction(user_id, self.item['id'], price_override=self.set_info['pack_price'], quantity_override=1)
             
             # Disable buttons
             for item in self.children:
@@ -129,8 +131,9 @@ class PackOrBoxView(discord.ui.View):
                 log_embed = discord.Embed(
                     title="MTG Card Shop Purchase",
                     description=f"User: <@{user_id}>\n"
-                                f"Item: {self.pack_item['name']}\n"
-                                f"Price: {self.pack_item['price']} NattyCoins",
+                                f"Item: {self.item['name']}\n"
+                                f"Quantity: 1 pack\n"
+                                f"Price: {self.set_info['pack_price']} NattyCoins",
                     color=discord.Color.green()
                 )
                 
@@ -139,7 +142,7 @@ class PackOrBoxView(discord.ui.View):
                     await log_channel.send(embed=log_embed)
                 
                 await interaction.followup.send(
-                    f"✅ Purchased 1 pack of {self.pack_item['name']}!",
+                    f"✅ Purchased 1 pack of {self.set_info['set_name']}!",
                     ephemeral=True
                 )
             else:
@@ -163,7 +166,7 @@ class PackOrBoxView(discord.ui.View):
             user_id = interaction.user.id
             
             # Use shop service to process transaction
-            result = await self.shop_service.process_transaction(user_id, self.box_item['id'])
+            result = await self.shop_service.process_transaction(user_id, self.item['id'], price_override=self.set_info['box_price'], quantity_override=30)
             
             # Disable buttons
             for item in self.children:
@@ -175,8 +178,9 @@ class PackOrBoxView(discord.ui.View):
                 log_embed = discord.Embed(
                     title="MTG Card Shop Purchase",
                     description=f"User: <@{user_id}>\n"
-                                f"Item: {self.box_item['name']}\n"
-                                f"Price: {self.box_item['price']} NattyCoins",
+                                f"Item: {self.item['name']}\n"
+                                f"Quantity: 30 packs\n"
+                                f"Price: {self.set_info['box_price']} NattyCoins",
                     color=discord.Color.green()
                 )
                 
@@ -185,7 +189,7 @@ class PackOrBoxView(discord.ui.View):
                     await log_channel.send(embed=log_embed)
                 
                 await interaction.followup.send(
-                    f"✅ Purchased 1 box of {self.box_item['name']} (30 packs)!",
+                    f"✅ Purchased 1 box of {self.set_info['set_name']} (30 packs)!",
                     ephemeral=True
                 )
             else:

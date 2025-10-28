@@ -53,30 +53,12 @@ class MtgService:
                         INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
                         VALUES ($1, $2, $3, 'collectible', $4, TRUE)
                     """,
-                        f"{set_name} - Pack",
-                        f"Single booster pack from {set_name}",
+                        f"{set_name} Booster Packs",
+                        f"Booster packs from {set_name}",
                         pack_price,
                         json.dumps({
                             "set_id": set_id,
-                            "set_code": set_code,
-                            "product_type": "pack",
-                            "quantity": 1
-                        })
-                    )
-
-                    # Create the box shop item
-                    await conn.execute("""
-                        INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
-                        VALUES ($1, $2, $3, 'collectible', $4, TRUE)
-                    """,
-                        f"{set_name} - Box",
-                        f"Sealed booster box from {set_name} (30 packs)",
-                        box_price,
-                        json.dumps({
-                            "set_id": set_id,
-                            "set_code": set_code,
-                            "product_type": "box",
-                            "quantity": 30
+                            "set_code": set_code
                         })
                     )
 
@@ -95,7 +77,7 @@ class MtgService:
     # Get specific set by code
     async def get_set_by_code(self, set_code: str):
         async with self.db_pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT set_name FROM mtg_sets WHERE set_code = $1;", set_code)
+            row = await conn.fetchrow("SELECT set_name, pack_price, box_price FROM mtg_sets WHERE set_code = $1;", set_code)
         return dict(row) if row else None
     
     # Get price of cards 

@@ -96,14 +96,14 @@ class PackOrBoxView(discord.ui.View):
         
         # Create buttons with dynamic labels
         pack_button = discord.ui.Button(
-            label=f"Buy Pack ({set_info['pack_price']} NattyCoins)",
+            label=f"Buy Pack ({pack_item['price']} NattyCoins)",
             style=discord.ButtonStyle.green,
             custom_id="buy_pack"
         )
         pack_button.callback = self.buy_pack
         
         box_button = discord.ui.Button(
-            label=f"Buy Box - 30 packs ({set_info['box_price']} NattyCoins)",
+            label=f"Buy Box - 30 packs ({box_item['price']} NattyCoins)",
             style=discord.ButtonStyle.blurple,
             custom_id="buy_box"
         )

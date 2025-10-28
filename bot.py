@@ -20,6 +20,7 @@ from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
 from cogs.magicthegathering.buildpack import setup as setup_openpack
+from cogs.magicthegathering.cardshop import setup as setup_cardshop
 from services.item_service import ItemService
 from services.inventory_service import InventoryService
 from services.shop_service import ShopService
@@ -107,6 +108,16 @@ class Client(commands.Bot):
                         acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         PRIMARY KEY (user_id, item_id)
                     );
+                    
+                    -- MTG sets table (for pack opening feature)
+                    CREATE TABLE IF NOT EXISTS mtg_sets (
+                        id SERIAL PRIMARY KEY,
+                        set_code TEXT UNIQUE NOT NULL,
+                        set_name TEXT UNIQUE NOT NULL,
+                        pack_price INTEGER NOT NULL,
+                        box_price INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
 
                     -- Purchase history/log table
                     CREATE TABLE IF NOT EXISTS purchases (
@@ -127,14 +138,6 @@ class Client(commands.Bot):
                         quantity INTEGER DEFAULT 1,
                         result_data JSONB, -- Store pack contents, payout amounts, etc.
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    -- MTG sets table (for pack opening feature)
-                    CREATE TABLE IF NOT EXISTS mtg_sets (
-                        id SERIAL PRIMARY KEY,
-                        set_code TEXT UNIQUE NOT NULL,
-                        set_name TEXT UNIQUE NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
 
                     -- Game stats table (for leaderboards)
@@ -280,7 +283,8 @@ async def setup_cogs():
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
     
     # MTG
-    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service))
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service, inventory_service))
+    await load_cog("CardShop", setup_cardshop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service, inventory_service, item_service, mtg_service))
     
     # MC Server Status
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))

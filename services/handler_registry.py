@@ -1,6 +1,7 @@
 from item_handlers.consumable_handler import ConsumableHandler
 from item_handlers.business_handler import BusinessHandler
 from item_handlers.bundle_handler import BundleHandler
+from item_handlers.mtg_collectible_handler import MTGCollectibleHandler
 
 class ItemHandlerRegistry:
     def __init__(self):
@@ -57,6 +58,12 @@ _default_registry.register_handler(
 )
 _default_registry.register_handler(
     "bundle",
+    lambda economy_service, item_service, inventory_service: BundleHandler(
+        economy_service, item_service, inventory_service
+    )
+)
+_default_registry.register_handler(
+    "collectible",
     lambda economy_service, item_service, inventory_service: BundleHandler(
         economy_service, item_service, inventory_service
     )

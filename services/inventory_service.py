@@ -80,3 +80,13 @@ class InventoryService:
                 ORDER BY shop_items.name;
             """, user_id)
         return [dict(row) for row in rows]
+    
+    # Get item by metadata set_code
+    async def get_item_id_by_set_code(self, user_id: int, set_code: str) -> int:
+        async with self.db_pool.acquire() as conn:
+            set_code = await conn.fetchval("""
+                SELECT item_id FROM inventory
+                WHERE user_id = $1
+                AND metadata->>'set_code' = $2
+            """, user_id, set_code)
+        return set_code

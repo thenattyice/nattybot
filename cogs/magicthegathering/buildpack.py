@@ -17,7 +17,7 @@ class OpenPackView(discord.ui.View):
         
     async def open_pack_setup(self):
         # Get all the shop items
-        sets = await self.mtg_service.get_all_sets()
+        sets = await self.mtg_service.get_user_mtg_packs()
         
         # Builds the dropdown
         self.clear_items()
@@ -25,14 +25,15 @@ class OpenPackView(discord.ui.View):
         self.add_item(select)
         
 class PackSelect(discord.ui.Select):
-    def __init__(self, sets, parent_cog, parent_view, mtg_service):
+    def __init__(self, sets, parent_cog, parent_view, mtg_service, inventory_service):
         self.parent_cog = parent_cog
         self.parent_view = parent_view
         self.mtg_service = mtg_service
+        self.inventory_service = inventory_service
         options = [
             discord.SelectOption(
                 label=set['set_name'],
-                description=f"Booster pack for {set['set_name']}",
+                description=f"Booster pack for {set['set_name']} ({set['total_quantity']} owned)",
                 value=set['set_code']
             )
             for set in sets
@@ -45,12 +46,10 @@ class PackSelect(discord.ui.Select):
             set_code = self.values[0]
             set_row = await self.mtg_service.get_set_by_code(set_code)
             pack_count = self.parent_view.pack_count
+            item_id = await self.inventory_service.get_item_id_by_set_code(user_id, set_code)
             
             # Remove the appropriate number of packs
-            if pack_count == 1:
-                await self.mtg_service.remove_pack_from_user(user_id)
-            else:
-                await self.mtg_service.remove_multiple_packs_from_user(user_id, pack_count)
+            await self.inventory_service.remove_item_from_inventory(user_id, item_id, pack_count)
             
             # Disable the dropdown after selection
             self.disabled = True
@@ -252,5 +251,5 @@ class BuildBoosterPack(commands.Cog):
         except Exception:
             traceback.print_exc()
 
-async def setup(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service):
-    await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service))
+async def setup(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service):
+    await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service))

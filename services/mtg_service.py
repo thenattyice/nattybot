@@ -19,7 +19,7 @@ class MtgService:
                 return data["data"]
     
     # Add a set to the DB table
-    async def add_set_to_db(self, set_code: str):
+    async def add_set_to_db(self, set_code: str, pack_price: int, box_price: int):
         try:
             url = f"https://api.scryfall.com/sets/{set_code}"
             async with aiohttp.ClientSession() as session:
@@ -29,17 +29,47 @@ class MtgService:
             set_name = set_data["name"]
 
             async with self.db_pool.acquire() as conn:
-                status = await conn.execute("""
-                    INSERT INTO mtg_sets (set_code, set_name)
-                    VALUES ($1, $2)
-                    ON CONFLICT (set_code) DO NOTHING;
-                """, set_code, set_name)
+                set_id = await conn.execute("""
+                    INSERT INTO mtg_sets (set_code, set_name, pack_price, box_price)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (set_code) DO NOTHING
+                    RETURNING id;
+                """, set_code, set_name, pack_price, box_price)
             
-            # status will look like "INSERT 0 1" or "INSERT 0 0"
-            if status.endswith("1"):
-                return {'success': True, 'message': f"Set `{set_name}` ({set_code}) added successfully!"}
-            else:
+            if not set_id:
                 return {'success': False, 'error': f"Set `{set_name}` ({set_code}) already exists."}
+            
+            # Create the pack shop item
+            await conn.execute("""
+                INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+            """,
+                f"{set_name} - Pack",
+                f"Single booster pack from {set_name}",
+                pack_price,
+                json.dumps({
+                    "set_id": set_id,
+                    "set_code": set_code,
+                    "product_type": "pack",
+                    "quantity": 1
+                })
+            )
+            
+            # Create the box shop item
+            await conn.execute("""
+                INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+            """,
+                f"{set_name} - Box",
+                f"Single booster pack from {set_name}",
+                pack_price,
+                json.dumps({
+                    "set_id": set_id,
+                    "set_code": set_code,
+                    "product_type": "pack",
+                    "quantity": 30
+                })
+            )
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}
@@ -47,7 +77,7 @@ class MtgService:
     # Get all MTG sets    
     async def get_all_sets(self):
         async with self.db_pool.acquire() as conn:
-            rows = await conn.fetch("SELECT id, set_name, set_code FROM mtg_sets;")
+            rows = await conn.fetch("SELECT id, set_name, set_code, pack_price, box_price FROM mtg_sets;")
         return [dict(row) for row in rows]  # Convert to list of dicts
     
     # Get specific set by code
@@ -77,46 +107,39 @@ class MtgService:
         else:
             return round(usd), False
     
-    # Validate that user owns a pack
-    async def owns_packs_validation(self, user_id: int) -> bool:
+    # Validate that user owns packs for the set
+    async def user_owns_set_packs(self, user_id: int, set_id: int, requested_open_count: int):
         async with self.db_pool.acquire() as conn:
             owns_packs = await conn.fetchrow("""
-                SELECT s.name
+                SELECT i.quantity
                 FROM inventory i
-                JOIN shop_items s ON s.id = i.item_id
-                WHERE i.user_id = $1
-                AND s.name = 'MTG Booster Pack'
-                AND i.quantity > 0;
-            """, user_id)
-        return owns_packs is not None
-    
-    async def multi_pack_validation(self, user_id: int, requested_open_count: int):
-        async with self.db_pool.acquire() as conn:
-            owns_packs = await conn.fetchrow("""
-                SELECT s.name, i.quantity
-                FROM inventory i
-                JOIN shop_items s ON s.id = i.item_id
-                WHERE i.user_id = $1
-                AND s.name = 'MTG Booster Pack'
-                AND i.quantity >= $2;
+                JOIN mtg_sets ms ON ms.id = mi.set_id
+                WHERE mi.user_id = $1
+                AND i.quantity >= $2
+                AND i.metadata->>'set_code' = ;
             """, user_id, requested_open_count)
         return owns_packs is not None
     
-    # Remove the pack from user
-    async def remove_pack_from_user(self, target_user_id: int):
-        item = await self.item_service.get_item_by_name("MTG Booster Pack")
-        
-        pack_item_id = item['id']
-        
-        await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id, 1)
+    # Get all packs and sets owned by user
+    async def get_user_mtg_packs(self, user_id):
+        async with self.db_pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT 
+                    inventory.item_id,
+                    SUM(inventory.quantity) as total_quantity,
+                    shop_items.metadata->>'set_code' as set_code,
+                    shop_items.name as set_name
+                FROM inventory
+                JOIN shop_items ON inventory.item_id = shop_items.id
+                WHERE inventory.user_id = $1
+                AND shop_items.item_type = 'collectible'
+                AND shop_items.metadata ? 'set_code'
+                GROUP BY shop_items.metadata->>'set_code', shop_items.name, inventory.item_id
+                HAVING SUM(inventory.quantity) > 0
+            """, user_id)
+        return [dict(row) for row in rows]
     
-    # Remove multiple packs from user
-    async def remove_multiple_packs_from_user(self, target_user_id: int, quantity: int):
-        item = await self.item_service.get_item_by_name("MTG Booster Pack")
-        
-        pack_item_id = item['id']
-        
-        await self.inventory_service.remove_item_from_inventory(target_user_id, pack_item_id, quantity)
+    # Get item_id by set_code
     
     # Open a pack and pay the user    
     async def open_pack(self, set_code: str) -> Tuple[List[Dict], float]:

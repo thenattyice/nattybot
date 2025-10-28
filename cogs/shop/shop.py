@@ -86,7 +86,7 @@ class ShopSelect(discord.ui.Select):
                 )
 
 class Shop(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
+    def __init__(self, bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service, mtg_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
@@ -94,6 +94,7 @@ class Shop(commands.Cog):
         self.shop_service = shop_service
         self.inventory_service = inventory_service
         self.item_service = item_service
+        self.mtg_service = mtg_service
         
         self.bot.tree.add_command(self.shop_open, guild=self.guild_object)
         self.bot.tree.add_command(self.shop_add_item, guild=self.guild_object)
@@ -169,29 +170,29 @@ class Shop(commands.Cog):
     async def show_inventory(self, interaction: discord.Interaction):
         try:
             user_id = interaction.user.id
-            inventory_list = await self.inventory_service.get_user_inventory(user_id)
             
-            if not inventory_list:
+            inventory = await self.inventory_service.get_user_inventory(user_id)
+            
+            if not inventory:
                 await interaction.response.send_message(
                     "Your inventory is empty.", ephemeral=True
                 )
                 return
             
-            description = '\n'.join(
-                f"{row['name']}: {row['quantity']}" for row in inventory_list
-            )
+            # Build the embed description
+            description = ""
             
-            embed = discord.Embed(
-                title="Your Inventory",
-                description=description,
-                color=discord.Color.blue()
-            )
+            if inventory:
+                description += "**Your Inventory**\n"
+                description += '\n'.join(
+                    f"• {row['name']}: {row['quantity']}" for row in inventory
+                )
             
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception:
             traceback.print_exc()
 
-async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service):
+async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_service, inventory_service, item_service, mtg_service):
     await bot.add_cog(Shop(
         bot, 
         guild_object, 
@@ -199,5 +200,6 @@ async def setup(bot, guild_object, allowed_roles, purchase_log_channel, shop_ser
         purchase_log_channel,
         shop_service,
         inventory_service,
-        item_service
+        item_service,
+        mtg_service
     ))

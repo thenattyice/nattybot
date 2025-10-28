@@ -33,6 +33,18 @@ class ItemService:
             rows = await conn.fetch("SELECT * FROM shop_items;")
         return [dict(row) for row in rows]
     
+    # Get collectble items (MTG packs) - active only
+    async def get_all_collectible_items(self) -> list[dict]:
+        async with self.db_pool.acquire() as conn:
+            rows = await conn.fetch("SELECT * FROM shop_items WHERE is_Active = TRUE AND item_type = 'collectible';")
+        return [dict(row) for row in rows]
+    
+    # Get all non-collectble items - active only
+    async def get_all_shop_items(self) -> list[dict]:
+        async with self.db_pool.acquire() as conn:
+            rows = await conn.fetch("SELECT * FROM shop_items WHERE is_Active = TRUE AND item_type != 'collectible';")
+        return [dict(row) for row in rows]
+    
     # Add an item to the shop table for purchase in the shop
     async def add_shop_item(self, name: str, description: str, price: int, item_type: str, is_active: bool, metadata: dict | None = None) -> dict:
         if price <= 0:
@@ -79,3 +91,22 @@ class ItemService:
                 DELETE FROM shop_items
                 WHERE id = $1
             """, item_id)
+            
+    # Get item by metadata set_code
+    async def get_items_by_set_code(self, set_code: str) -> int:
+        async with self.db_pool.acquire() as conn:
+            rows = await conn.fetch("""
+            SELECT id, name, price, metadata
+            FROM shop_items
+            WHERE item_type = 'collectible'
+            AND metadata->>'set_code' = $1
+            AND is_active = TRUE
+            ORDER BY (metadata->>'product_type')
+        """, set_code)
+            
+        items = {'pack': None, 'box': None}
+        for row in rows:
+            product_type = row['metadata'].get('product_type')
+            if product_type in ['pack', 'box']:
+                items[product_type] = dict(row)
+        return items

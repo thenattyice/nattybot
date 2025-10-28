@@ -168,7 +168,7 @@ class BuildBoosterPack(commands.Cog):
 
     # Command for adding an item to the shop
     @app_commands.command(name="addmtgset", description="Add an MTG set for pack openings")
-    async def add_set(self, interaction: discord.Interaction, set_code: str):
+    async def add_set(self, interaction: discord.Interaction, set_code: str, pack_price: int, box_price: int):
         user_role_ids = [role.id for role in interaction.user.roles]
         if not any(role_id in self.allowed_roles for role_id in user_role_ids):
             await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
@@ -176,7 +176,7 @@ class BuildBoosterPack(commands.Cog):
 
         try:
             await interaction.response.defer(thinking=True, ephemeral=True)
-            result = await self.mtg_service.add_set_to_db(set_code)
+            result = await self.mtg_service.add_set_to_db(set_code, pack_price, box_price)
 
             if result['success']:
                 await interaction.followup.send(result['message'], ephemeral=True)

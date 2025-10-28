@@ -183,10 +183,15 @@ class Shop(commands.Cog):
             description = ""
             
             if inventory:
-                description += "**Your Inventory**\n"
                 description += '\n'.join(
                     f"• {row['name']}: {row['quantity']}" for row in inventory
                 )
+                
+            embed = discord.Embed(
+                title="**Your Inventory**",
+                description=description,
+                color=discord.Color.blue()
+            )
             
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception:

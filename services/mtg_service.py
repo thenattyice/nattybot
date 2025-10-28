@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import random
 import traceback
+import json
 from typing import Tuple, List, Dict
 
 class MtgService:

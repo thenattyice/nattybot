@@ -71,6 +71,7 @@ class MtgService:
                         "quantity": 30
                     })
                 )
+            return {'success': True, 'message': 'Set successfully added!'}
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}

@@ -112,51 +112,51 @@ class PackOrBoxView(discord.ui.View):
         self.add_item(pack_button)
         self.add_item(box_button)
         
-        async def buy_pack(self, interaction: discord.Interaction):
+    async def buy_pack(self, interaction: discord.Interaction):
+        try:
+            user_id = interaction.user.id
+            
+            # Use shop service to process transaction
+            result = await self.shop_service.process_transaction(user_id, self.pack_item['id'])
+            
+            # Disable buttons
+            for item in self.children:
+                item.disabled = True
+            await interaction.response.edit_message(view=self)
+            
+            if result['success']:
+                # Log purchase
+                log_embed = discord.Embed(
+                    title="MTG Card Shop Purchase",
+                    description=f"User: <@{user_id}>\n"
+                                f"Item: {self.pack_item['name']}\n"
+                                f"Price: {self.pack_item['price']} NattyCoins",
+                    color=discord.Color.green()
+                )
+                
+                log_channel = self.bot.get_channel(self.log_channel)
+                if log_channel:
+                    await log_channel.send(embed=log_embed)
+                
+                await interaction.followup.send(
+                    f"✅ Purchased 1 pack of {self.pack_item['name']}!",
+                    ephemeral=True
+                )
+            else:
+                await interaction.followup.send(
+                    f"❌ {result['error']}",
+                    ephemeral=True
+                )
+                
+        except Exception as e:
+            print("Error in buy_pack:")
+            traceback.print_exc()
             try:
-                user_id = interaction.user.id
-                
-                # Use shop service to process transaction
-                result = await self.shop_service.process_transaction(user_id, self.pack_item['id'])
-                
-                # Disable buttons
-                for item in self.children:
-                    item.disabled = True
-                await interaction.response.edit_message(view=self)
-                
-                if result['success']:
-                    # Log purchase
-                    log_embed = discord.Embed(
-                        title="MTG Card Shop Purchase",
-                        description=f"User: <@{user_id}>\n"
-                                    f"Item: {self.pack_item['name']}\n"
-                                    f"Price: {self.pack_item['price']} NattyCoins",
-                        color=discord.Color.green()
-                    )
-                    
-                    log_channel = self.bot.get_channel(self.log_channel)
-                    if log_channel:
-                        await log_channel.send(embed=log_embed)
-                    
-                    await interaction.followup.send(
-                        f"✅ Purchased 1 pack of {self.pack_item['name']}!",
-                        ephemeral=True
-                    )
-                else:
-                    await interaction.followup.send(
-                        f"❌ {result['error']}",
-                        ephemeral=True
-                    )
-                    
-            except Exception as e:
-                print("Error in buy_pack:")
-                traceback.print_exc()
-                try:
-                    await interaction.followup.send(
-                        "An error occurred during purchase.", ephemeral=True
-                    )
-                except:
-                    pass
+                await interaction.followup.send(
+                    "An error occurred during purchase.", ephemeral=True
+                )
+            except:
+                pass
     
     async def buy_box(self, interaction: discord.Interaction):
         try:

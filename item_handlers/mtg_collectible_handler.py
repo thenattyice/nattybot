@@ -19,18 +19,16 @@ class MTGCollectibleHandler:
         
         set_code = metadata['set_code']
         quantity = metadata['quantity']  # 1 for pack, 30 for box
-        product_type = metadata['product_type']  # 'pack' or 'box'
         
         # Add to inventory with set_code in metadata
         await self.inventory_service.add_item_to_inventory(
             user_id, 
             item['id'], 
             quantity,
-            metadata={'set_code': set_code, 'product_type': product_type}
+            metadata={'set_code': set_code}
         )
         
         return {
             'set_code': set_code,
-            'quantity': quantity,
-            'product_type': product_type
+            'quantity': quantity
         }

@@ -78,13 +78,14 @@ class PackSelect(discord.ui.Select):
                 await interaction.followup.send("An error occurred during pack selection.", ephemeral=True)
 
 class BuildBoosterPack(commands.Cog):
-    def __init__(self, bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service):
+    def __init__(self, bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service):
         self.bot = bot
         self.guild_object = guild_object
         self.allowed_roles = allowed_roles
         self.pack_opening_channel = pack_opening_channel
         self.economy_service = economy_service
         self.mtg_service = mtg_service
+        self.inventory_service = inventory_service
         
         # Register commands here
         self.bot.tree.add_command(self.add_set, guild=self.guild_object)

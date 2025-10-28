@@ -40,37 +40,37 @@ class MtgService:
             if not set_id:
                 return {'success': False, 'error': f"Set `{set_name}` ({set_code}) already exists."}
             
-            # Create the pack shop item
-            await conn.execute("""
-                INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
-                VALUES ($1, $2, $3, 'collectible', $4, TRUE)
-            """,
-                f"{set_name} - Pack",
-                f"Single booster pack from {set_name}",
-                pack_price,
-                json.dumps({
-                    "set_id": set_id,
-                    "set_code": set_code,
-                    "product_type": "pack",
-                    "quantity": 1
-                })
-            )
+                # Create the pack shop item
+                await conn.execute("""
+                    INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                    VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+                """,
+                    f"{set_name} - Pack",
+                    f"Single booster pack from {set_name}",
+                    pack_price,
+                    json.dumps({
+                        "set_id": set_id,
+                        "set_code": set_code,
+                        "product_type": "pack",
+                        "quantity": 1
+                    })
+                )
             
-            # Create the box shop item
-            await conn.execute("""
-                INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
-                VALUES ($1, $2, $3, 'collectible', $4, TRUE)
-            """,
-                f"{set_name} - Box",
-                f"Single booster pack from {set_name}",
-                pack_price,
-                json.dumps({
-                    "set_id": set_id,
-                    "set_code": set_code,
-                    "product_type": "pack",
-                    "quantity": 30
-                })
-            )
+                # Create the box shop item
+                await conn.execute("""
+                    INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                    VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+                """,
+                    f"{set_name} - Box",
+                    f"Single booster pack from {set_name}",
+                    pack_price,
+                    json.dumps({
+                        "set_id": set_id,
+                        "set_code": set_code,
+                        "product_type": "pack",
+                        "quantity": 30
+                    })
+                )
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}

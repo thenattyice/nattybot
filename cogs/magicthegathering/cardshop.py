@@ -33,7 +33,7 @@ class CardShopSelect(discord.ui.Select):
         
         options = [
             discord.SelectOption(
-                label=set['name'],
+                label=set['set_name'],
                 description=f"Single Pack: {set['pack_price']} | Booster Box: {set['box_price']}",
                 value=str(set['set_code'])
             )

@@ -255,6 +255,7 @@ async def setup_cogs():
         economy_service=economy_service,
         item_service=item_service,
         inventory_service=inventory_service,
+        mtg_service=mtg_service,
         handler_registry=handler_registry
     )
     

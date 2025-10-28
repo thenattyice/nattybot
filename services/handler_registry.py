@@ -64,7 +64,7 @@ _default_registry.register_handler(
 )
 _default_registry.register_handler(
     "collectible",
-    lambda economy_service, item_service, inventory_service: BundleHandler(
-        economy_service, item_service, inventory_service
+    lambda economy_service, item_service, inventory_service, mtg_service: MTGCollectibleHandler(
+        economy_service, item_service, inventory_service, mtg_service
     )
 )

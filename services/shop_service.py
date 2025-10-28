@@ -1,11 +1,12 @@
 import traceback
 
 class ShopService():
-    def __init__(self, db_pool, economy_service, item_service, inventory_service, handler_registry):
+    def __init__(self, db_pool, economy_service, item_service, inventory_service, mtg_service, handler_registry):
         self.db_pool = db_pool
         self.economy_service = economy_service
         self.item_service = item_service
         self.inventory_service = inventory_service
+        self.mtg_service = mtg_service
         self.handler_registry = handler_registry
     
     # Purchase validation
@@ -29,7 +30,8 @@ class ShopService():
             item['item_type'],
             economy_service=self.economy_service,
             item_service=self.item_service,
-            inventory_service=self.inventory_service
+            inventory_service=self.inventory_service,
+            mtg_service=self.mtg_service
         )  
         
         # 3. Check that user can buy/afford item

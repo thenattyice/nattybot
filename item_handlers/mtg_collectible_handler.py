@@ -12,6 +12,9 @@ class MTGCollectibleHandler:
     async def on_purchase(self, user_id: int, item: dict) -> dict:
         # Extract metadata
         metadata = item['metadata']
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        
         set_code = metadata['set_code']
         quantity = metadata['quantity']  # 1 for pack, 30 for box
         product_type = metadata['product_type']  # 'pack' or 'box'

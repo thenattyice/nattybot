@@ -1,3 +1,5 @@
+import json
+
 class InventoryService:
     def __init__(self, db_pool):
         self.db_pool = db_pool
@@ -51,9 +53,9 @@ class InventoryService:
                 # Insert new record (only if quantity is positive)
                 if quantity > 0:
                     await conn.execute("""
-                        INSERT INTO inventory (user_id, item_id, quantity)
-                        VALUES ($1, $2, $3)
-                    """, user_id, item_id, quantity)
+                        INSERT INTO inventory (user_id, item_id, quantity, metadata)
+                        VALUES ($1, $2, $3, $4)
+                    """, user_id, item_id, quantity, json.dumps(metadata or {}))
             
     # Remove item from inventory quantity
     async def remove_item_from_inventory(self, user_id: int, item_id: int, quantity: int):
@@ -61,7 +63,6 @@ class InventoryService:
     
     # Update metadata for inventory item
     async def update_item_metadata(self, user_id: int, item_id: int, metadata: dict):
-        import json
         async with self.db_pool.acquire() as conn:
             await conn.execute("""
                 UPDATE inventory

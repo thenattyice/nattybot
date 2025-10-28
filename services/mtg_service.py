@@ -14,64 +14,74 @@ class MtgService:
     # Get all cards from a set
     async def get_cards_from_set(self, set_code: str):
         url = f"https://api.scryfall.com/cards/search?q=set:{set_code}"
+        cards = []
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                data = await response.json()
-                return data["data"]
+            while url:
+                async with session.get(url) as response:
+                    data = await response.json()
+                    cards.extend(data.get("data", []))
+                    url = data.get("next_page") if data.get("has_more") else None
+        return cards
     
     # Add a set to the DB table
     async def add_set_to_db(self, set_code: str, pack_price: int, box_price: int):
         try:
+            # Fetch set info from Scryfall
             url = f"https://api.scryfall.com/sets/{set_code}"
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     set_data = await response.json()
-            
+
             set_name = set_data["name"]
 
             async with self.db_pool.acquire() as conn:
-                set_id = await conn.execute("""
-                    INSERT INTO mtg_sets (set_code, set_name, pack_price, box_price)
-                    VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (set_code) DO NOTHING
-                    RETURNING id;
-                """, set_code, set_name, pack_price, box_price)
-            
-            if not set_id:
-                return {'success': False, 'error': f"Set `{set_name}` ({set_code}) already exists."}
-            
-                # Create the pack shop item
-                await conn.execute("""
-                    INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
-                    VALUES ($1, $2, $3, 'collectible', $4, TRUE)
-                """,
-                    f"{set_name} - Pack",
-                    f"Single booster pack from {set_name}",
-                    pack_price,
-                    json.dumps({
-                        "set_id": set_id,
-                        "set_code": set_code,
-                        "product_type": "pack",
-                        "quantity": 1
-                    })
-                )
-            
-                # Create the box shop item
-                await conn.execute("""
-                    INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
-                    VALUES ($1, $2, $3, 'collectible', $4, TRUE)
-                """,
-                    f"{set_name} - Box",
-                    f"Single booster pack from {set_name}",
-                    pack_price,
-                    json.dumps({
-                        "set_id": set_id,
-                        "set_code": set_code,
-                        "product_type": "pack",
-                        "quantity": 30
-                    })
-                )
+                async with conn.transaction():  # All DB ops happen in one transaction
+
+                    # Insert into mtg_sets and get the id
+                    set_id = await conn.fetchval("""
+                        INSERT INTO mtg_sets (set_code, set_name, pack_price, box_price)
+                        VALUES ($1, $2, $3, $4)
+                        ON CONFLICT (set_code) DO NOTHING
+                        RETURNING id;
+                    """, set_code, set_name, pack_price, box_price)
+
+                    if not set_id:
+                        return {'success': False, 'error': f"Set `{set_name}` ({set_code}) already exists."}
+
+                    # Create the pack shop item
+                    await conn.execute("""
+                        INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                        VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+                    """,
+                        f"{set_name} - Pack",
+                        f"Single booster pack from {set_name}",
+                        pack_price,
+                        json.dumps({
+                            "set_id": set_id,
+                            "set_code": set_code,
+                            "product_type": "pack",
+                            "quantity": 1
+                        })
+                    )
+
+                    # Create the box shop item
+                    await conn.execute("""
+                        INSERT INTO shop_items (name, description, price, item_type, metadata, is_active)
+                        VALUES ($1, $2, $3, 'collectible', $4, TRUE)
+                    """,
+                        f"{set_name} - Box",
+                        f"Sealed booster box from {set_name} (30 packs)",
+                        box_price,
+                        json.dumps({
+                            "set_id": set_id,
+                            "set_code": set_code,
+                            "product_type": "box",
+                            "quantity": 30
+                        })
+                    )
+
             return {'success': True, 'message': 'Set successfully added!'}
+
         except Exception:
             traceback.print_exc()
             return {'success': False, 'error': 'Unable to add set'}
@@ -110,16 +120,16 @@ class MtgService:
             return round(usd), False
     
     # Validate that user owns packs for the set
-    async def user_owns_set_packs(self, user_id: int, set_id: int, requested_open_count: int):
+    async def user_owns_set_packs(self, user_id: int, set_code: str, requested_open_count: int):
         async with self.db_pool.acquire() as conn:
             owns_packs = await conn.fetchrow("""
                 SELECT i.quantity
                 FROM inventory i
-                JOIN mtg_sets ms ON ms.id = mi.set_id
-                WHERE mi.user_id = $1
+                JOIN shop_items si ON si.id = i.item_id
+                WHERE i.user_id = $1
                 AND i.quantity >= $2
-                AND i.metadata->>'set_code' = ;
-            """, user_id, requested_open_count)
+                AND si.metadata->>'set_code' = $3
+            """, user_id, requested_open_count, set_code)
         return owns_packs is not None
     
     # Get all packs and sets owned by user

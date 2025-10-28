@@ -24,7 +24,7 @@ class CardShopView(discord.ui.View):
         self.add_item(select)
 
 class CardShopSelect(discord.ui.Select):
-    def __init__(self, items, shop_service, item_service, parent_view, bot, purchase_log_channel):
+    def __init__(self, sets, shop_service, item_service, parent_view, bot, purchase_log_channel):
         self.shop_service = shop_service
         self.item_service = item_service
         self.parent_view = parent_view

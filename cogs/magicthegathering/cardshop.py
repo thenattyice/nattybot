@@ -20,7 +20,7 @@ class CardShopView(discord.ui.View):
         
         # Build dropdown
         self.clear_items()
-        select = CardShopSelect(sets, self.shop_service, self.item_service, self, self.bot, self.purchase_log_channel)
+        select = CardShopSelect(sets, self.shop_service, self.item_service, self.mtg_service, self, self.bot, self.purchase_log_channel)
         self.add_item(select)
 
 class CardShopSelect(discord.ui.Select):

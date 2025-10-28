@@ -1,3 +1,5 @@
+import json
+
 class MTGCollectibleHandler:
     def __init__(self, economy_service, item_service, inventory_service, mtg_service):
         self.economy_service = economy_service

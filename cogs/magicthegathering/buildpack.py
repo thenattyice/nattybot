@@ -5,6 +5,7 @@ import traceback
 import discord
 from discord import app_commands, Member
 from discord.ext import commands
+from typing import Optional
 
 # Class for the pack opening dropdown UX
 class OpenPackView(discord.ui.View):

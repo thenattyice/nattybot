@@ -1,3 +1,5 @@
+import inspect
+
 from item_handlers.consumable_handler import ConsumableHandler
 from item_handlers.business_handler import BusinessHandler
 from item_handlers.bundle_handler import BundleHandler
@@ -18,14 +20,21 @@ class ItemHandlerRegistry:
     
     #Return a cached handler instance, or create it if missing
     def get_handler(self, item_type: str, **kwargs):
-        
         if item_type in self._handler_cache:
             return self._handler_cache[item_type]
 
         if item_type not in self.handler_factories:
             raise ValueError(f"No handler registered for item type: {item_type}")
 
-        handler = self.handler_factories[item_type](**kwargs)
+        factory = self.handler_factories[item_type]
+
+        # Filter kwargs to only what the factory expects
+        sig = inspect.signature(factory)
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k in sig.parameters
+        }
+
+        handler = factory(**filtered_kwargs)
         self._handler_cache[item_type] = handler
         return handler
 

@@ -2,3 +2,8 @@
 .env
 .vs
 .changelog
+venv/
+__pycache__/
+*.pyc
+simulate_profit.py
+simulate_average_pack_prices.py

@@ -113,6 +113,7 @@ class BuildBoosterPack(commands.Cog):
         self.bot.tree.add_command(self.add_set, guild=self.guild_object)
         self.bot.tree.add_command(self.rip_a_pack, guild=self.guild_object)
         self.bot.tree.add_command(self.rip_packs, guild=self.guild_object)
+        self.bot.tree.add_command(self.update_set_pricing, guild=self.guild_object)
     
     async def open_pack(self, interaction: discord.Interaction, set_code: str, target_user_id: int):
         # Get pack data from service layer
@@ -297,6 +298,32 @@ class BuildBoosterPack(commands.Cog):
         except Exception:
             traceback.print_exc()
             await interaction.response.send_message("An error occurred.", ephemeral=True)
-
+            
+    # Command for updating set prices
+    @app_commands.command(name="updatesetprice", description="Update pack/box prices for an MTG set")
+    async def update_set_pricing(self, interaction: discord.Interaction, set_code: str, new_pack_price: Optional[int] = None, new_box_price: Optional[int] = None):
+        user_role_ids = [role.id for role in interaction.user.roles]
+        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+            return
+        
+        # Validate that at least on of the price args is populated
+        if not pack_price and not box_price:
+            await interaction.response.send_message("At least one price must be populated", ephemeral=True)
+            return
+        
+        # Update the values in mtg_sets via the code specified
+        try:
+            if new_pack_price:
+                await self.mtg_service.update_set_pack_price(set_code, new_pack_price)
+                
+            if new_box_price:
+                await self.mtg_service.update_set_box_price(set_code, new_box_price)
+            
+            await interaction.response.send_message("Set prices updated!", ephemeral=True)
+        except Exception:
+            traceback.print_exc()
+            await interaction.response.send_message("An error occurred.", ephemeral=True)
+        
 async def setup(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service):
     await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service))

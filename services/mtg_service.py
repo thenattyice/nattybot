@@ -10,9 +10,14 @@ class MtgService:
         self.db_pool = db_pool
         self.inventory_service = inventory_service
         self.item_service = item_service
+        self._cards_cache = {}  # key = set_code, value = list of cards
     
     # Get all cards from a set
     async def get_cards_from_set(self, set_code: str):
+        # If we already have this set cached, return it
+        if set_code in self._cards_cache:
+            return self._cards_cache[set_code]
+        
         url = f"https://api.scryfall.com/cards/search?q=set:{set_code}"
         cards = []
         async with aiohttp.ClientSession() as session:
@@ -21,6 +26,9 @@ class MtgService:
                     data = await response.json()
                     cards.extend(data.get("data", []))
                     url = data.get("next_page") if data.get("has_more") else None
+        
+        # Cache the results
+        self._cards_cache[set_code] = cards
         return cards
     
     # Add a set to the DB table
@@ -134,7 +142,23 @@ class MtgService:
             """, user_id)
         return [dict(row) for row in rows]
     
-    # Get item_id by set_code
+    # Update set pack pricing
+    async def update_set_pack_price(self, set_code: str, pack_price: int):
+        async with self.db_pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE mtg_sets
+                SET pack_price = $2
+                WHERE set_code = $1
+            """, set_code, pack_price)
+            
+    # Update set box pricing
+    async def update_set_box_price(self, set_code: str, box_price: int):
+        async with self.db_pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE mtg_sets
+                SET box_price = $3
+                WHERE set_code = $1
+            """, set_code, box_price)
     
     # Open a pack and pay the user    
     async def open_pack(self, set_code: str) -> Tuple[List[Dict], float]:

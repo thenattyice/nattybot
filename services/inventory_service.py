@@ -25,7 +25,7 @@ class InventoryService:
             """, user_id, item_id, quantity)
             
     # Add item to inventory quantity. Handles quantity becoming zero for use in remove quantity method
-    async def add_item_to_inventory(self, user_id: int, item_id: int, quantity: int, metadata: dict | None):
+    async def add_item_to_inventory(self, user_id: int, item_id: int, quantity: int, metadata: dict | None = None):
         async with self.db_pool.acquire() as conn:
             # Check if the item exists in inventory
             result = await conn.fetchrow("""

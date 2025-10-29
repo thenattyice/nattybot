@@ -115,21 +115,22 @@ class MtgService:
         return owns_packs is not None
     
     # Get all packs and sets owned by user
-    async def get_user_mtg_packs(self, user_id):
+    async def get_user_mtg_packs(self, user_id: int) -> list[dict]:
         async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("""
                 SELECT 
-                    inventory.item_id,
-                    SUM(inventory.quantity) as total_quantity,
                     shop_items.metadata->>'set_code' as set_code,
-                    shop_items.name as set_name
+                    mtg_sets.set_name,
+                    SUM(inventory.quantity) as total_quantity,
+                    inventory.item_id
                 FROM inventory
                 JOIN shop_items ON inventory.item_id = shop_items.id
+                JOIN mtg_sets ON shop_items.metadata->>'set_code' = mtg_sets.set_code
                 WHERE inventory.user_id = $1
                 AND shop_items.item_type = 'collectible'
-                AND shop_items.metadata ? 'set_code'
-                GROUP BY shop_items.metadata->>'set_code', shop_items.name, inventory.item_id
-                HAVING SUM(inventory.quantity) > 0
+                AND inventory.quantity > 0
+                GROUP BY shop_items.metadata->>'set_code', mtg_sets.set_name, inventory.item_id
+                ORDER BY mtg_sets.set_name
             """, user_id)
         return [dict(row) for row in rows]
     

@@ -6,22 +6,23 @@ import discord
 from discord import app_commands, Member
 from discord.ext import commands
 
-# Class for the shop buying dropdown UX
+# Class for the pack opening dropdown UX
 class OpenPackView(discord.ui.View):
-    def __init__(self, user: discord.User, parent_cog, mtg_service, pack_count: int = 1):
+    def __init__(self, user: discord.User, parent_cog, mtg_service, inventory_service, pack_count: int = 1):
         super().__init__()
         self.user = user
         self.parent_cog = parent_cog
         self.mtg_service = mtg_service
-        self.pack_count = pack_count  # Track how many packs to open
+        self.inventory_service = inventory_service
+        self.pack_count = pack_count
         
     async def open_pack_setup(self):
-        # Get all the shop items
-        sets = await self.mtg_service.get_user_mtg_packs()
+        # Get the user's owned pack sets
+        sets = await self.mtg_service.get_user_mtg_packs(self.user.id)
         
         # Builds the dropdown
         self.clear_items()
-        select = PackSelect(sets, self.parent_cog, self, self.mtg_service)
+        select = PackSelect(sets, self.parent_cog, self, self.mtg_service, self.inventory_service)
         self.add_item(select)
         
 class PackSelect(discord.ui.Select):
@@ -30,10 +31,11 @@ class PackSelect(discord.ui.Select):
         self.parent_view = parent_view
         self.mtg_service = mtg_service
         self.inventory_service = inventory_service
+        
         options = [
             discord.SelectOption(
                 label=set['set_name'],
-                description=f"Booster pack for {set['set_name']} ({set['total_quantity']} owned)",
+                description=f"You own {set['total_quantity']} pack{'s' if set['total_quantity'] != 1 else ''}",
                 value=set['set_code']
             )
             for set in sets
@@ -44,9 +46,29 @@ class PackSelect(discord.ui.Select):
         try:
             user_id = interaction.user.id
             set_code = self.values[0]
-            set_row = await self.mtg_service.get_set_by_code(set_code)
             pack_count = self.parent_view.pack_count
+            
+            # Get set info
+            set_info = await self.mtg_service.get_set_by_code(set_code)
+            
+            # Get the item_id for this set from user's inventory
             item_id = await self.inventory_service.get_item_id_by_set_code(user_id, set_code)
+            
+            if not item_id:
+                await interaction.response.send_message(
+                    "Error: Could not find packs in inventory.", 
+                    ephemeral=True
+                )
+                return
+            
+            # Check if user has enough packs
+            current_quantity = await self.inventory_service.get_item_quantity(user_id, item_id)
+            if current_quantity < pack_count:
+                await interaction.response.send_message(
+                    f"You only have {current_quantity} pack{'s' if current_quantity != 1 else ''}, but tried to open {pack_count}!",
+                    ephemeral=True
+                )
+                return
             
             # Remove the appropriate number of packs
             await self.inventory_service.remove_item_from_inventory(user_id, item_id, pack_count)
@@ -58,7 +80,7 @@ class PackSelect(discord.ui.Select):
             
             # Feedback message
             pack_text = "pack" if pack_count == 1 else f"{pack_count} packs"
-            content = f"You are opening {pack_text} from **{set_row['set_name']}**!"
+            content = f"You are opening {pack_text} from **{set_info['set_name']}**!"
             
             await interaction.response.edit_message(view=self.parent_view)
             await interaction.followup.send(content=content, ephemeral=True)
@@ -102,7 +124,7 @@ class BuildBoosterPack(commands.Cog):
             foil_tag = " (Foil)✨" if card["foil"] else ""
             description += f"{card['name']}{foil_tag} - ${card['price']}\n"
         
-        description += f"***GRAND TOTAL: {total_value}***\n\nPack opened by: <@{target_user_id}>"
+        description += f"***GRAND TOTAL: ${total_value}***\n\nPack opened by: <@{target_user_id}>"
         
         # Create pack embed
         embed = discord.Embed(
@@ -118,7 +140,7 @@ class BuildBoosterPack(commands.Cog):
         # Create money embed
         money_embed = discord.Embed(
             title="",
-            description=f"You have been paid **{total_value}** NattyCoins for your pack opening!\n\nNew balance: **{new_balance}** NattyCoins",
+            description=f"You have been paid **${total_value}** NattyCoins for your pack opening!\n\nNew balance: **${new_balance}** NattyCoins",
             color=discord.Color.gold()
         )
         
@@ -128,45 +150,68 @@ class BuildBoosterPack(commands.Cog):
         
     async def open_multiple_packs(self, interaction: discord.Interaction, set_code: str, target_user_id: int, pack_count: int):
         total_earnings = 0
+        all_pack_results = []
         
-        # Open and send each pack individually
+        # Open each pack and collect results
         for i in range(pack_count):
             pack_cards, pack_value = await self.mtg_service.open_pack(set_code)
             total_earnings += pack_value
-            
-            # Build description for this pack
-            description = ""
+            all_pack_results.append((pack_cards, pack_value))
+        
+        # Build descriptions, splitting into multiple embeds if needed
+        embeds = []
+        current_description = f"Opening {pack_count} packs!\n\n"
+        packs_in_current_embed = 0
+        CHAR_LIMIT = 3500  # Leave room for footer
+        
+        for i, (pack_cards, pack_value) in enumerate(all_pack_results, 1):
+            pack_text = f"**Pack {i}** (${pack_value}):\n"
             for card in pack_cards:
-                foil_tag = " (Foil)✨" if card["foil"] else ""
-                description += f"{card['name']}{foil_tag} - ${card['price']}\n"
+                foil_tag = " ✨" if card["foil"] else ""
+                pack_text += f"  • {card['name']}{foil_tag} - ${card['price']}\n"
+            pack_text += "\n"
             
-            description += f"***PACK TOTAL: ${pack_value}***\n\nPack {i+1} of {pack_count} opened by: <@{target_user_id}>"
-            
-            # Create pack embed
+            # Check if adding this pack would exceed the limit
+            if len(current_description + pack_text) > CHAR_LIMIT:
+                # Save current embed and start a new one
+                embeds.append(current_description)
+                current_description = pack_text
+                packs_in_current_embed = 1
+            else:
+                current_description += pack_text
+                packs_in_current_embed += 1
+        
+        # Add the final embed
+        if current_description:
+            embeds.append(current_description)
+        
+        # Add grand total to the last embed
+        embeds[-1] += f"***GRAND TOTAL: ${total_earnings}***\n\nPacks opened by: <@{target_user_id}>"
+        
+        # Send all embeds
+        for idx, desc in enumerate(embeds):
             embed = discord.Embed(
-                title=f"MTG Booster Pack #{i+1}",
-                description=description,
+                title=f"MTG Booster Packs x{pack_count}" + (f" (Part {idx+1}/{len(embeds)})" if len(embeds) > 1 else ""),
+                description=desc,
                 color=discord.Color.blue()
             )
-            
-            # Send this pack's embed
             await interaction.followup.send(embed=embed)
         
-        # Update user balance after all packs are opened
+        # Update user balance
         await self.economy_service.add_money_to_user(target_user_id, total_earnings)
         new_balance = await self.economy_service.get_balance(target_user_id)
         
-        # Create final summary money embed
+        # Create money embed
         money_embed = discord.Embed(
             title="",
-            description=f"You have been paid **{total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **{new_balance}** NattyCoins",
+            description=f"You have been paid **${total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **${new_balance}** NattyCoins",
             color=discord.Color.gold()
         )
         
         # Send final summary
         await interaction.followup.send(embed=money_embed, ephemeral=True)
 
-    # Command for adding an item to the shop
+    # Command for adding a set to the shop
     @app_commands.command(name="addmtgset", description="Add an MTG set for pack openings")
     async def add_set(self, interaction: discord.Interaction, set_code: str, pack_price: int, box_price: int):
         user_role_ids = [role.id for role in interaction.user.roles]
@@ -184,7 +229,7 @@ class BuildBoosterPack(commands.Cog):
                 await interaction.followup.send(result['error'], ephemeral=True)
         except Exception as e:
             traceback.print_exc()
-            await interaction.response.send_message("An error occurred while adding the item.", ephemeral=True)
+            await interaction.followup.send("An error occurred while adding the set.", ephemeral=True)
             
     # Command for opening a pack
     @app_commands.command(name="openpack", description="Earn NattyCoins based on opening a pack!")
@@ -197,27 +242,22 @@ class BuildBoosterPack(commands.Cog):
             
             user_id = interaction.user.id
             
-            users_packs = await self.mtg_service.owns_packs_validation(user_id)
+            # Get user's MTG packs
+            user_packs = await self.mtg_service.get_user_mtg_packs(user_id)
             
-            if not users_packs:
-                    await interaction.response.send_message("You have no packs to open.", ephemeral=True)
-                    return
-                
-            # Check if there are any sets available
-            sets = await self.mtg_service.get_all_sets()
-            if not sets:
+            if not user_packs:
                 await interaction.response.send_message(
-                    "No MTG sets are currently available. Please contact an admin.", 
+                    "You don't own any MTG packs! Buy some from `/cardshop` first.", 
                     ephemeral=True
                 )
                 return
             
-            view = OpenPackView(interaction.user, self, self.mtg_service, pack_count=1)
+            view = OpenPackView(interaction.user, self, self.mtg_service, self.inventory_service, pack_count=1)
             await view.open_pack_setup()
             await interaction.response.send_message("Select a set to open:", view=view, ephemeral=True)
         except Exception:
             traceback.print_exc()
-            
+            await interaction.response.send_message("An error occurred.", ephemeral=True)
             
     # Command for opening multiple packs
     @app_commands.command(name="openpacks", description="Earn NattyCoins based on opening multiple packs all at once!")
@@ -228,29 +268,35 @@ class BuildBoosterPack(commands.Cog):
                     "You can only use this command in the #pack-openings channel.", ephemeral=True)
                 return
             
-            user_id = interaction.user.id
-            
-            # Validate that they own packs and that the entered number isnt greater than their total pack count in inventory
-            users_packs = await self.mtg_service.multi_pack_validation(user_id, requested_open_count)
-            
-            if not users_packs:
-                    await interaction.response.send_message("Please enter a valid number of packs to open.", ephemeral=True)
-                    return
-                
-            # Check if there are any sets available
-            sets = await self.mtg_service.get_all_sets()
-            if not sets:
+            if requested_open_count < 1:
                 await interaction.response.send_message(
-                    "No MTG sets are currently available. Please contact an admin.", 
+                    "Please enter a valid number of packs to open (at least 1).", 
                     ephemeral=True
                 )
                 return
             
-            view = OpenPackView(interaction.user, self, self.mtg_service, pack_count=requested_open_count)
+            user_id = interaction.user.id
+            
+            # Get user's MTG packs
+            user_packs = await self.mtg_service.get_user_mtg_packs(user_id)
+            
+            if not user_packs:
+                await interaction.response.send_message(
+                    "You don't own any MTG packs! Buy some from `/cardshop` first.", 
+                    ephemeral=True
+                )
+                return
+            
+            view = OpenPackView(interaction.user, self, self.mtg_service, self.inventory_service, pack_count=requested_open_count)
             await view.open_pack_setup()
-            await interaction.response.send_message(f"Select a set to open {requested_open_count} packs from:", view=view, ephemeral=True)
+            await interaction.response.send_message(
+                f"Select a set to open {requested_open_count} packs from:", 
+                view=view, 
+                ephemeral=True
+            )
         except Exception:
             traceback.print_exc()
+            await interaction.response.send_message("An error occurred.", ephemeral=True)
 
 async def setup(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service):
     await bot.add_cog(BuildBoosterPack(bot, guild_object, allowed_roles, pack_opening_channel, economy_service, mtg_service, inventory_service))

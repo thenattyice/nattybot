@@ -11,7 +11,7 @@ class CardShopView(discord.ui.View):
         self.shop_service = shop_service
         self.item_service = item_service
         self.bot = bot
-        self.purchase_log_channel = purchase_log_channel,
+        self.purchase_log_channel = purchase_log_channel
         self.mtg_service = mtg_service
         
     async def setup(self):

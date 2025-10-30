@@ -303,18 +303,18 @@ class BuildBoosterPack(commands.Cog):
     # Command for updating set prices
     @app_commands.command(name="updatesetprice", description="Update pack/box prices for an MTG set")
     async def update_set_pricing(self, interaction: discord.Interaction, set_code: str, new_pack_price: Optional[int] = None, new_box_price: Optional[int] = None):
-        user_role_ids = [role.id for role in interaction.user.roles]
-        if not any(role_id in self.allowed_roles for role_id in user_role_ids):
-            await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
-            return
-        
-        # Validate that at least on of the price args is populated
-        if not pack_price and not box_price:
-            await interaction.response.send_message("At least one price must be populated", ephemeral=True)
-            return
+        try:
+            user_role_ids = [role.id for role in interaction.user.roles]
+            if not any(role_id in self.allowed_roles for role_id in user_role_ids):
+                await interaction.response.send_message("You do not have permission to run this command.", ephemeral=True)
+                return
+            
+            # Validate that at least on of the price args is populated
+            if not pack_price and not box_price:
+                await interaction.response.send_message("At least one price must be populated", ephemeral=True)
+                return
         
         # Update the values in mtg_sets via the code specified
-        try:
             if new_pack_price:
                 await self.mtg_service.update_set_pack_price(set_code, new_pack_price)
                 

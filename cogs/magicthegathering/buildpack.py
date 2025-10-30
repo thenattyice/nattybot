@@ -310,7 +310,7 @@ class BuildBoosterPack(commands.Cog):
                 return
             
             # Validate that at least on of the price args is populated
-            if not pack_price and not box_price:
+            if not new_pack_price and not new_box_price:
                 await interaction.response.send_message("At least one price must be populated", ephemeral=True)
                 return
         

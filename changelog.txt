@@ -42,3 +42,10 @@
 
 **Natty Bot v2.2 - 10/19/2025**
 - Added /openpacks for opening multiple MTG packs at a time
+
+**Natty Bot v2.3 - 10/30/2025**
+- NEW MTG CARD SHOP! /cardshop now lets you buy packs and boxes nicely
+- /inventory now only shows for you, and not everyone
+- Optimized API call volume to Scryfall when opening packs
+- Optimized pack opening messages when opening multiple packs
+- Added ability to control pack and box pricing per MTG set

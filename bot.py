@@ -19,6 +19,7 @@ from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
+from cogs.games.slots import setup as setup_slots
 from cogs.magicthegathering.buildpack import setup as setup_openpack
 from cogs.magicthegathering.cardshop import setup as setup_cardshop
 from services.item_service import ItemService
@@ -30,6 +31,7 @@ from services.handler_registry import get_default_registry
 from services.business_service import BusinessService
 from services.game_service import GameService
 from services.user_service import UserService
+from services.slots_service import SlotsService
 
 load_dotenv() #Load the env file
 
@@ -245,6 +247,7 @@ async def setup_cogs():
     business_service = BusinessService(client.db_pool, economy_service)
     game_service = GameService(client.db_pool)
     user_service = UserService(client.db_pool, economy_service, game_service)
+    slots_service = SlotsService(client.db_pool, economy_service, game_service)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -282,6 +285,7 @@ async def setup_cogs():
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service, game_service))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
+    await load_cog("SlotMachine", setup_slots(client, GUILD_OBJECT, economy_service, game_service, slots_service))
     
     # MTG
     await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service, inventory_service))

@@ -22,4 +22,3 @@ class GameService:
             GROUP BY user_id
             ORDER BY total_wagered DESC;""")
         return [dict(row) for row in rows]
-    

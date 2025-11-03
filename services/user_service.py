@@ -29,20 +29,24 @@ class UserService:
                         ), 'None') AS most_played_game
                     FROM users u
                     LEFT JOIN game_stats g ON u.user_id = g.user_id
-                    WHERE u.user_id = $1
                     GROUP BY u.user_id
+                ),
+                ranked_users AS (
+                    SELECT
+                        uw.*,
+                        CASE
+                            WHEN uw.total_wagered = 0 THEN NULL
+                            ELSE DENSE_RANK() OVER (ORDER BY uw.total_wagered DESC)
+                        END AS wager_rank,
+                        CASE
+                            WHEN (uw.wins + uw.losses) = 0 THEN 0
+                            ELSE ROUND((uw.wins::numeric / (uw.wins + uw.losses)) * 100, 2)
+                        END AS win_ratio
+                    FROM user_wagers uw
                 )
-                SELECT
-                    uw.*,
-                    CASE
-                        WHEN uw.total_wagered = 0 THEN NULL
-                        ELSE DENSE_RANK() OVER (ORDER BY uw.total_wagered DESC)
-                    END AS wager_rank,
-                    CASE
-                        WHEN (uw.wins + uw.losses) = 0 THEN 0
-                        ELSE ROUND((uw.wins::numeric / (uw.wins + uw.losses)) * 100, 2)
-                    END AS win_ratio
-                FROM user_wagers uw;
+                SELECT *
+                FROM ranked_users
+                WHERE user_id = $1;
             """, user_id)
 
         if not stats:

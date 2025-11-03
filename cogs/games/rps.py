@@ -133,6 +133,7 @@ class RockPaperScissors(commands.Cog):
         user_id = interaction.user.id # Identify and store the user who ran the command
         try:
             if not await self.economy_service.bet_validation(user_id, bet):
+                await interaction.response.send_message("Please bet a valid amount", ephemeral=True)
                 return
             
             # Prompt the user to pick

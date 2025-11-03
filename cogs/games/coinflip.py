@@ -108,6 +108,7 @@ class CoinFlip(commands.Cog):
         
         # Bet validation
         if not await self.economy_service.bet_validation(user_id, bet):
+            await interaction.response.send_message("Please bet a valid amount", ephemeral=True)
             return
             
         # Prompt the user to pick

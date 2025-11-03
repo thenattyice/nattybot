@@ -314,6 +314,7 @@ class Blackjack(commands.Cog):
             
             # Bet validation
             if not await self.economy_service.bet_validation(user_id, bet):
+                await interaction.response.send_message("Please bet a valid amount", ephemeral=True)
                 return
             
             # Validate that user isn't already in a session

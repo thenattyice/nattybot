@@ -15,7 +15,7 @@ class SlotMachine(commands.Cog):
         
         # Commands registered here
         self.bot.tree.add_command(self.slots, guild=self.guild_object)
-        # Also need a command with slot info on each multipler and weight for the wheel emojis
+        self.bot.tree.add_command(self.slotinfo, guild=self.guild_object)
         
     # SlotMachine game
     @app_commands.command(name="slots", description="Pull the lever on the Slot Machine!")

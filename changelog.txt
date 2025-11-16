@@ -49,3 +49,8 @@
 - Optimized API call volume to Scryfall when opening packs
 - Optimized pack opening messages when opening multiple packs
 - Added ability to control pack and box pricing per MTG set
+
+**Natty Bot v2.4 - 11/15/2025**
+- Added Slot machine game! /slots
+- Fixed wager rank stat in /stats
+- Added messaging for failed bet validations

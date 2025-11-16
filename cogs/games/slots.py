@@ -46,5 +46,27 @@ class SlotMachine(commands.Cog):
         
         await interaction.followup.send(embed=result, ephemeral=True)
         
+    # Command to show the details about each wheel item
+    @app_commands.command(name="slotinfo", description="See the Slot machine details")
+    async def slotinfo(self, interaction: discord.Interaction):
+        symbols = self.slots_service.symbols
+        
+        description = ''
+        
+        for symbol in symbols:
+            emoji = [data['emoji'] for data in symbols.values()]
+            weight = [data['weight'] for data in symbols.values()]
+            multiplier = [data['payout'] for data in symbols.values()]
+            
+            description += f"{emoji} | Weight: {weight} | Multiplier: {multiplier}\n"
+            
+        embed = disc.Embed(
+            title="🎮 Natty Games: Slots 🎮",
+            description=description,
+            color=discord.Color.blue()
+        )
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+            
 async def setup(bot, guild_object, economy_service, game_service, slots_service):
     await bot.add_cog(SlotMachine(bot, guild_object, economy_service, game_service, slots_service))

@@ -1,7 +1,7 @@
 #Ignore environment variables
 .env
 .vs
-.changelog
+changelog.txt
 venv/
 __pycache__/
 *.pyc

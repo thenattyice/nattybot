@@ -58,9 +58,9 @@ class SlotMachine(commands.Cog):
             weight = symbol_data['weight']
             multiplier = symbol_data['payout']
             
-            description += f"{emoji} | Weight: {weight} | Multiplier: {multiplier}\n"
+            description += f"{emoji} | Weight: {weight} | Multiplier: {multiplier}x\n"
             
-        embed = disc.Embed(
+        embed = discord.Embed(
             title="🎮 Natty Games: Slots 🎮",
             description=description,
             color=discord.Color.blue()

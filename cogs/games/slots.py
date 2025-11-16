@@ -53,10 +53,10 @@ class SlotMachine(commands.Cog):
         
         description = ''
         
-        for symbol in symbols:
-            emoji = [data['emoji'] for data in symbols.values()]
-            weight = [data['weight'] for data in symbols.values()]
-            multiplier = [data['payout'] for data in symbols.values()]
+        for symbol_name, symbol_data in symbols.items():
+            emoji = symbol_data['emoji']
+            weight = symbol_data['weight']
+            multiplier = symbol_data['payout']
             
             description += f"{emoji} | Weight: {weight} | Multiplier: {multiplier}\n"
             

@@ -34,12 +34,12 @@ class SlotsService():
         # Get current total in the jackpot
         async with self.db_pool.acquire() as conn:
             row = await conn.fetchrow("""
-                SELECT total, last_winner, last_winner_date
+                SELECT total, last_winner_id, last_winner_date
                 FROM jackpot
             """)
             
             total = row['total']
-            last_winner = row['last_winner']
+            last_winner = row['last_winner_id']
             last_winner_date = row['last_winner_date']
             
         return total, last_winner, last_winner_date
@@ -62,7 +62,7 @@ class SlotsService():
             await conn.execute("""
                 UPDATE jackpot
                 SET total = 1000,
-                last_winner = $1,
+                last_winner_id = $1,
                 last_winner_date = CURRENT_DATE
             """, user_id)
             

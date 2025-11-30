@@ -75,15 +75,19 @@ class SlotMachine(commands.Cog):
     # Command to show the current jackpot details
     @app_commands.command(name="jackpot", description="See the Slot machine jackpot details")
     async def jackpotinfo(self, interaction: discord.Interaction):
-        current_jackpot, last_winner, last_winner_date = await self.slots_service.get_jackpot_details()
-        
-        embed = discord.Embed(
-            title="**Current Jackpot**",
-            description=f"Jackpot: **{current_jackpot}**\nLast Winner: **<{last_winner}>**\nDate Last Won: **{last_winner_date}**",
-            color=discord.Color.gold()
-        )
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        try:
+            current_jackpot, last_winner, last_winner_date = await self.slots_service.get_jackpot_details()
+            
+            embed = discord.Embed(
+                title="**Current Jackpot**",
+                description=f"Jackpot: **{current_jackpot}**\nLast Winner: **<{last_winner}>**\nDate Last Won: **{last_winner_date}**",
+                color=discord.Color.gold()
+            )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+                print(f"[Slots] Error checking jackpot: {e}")
+                traceback.print_exc()
          
 async def setup(bot, guild_object, economy_service, game_service, slots_service):
     await bot.add_cog(SlotMachine(bot, guild_object, economy_service, game_service, slots_service))

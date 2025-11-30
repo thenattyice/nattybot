@@ -7,3 +7,7 @@ __pycache__/
 *.pyc
 simulate_profit.py
 simulate_average_pack_prices.py
+# Test files and configs
+tests/
+pytest.ini
+requirements-dev.txt

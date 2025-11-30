@@ -172,6 +172,13 @@ class Client(commands.Bot):
                         status_channel_id BIGINT,
                         player_count_channel_id BIGINT
                     );
+                    
+                    -- Jackpot for slots
+                    CREATE TABLE IF NOT EXISTS jackpot (
+                        total INTEGER DEFAULT 1000,
+                        last_winner_id BIGINT,
+                        last_winner_date DATE
+                    )
 
                     -- Indexes for performance
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);

@@ -178,7 +178,7 @@ class Client(commands.Bot):
                         total INTEGER DEFAULT 1000,
                         last_winner_id BIGINT,
                         last_winner_date DATE
-                    )
+                    );
 
                     -- Indexes for performance
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);

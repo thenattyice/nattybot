@@ -7,7 +7,6 @@ import traceback
 from discord.ext import commands
 from discord import Member
 from dotenv import load_dotenv
-from f1_schedule_data import schedule_2025
 from cogs.economy import setup as setup_economy
 from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
@@ -184,8 +183,6 @@ class Client(commands.Bot):
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);
                     CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
                     CREATE INDEX IF NOT EXISTS idx_purchases_timestamp ON purchases(purchase_time DESC);
-                    CREATE INDEX IF NOT EXISTS idx_item_usage_user_id ON item_usage(user_id);
-                    CREATE INDEX IF NOT EXISTS idx_item_usage_timestamp ON item_usage(timestamp DESC);
                     CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
                     CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active) WHERE is_active = TRUE;
                 """)
@@ -220,14 +217,6 @@ intents.reactions = True
 intents.voice_states = True
 intents.members = True
 client = Client(command_prefix="!", intents=intents)
-
-# F1 schedule command. Pulls from f1_schedule_data.py
-@client.tree.command(name="f1", description="Show 2025 F1 schedule", guild=GUILD_OBJECT)
-async def f1_schedule(interaction: discord.Interaction):
-    embed = discord.Embed(title="2025 Formula 1 Race Schedule", color=0xFF0000)
-    for race in schedule_2025.values():
-        embed.add_field(name=race['name'], value=f"Date: {race['date']}\nTime: {race['time']} EST", inline=False)
-    await interaction.response.send_message(embed=embed)
 
 async def load_cog(name: str, coro):
     """

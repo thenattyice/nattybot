@@ -21,76 +21,13 @@ class Wordle(commands.Cog):
     def cog_unload(self):
         self.monthly_wordle_champ_process.cancel()
     
-    # Method to insert the wordle_pts
-    async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
-        async with self.bot.db_pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO users (user_id, wordle_pts)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE
-                SET wordle_pts = users.wordle_pts + $2;
-            """, target_user_id, points)
-            
-    # Function for pulling the wordle points data
-    async def championship_pull(self):
-        async with self.bot.db_pool.acquire() as conn:
-            rows = await conn.fetch("""SELECT 
-                                    RANK() OVER (ORDER BY wordle_pts DESC) AS rank,
-                                    user_id,
-                                    wordle_pts
-                                    FROM users LIMIT 5;""")
-        
-        description = '' # Init the field
-        for row in rows:
-            user_id = row['user_id']
-            points = row['wordle_pts']
-            rank = row['rank']
-            
-            # Mention the user based on id
-            display_name = f"<@{user_id}>"
-            
-            # Add emoji for top 3
-            if rank == 1:
-                medal = "🥇"
-            elif rank == 2:
-                medal = "🥈"
-            elif rank == 3:
-                medal = "🥉"
-            else:
-                medal = f"#{rank}"
-            
-            description += f"**{medal}** – {display_name}: {points} points\n" # Formatting for each row in the embed
-            
-        # Discord embed structure
-        championship_embed = discord.Embed(
-            title="🏆 Wordle Championship Leaderboard 🏆",
-            description=description,
-            color=discord.Color.gold()
-        )
-        
-        return championship_embed
-        
-    # Determine championship winner
-    async def determine_champ(self):
-        async with self.bot.db_pool.acquire() as conn:
-            result = await conn.fetchrow("""WITH ranked AS (
-                                            SELECT user_id, wordle_pts,
-                                                RANK() OVER (ORDER BY wordle_pts DESC) AS rnk
-                                            FROM users
-                                        )
-                                        SELECT user_id, wordle_pts
-                                        FROM ranked
-                                        WHERE rnk = 1;""")
-        champion = result["user_id"]
-        return champion
-    
     # Create and assign the wordle champ role
     async def wordle_champ_role(self):
         try:
             guild = self.bot.get_guild(self.guild_object.id)
             
             # Get champ details
-            champ_id = await self.determine_champ()
+            champ_id = await self.wordle_service.determine_champ()
             
             champ = guild.get_member(champ_id)
             if champ is None:
@@ -274,11 +211,13 @@ class Wordle(commands.Cog):
             economy_cog = self.bot.get_cog("Economy")
             
             for user_id, score in user_rewards.items():
+                # Natty coins
                 reward = self.calculate_wordle_reward(score)
                 await self.economy_service.add_money_to_user(user_id, reward)
                 
+                # Wordle points
                 points = self.calculate_wordle_pts(score)
-                await self.add_wordle_pts_to_user(user_id, points)
+                await self.wordle_service.add_wordle_pts_to_user(user_id, points)
 
                 member = message.guild.get_member(user_id)
                 if member:
@@ -296,7 +235,7 @@ class Wordle(commands.Cog):
                 await message.channel.send(embed=reward_embed)
             
             # Display the Wordle points championship leaderboard
-            championship_embed = await self.championship_pull()
+            championship_embed = await self.wordle_service.championship_pull()
             await message.channel.send(embed=championship_embed)
             
             # Display the NattyCoin leaderboard
@@ -327,7 +266,7 @@ class Wordle(commands.Cog):
         await interaction.response.defer()
         
         # Display the Wordle points championship leaderboard
-        championship_embed = await self.championship_pull()
+        championship_embed = await self.wordle_service.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
 async def setup(bot, guild_object, wordle_app_id, economy_service, wordle_service):

@@ -78,3 +78,66 @@ class WordleService():
             
         # Catch all for users not in the summary
         await self.wordle_streak_cleanup(yesterday)
+        
+    # Method to insert the wordle_pts
+    async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
+        async with self.bot.db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO users (user_id, wordle_pts)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET wordle_pts = users.wordle_pts + $2;
+            """, target_user_id, points)
+            
+    # Function for pulling the wordle points data
+    async def championship_pull(self):
+        async with self.bot.db_pool.acquire() as conn:
+            rows = await conn.fetch("""SELECT 
+                                    RANK() OVER (ORDER BY wordle_pts DESC) AS rank,
+                                    user_id,
+                                    wordle_pts
+                                    FROM users LIMIT 5;""")
+        
+        description = '' # Init the field
+        for row in rows:
+            user_id = row['user_id']
+            points = row['wordle_pts']
+            rank = row['rank']
+            
+            # Mention the user based on id
+            display_name = f"<@{user_id}>"
+            
+            # Add emoji for top 3
+            if rank == 1:
+                medal = "🥇"
+            elif rank == 2:
+                medal = "🥈"
+            elif rank == 3:
+                medal = "🥉"
+            else:
+                medal = f"#{rank}"
+            
+            description += f"**{medal}** – {display_name}: {points} points\n" # Formatting for each row in the embed
+            
+        # Discord embed structure
+        championship_embed = discord.Embed(
+            title="🏆 Wordle Championship Leaderboard 🏆",
+            description=description,
+            color=discord.Color.gold()
+        )
+        
+        return championship_embed
+    
+    # Determine championship winner
+    async def determine_champ(self):
+        async with self.bot.db_pool.acquire() as conn:
+            result = await conn.fetchrow("""WITH ranked AS (
+                                            SELECT user_id, wordle_pts,
+                                                RANK() OVER (ORDER BY wordle_pts DESC) AS rnk
+                                            FROM users
+                                        )
+                                        SELECT user_id, wordle_pts
+                                        FROM ranked
+                                        WHERE rnk = 1;""")
+        champion = result["user_id"]
+        return champion

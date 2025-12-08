@@ -188,7 +188,7 @@ class BuildBoosterPack(commands.Cog):
             embeds.append(current_description)
         
         # Add grand total to the last embed
-        embeds[-1] += f"***GRAND TOTAL: ${total_earnings}***\n\nPacks opened by: <@{target_user_id}>"
+        embeds[-1] += f"***GRAND TOTAL: {total_earnings}***\n\nPacks opened by: <@{target_user_id}>"
         
         # Send all embeds
         for idx, desc in enumerate(embeds):
@@ -206,7 +206,7 @@ class BuildBoosterPack(commands.Cog):
         # Create money embed
         money_embed = discord.Embed(
             title="",
-            description=f"You have been paid **${total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **${new_balance}** NattyCoins",
+            description=f"You have been paid **{total_earnings}** NattyCoins for opening {pack_count} packs!\n\nNew balance: **{new_balance}** NattyCoins",
             color=discord.Color.gold()
         )
         

@@ -85,14 +85,13 @@ class Stats(commands.Cog):
             # Add fields for each stat
             embed.add_field(name="💰 Balance", value=f"{user_stats['balance']:,} NattyCoins", inline=False)
             embed.add_field(name="📝 Wordle Points", value=f"{user_stats['wordle_pts']:,}", inline=False)
+            embed.add_field(name="✨ Best Wordle Streak", value=f"{user_stats['best_wordle_streak']:,}", inline=False)
             embed.add_field(name="🎲 Total Wagered", value=f"{user_stats['total_wagered']:,}", inline=False)
             embed.add_field(name="🎮 Most Played Game", value=user_stats['most_played_game'] or "None", inline=False)
             embed.add_field(name="🏆 Win Ratio", value=f"{user_stats['win_ratio']:.1f}%", inline=False)
             embed.add_field(name="🎯 Total Games", value=f"{user_stats['total_games']:,}", inline=False)
             embed.add_field(name="💎 Total Wager Rank", value=f"#{user_stats['wager_rank']}", inline=False)
 
-
-            
             # Send the embed
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception:

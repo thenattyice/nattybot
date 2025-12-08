@@ -13,6 +13,7 @@ class UserService:
                         u.user_id,
                         u.balance,
                         u.wordle_pts,
+                        COALESCE(u.best_wordle_streak, 0) as best_wordle_streak
                         COALESCE(SUM(g.wager), 0) AS total_wagered,
                         COALESCE(SUM(CASE WHEN g.result = 'win' THEN 1 ELSE 0 END), 0) AS wins,
                         COALESCE(SUM(CASE WHEN g.result = 'loss' THEN 1 ELSE 0 END), 0) AS losses,
@@ -54,6 +55,7 @@ class UserService:
             return {
                 "balance": 0,
                 "wordle_pts": 0,
+                "best_wordle_streak": 0,
                 "total_wagered": 0,
                 "wins": 0,
                 "losses": 0,
@@ -68,6 +70,7 @@ class UserService:
         return {
             "balance": stats["balance"] or 0,
             "wordle_pts": stats["wordle_pts"] or 0,
+            "best_wordle_streak": stats["best_wordle_streak"] or 0,
             "total_wagered": stats["total_wagered"] or 0,
             "wins": stats["wins"] or 0,
             "losses": stats["losses"] or 0,

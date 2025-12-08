@@ -61,6 +61,12 @@ class WordleService():
             wordle_streak = row['wordle_streak']
             last_wordle_date = row['last_wordle_date']
             
+            # Handle first-time players (no previous wordle date)
+            if last_wordle_date is None:
+                # This is their first wordle, start streak at 1
+                await self.update_wordle_details(user_id, yesterday, 1)
+                continue
+            
             days_between_last_wordle = (yesterday - last_wordle_date).days
             
             if days_between_last_wordle == 1:

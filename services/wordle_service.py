@@ -23,10 +23,7 @@ class WordleService():
                 UPDATE users
                 SET wordle_streak = $1,
                     last_wordle_date = $2,
-                    best_wordle_streak = CASE
-                        WHEN $1 > best_wordle_streak THEN $1
-                        ELSE best_wordle_streak
-                    END
+                    best_wordle_streak = GREATEST($1, COALESCE(best_wordle_streak, 0))
                 WHERE user_id = $3
                 """, wordle_streak, last_wordle_date, user_id)
             

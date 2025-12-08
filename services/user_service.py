@@ -13,7 +13,7 @@ class UserService:
                         u.user_id,
                         u.balance,
                         u.wordle_pts,
-                        COALESCE(u.best_wordle_streak, 0) as best_wordle_streak
+                        COALESCE(u.best_wordle_streak, 0) as best_wordle_streak,
                         COALESCE(SUM(g.wager), 0) AS total_wagered,
                         COALESCE(SUM(CASE WHEN g.result = 'win' THEN 1 ELSE 0 END), 0) AS wins,
                         COALESCE(SUM(CASE WHEN g.result = 'loss' THEN 1 ELSE 0 END), 0) AS losses,

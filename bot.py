@@ -31,6 +31,7 @@ from services.business_service import BusinessService
 from services.game_service import GameService
 from services.user_service import UserService
 from services.slots_service import SlotsService
+from services.wordle_service import WordleService
 
 load_dotenv() #Load the env file
 
@@ -85,7 +86,10 @@ class Client(commands.Bot):
                         user_id BIGINT PRIMARY KEY,
                         balance BIGINT NOT NULL DEFAULT 0,
                         wordle_pts BIGINT NOT NULL DEFAULT 0,
-                        daily_spin BOOLEAN DEFAULT FALSE
+                        daily_spin BOOLEAN DEFAULT FALSE,
+                        wordle_streak INT NOT NULL DEFAULT 0,
+                        last_wordle_date DATE,
+                        best_wordle_streak INT
                     );
 
                     -- Shop items table (item_type stored as text)
@@ -244,6 +248,7 @@ async def setup_cogs():
     game_service = GameService(client.db_pool)
     user_service = UserService(client.db_pool, economy_service, game_service)
     slots_service = SlotsService(client.db_pool, economy_service, game_service)
+    wordle_service = WordleService(client.db_pool)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -271,7 +276,7 @@ async def setup_cogs():
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
     # Wordle Cog
-    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service, wordle_service))
     
     # User Stats Cog
     await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service, game_service))

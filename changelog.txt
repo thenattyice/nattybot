@@ -54,3 +54,8 @@
 - Added Slot machine game! /slots
 - Fixed wager rank stat in /stats
 - Added messaging for failed bet validations
+
+**Natty Bot v2.5 - 11/30/2025**
+- Added a jackpot system for Slots! 50% of your bet gets added to the jackpot. Check it via /jackpot
+- Cleaned up old DB tables
+- Removed F1 command (Big overhaul coming for the 2026 season)

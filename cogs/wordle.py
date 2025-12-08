@@ -8,11 +8,12 @@ from discord.ext import commands, tasks
 
 eastern = ZoneInfo("America/New_York")
 class Wordle(commands.Cog):
-    def __init__(self, bot, guild_object, wordle_app_id, economy_service):
+    def __init__(self, bot, guild_object, wordle_app_id, economy_service, wordle_service):
         self.bot = bot
         self.guild_object = guild_object
         self.wordle_app_id = wordle_app_id
         self.economy_service = economy_service
+        self.wordle_service = wordle_service
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
@@ -301,6 +302,10 @@ class Wordle(commands.Cog):
             # Display the NattyCoin leaderboard
             leaderboard_embed = await economy_cog.build_leaderboard()
             await message.channel.send(embed=leaderboard_embed)
+            
+            # Process the wordle streaks (only if users played)
+            if user_rewards:
+                await self.wordle_service.wordle_streak_process(list(user_rewards.keys()))
 
             await self.bot.process_commands(message)
         except Exception as e:
@@ -325,7 +330,7 @@ class Wordle(commands.Cog):
         championship_embed = await self.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
-async def setup(bot, guild_object, wordle_app_id, economy_service):
-    cog = Wordle(bot, guild_object, wordle_app_id, economy_service)          
+async def setup(bot, guild_object, wordle_app_id, economy_service, wordle_service):
+    cog = Wordle(bot, guild_object, wordle_app_id, economy_service, wordle_service)          
     await bot.add_cog(cog) 
     cog.monthly_wordle_champ_process.start()

@@ -141,3 +141,34 @@ class WordleService():
                                         WHERE rnk = 1;""")
         champion = result["user_id"]
         return champion
+    
+    # Get user's wordle streak
+    async def get_user_wordle_streak(self, user_id):
+        async with self.db_pool.acquire() as conn:
+            current_streak = await conn.fetchval("""
+                SELECT wordle_streak
+                FROM users
+                WHERE user_id = $1
+                """, user_id)
+        return current_streak
+    
+    # Method to apply a coin multiplier for Wordle streak
+    async def wordle_payout_multiplier(self, reward: int, user_id):
+        streak_multipliers = {
+            0: 1.0,
+            5: 1.2,
+            10: 1.5,
+            25: 2.0,
+            50: 2.5 
+        }
+        
+        current_streak = await self.get_user_wordle_streak(user_id)
+        
+        # Filter the streak_multipliers as threshholds
+        eligible = [s for s in streak_multipliers is s <= current_streak]
+        multiplier = streak_multipliers[max(eligible)] if eligible else 1.0
+        
+        return multiplier
+        
+        
+        

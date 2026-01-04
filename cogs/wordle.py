@@ -62,7 +62,7 @@ class Wordle(commands.Cog):
             return False
     
     # Clear all wordle champ pts monthly
-    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=eastern))
+    @tasks.loop(time=datetime.time(hour=12, minute=0, tzinfo=eastern))
     async def monthly_wordle_champ_process(self):
         now = datetime.datetime.now(eastern)
         if now.day != 1:  # Only run on the 1st of the month
@@ -211,9 +211,19 @@ class Wordle(commands.Cog):
             economy_cog = self.bot.get_cog("Economy")
             
             for user_id, score in user_rewards.items():
-                # Natty coins
+                
+                # Get wordle streak count
+                current_streak = await self.wordle_service.get_user_wordle_streak(user_id)
+                
+                # NattyCoin payout
                 reward = self.calculate_wordle_reward(score)
-                await self.economy_service.add_money_to_user(user_id, reward)
+                
+                # Check for wordle streak multiplier
+                multiplier = await self.wordle_service.wordle_payout_multiplier(reward, user_id)
+                
+                payout = round(reward * multiplier)
+                
+                await self.economy_service.add_money_to_user(user_id, payout)
                 
                 # Wordle points
                 points = self.calculate_wordle_pts(score)
@@ -221,7 +231,7 @@ class Wordle(commands.Cog):
 
                 member = message.guild.get_member(user_id)
                 if member:
-                    description += f"{member.mention} is awarded **{reward}** NattyCoins🪙 and **{points}** championship points!\n"
+                    description += f"{member.mention} is awarded **{payout}** NattyCoins🪙 and **{points}** championship points! (Current streak: {current_streak} - {multiplier}x payout)\n"
                 else:
                     print(f"⚠️ Could not find member with ID {user_id} to announce reward.")
             

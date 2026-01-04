@@ -81,7 +81,7 @@ class WordleService():
         
     # Method to insert the wordle_pts
     async def add_wordle_pts_to_user(self, target_user_id: int, points: int):
-        async with self.bot.db_pool.acquire() as conn:
+        async with self.db_pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO users (user_id, wordle_pts)
                 VALUES ($1, $2)
@@ -91,7 +91,7 @@ class WordleService():
             
     # Function for pulling the wordle points data
     async def championship_pull(self):
-        async with self.bot.db_pool.acquire() as conn:
+        async with self.db_pool.acquire() as conn:
             rows = await conn.fetch("""SELECT 
                                     RANK() OVER (ORDER BY wordle_pts DESC) AS rank,
                                     user_id,
@@ -130,7 +130,7 @@ class WordleService():
     
     # Determine championship winner
     async def determine_champ(self):
-        async with self.bot.db_pool.acquire() as conn:
+        async with self.db_pool.acquire() as conn:
             result = await conn.fetchrow("""WITH ranked AS (
                                             SELECT user_id, wordle_pts,
                                                 RANK() OVER (ORDER BY wordle_pts DESC) AS rnk

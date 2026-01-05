@@ -106,8 +106,8 @@ class Wordle(commands.Cog):
             if message.channel.name != 'wordle': # Filter for the 'wordle' channel
                 return
             
-            """ if message.author.id != self.wordle_app_id: # Filter for only messages by the Wordle app
-                return """
+            if message.author.id != self.wordle_app_id: # Filter for only messages by the Wordle app
+                return
             
             if "Here are yesterday's results:" not in message.content: # Finds the summary message via the summary phrase
                 return
@@ -210,6 +210,10 @@ class Wordle(commands.Cog):
 
             economy_cog = self.bot.get_cog("Economy")
             
+            # Process the wordle streaks (only if users played)
+            if user_rewards:
+                await self.wordle_service.wordle_streak_process(list(user_rewards.keys()))
+            
             for user_id, score in user_rewards.items():
                 
                 # Get wordle streak count
@@ -251,10 +255,6 @@ class Wordle(commands.Cog):
             # Display the NattyCoin leaderboard
             leaderboard_embed = await economy_cog.build_leaderboard()
             await message.channel.send(embed=leaderboard_embed)
-            
-            # Process the wordle streaks (only if users played)
-            if user_rewards:
-                await self.wordle_service.wordle_streak_process(list(user_rewards.keys()))
 
             await self.bot.process_commands(message)
         except Exception as e:

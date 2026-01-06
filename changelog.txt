@@ -59,3 +59,9 @@
 - Added a jackpot system for Slots! 50% of your bet gets added to the jackpot. Check it via /jackpot
 - Cleaned up old DB tables
 - Removed F1 command (Big overhaul coming for the 2026 season)
+
+**Natty Bot v2.6 - 01/05/2026**
+- Added Wordle Streaks! Longer streaks give NattyCoin payout multipliers for the dialy Wordle
+- See your best wordle streak in /stats
+- MTG pack opening summary no longer has dollar sign in it (WE ARE NATTYCOINS ONLY HERE)
+- Refactored Wordle cog to ue a service for more optimal processing

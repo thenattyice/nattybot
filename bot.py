@@ -39,7 +39,7 @@ load_dotenv() #Load the env file
 GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
-WORDLE_APP_ID = 1211781489931452447
+WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID")) if os.getenv("WORDLE_APP_ID") else None
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
 PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
@@ -48,14 +48,6 @@ GAME_ROLES = {
     "rocket league": int(os.getenv("RL_ROLE")),
     "rematch": int(os.getenv("REMATCH_ROLE")),
     "mtg": int(os.getenv("MTG_ROLE"))
-}
-
-# User mappings for adding and removing users
-USERS = {
-    "grayson": 162343822179696640,
-    "jake": 277997412583473152,
-    "nate": 280683796020330497,
-    "gunnar": 768246922766450689
 }
 
 class Client(commands.Bot):
@@ -199,20 +191,6 @@ class Client(commands.Bot):
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
         print("Successfully finished startup")
-
-    # Event handler for voice state updates
-    async def on_voice_state_update(self, member, before, after):
-        print(f"Voice state update detected for {member.name}")
-
-        if before.channel is None and after.channel is not None and member.id == USERS["nate"]:
-            print(f'Nate joined the VC')
-            try:
-                # Send you a DM
-                user = await self.fetch_user(USERS["grayson"])
-                await user.send("Grayson is bad at RL")
-                print(f"DM sent to {user.name}")
-            except Exception as e:
-                print(f"Error sending DM: {e}")
     
 # Declared intents for bot perms in server
 intents = discord.Intents.all()

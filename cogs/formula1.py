@@ -13,8 +13,12 @@ class Formula1(commands.Cog):
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
+    
+    # Run setup when cog is loaded
+    async def cog_load(self):
+        await self.bot.wait_until_ready()
+        await self.setup_notification_role()
         
-    # Method to check if the notifcation role exists, and if not, create it and cache it
     async def setup_notification_role(self):
         try:
             guild = self.bot.get_guild(self.guild_object.id)

@@ -14,13 +14,6 @@ class Formula1(commands.Cog):
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
-    
-    # Run setup when bot is ready (only once)
-    @commands.Cog.listener()
-    async def on_ready(self):
-        if not self.setup_complete:
-            await self.setup_notification_role()
-            self.setup_complete = True
         
     async def setup_notification_role(self):
         try:

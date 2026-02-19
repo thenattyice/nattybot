@@ -59,36 +59,41 @@ class Formula1(commands.Cog):
     async def f1_command(self, interaction: discord.Interaction, action: app_commands.Choice[str]):
         # Logic to get the next race weekend details
         if action.value == 'next_race':
-            sessions = await self.f1_service.determine_next_race() 
-            
-            if not sessions:
-                await interaction.response.send_message(
-                    "No upcoming races found.", 
-                    ephemeral=True
-                )
-                return
-            
-            else:
-                description = ""
+            try:
+                sessions = await self.f1_service.determine_next_race() 
                 
-                # Convert to unix
-                start_date = int(sessions['start'].timestamp())
-                end_date = int(sessions['end'].timestamp())
+                if not sessions:
+                    await interaction.response.send_message(
+                        "No upcoming races found.", 
+                        ephemeral=True
+                    )
+                    return
                 
-                description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
-                
-                for s in sessions['race_sessions']:
-                    session_start = int(s['date_start'].timestamp())
+                else:
+                    description = ""
+                    
+                    # Convert to unix
+                    start_date = int(sessions['start'].timestamp())
+                    end_date = int(sessions['end'].timestamp())
+                    
+                    description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
+                    
+                    for s in sessions['race_sessions']:
+                        session_start = int(s['date_start'].timestamp())
 
-                    description += f"{s['session_name']}: <t:{session_start}:F>\n"
-                
-                embed = discord.Embed(
-                    title=f'**{sessions['race']}**',
-                    description=description,
-                    color=discord.Color.red()
-                )
-                
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                        description += f"{s['session_name']}: <t:{session_start}:F>\n"
+                    
+                    embed = discord.Embed(
+                        title=f'**{sessions['race']}**',
+                        description=description,
+                        color=discord.Color.red()
+                    )
+                    
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except Exception as e:
+                print(f"F1 Error: {e}")
+                traceback.print_exc()
+                return
 
         # Logic to get the full season calendar
         elif action.value == 'full_season':

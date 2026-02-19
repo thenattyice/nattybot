@@ -21,6 +21,7 @@ from cogs.games.freespin import setup as setup_freespin
 from cogs.games.slots import setup as setup_slots
 from cogs.magicthegathering.buildpack import setup as setup_openpack
 from cogs.magicthegathering.cardshop import setup as setup_cardshop
+from cogs.formula1 import setup as setup_f1
 from services.item_service import ItemService
 from services.inventory_service import InventoryService
 from services.shop_service import ShopService
@@ -186,7 +187,7 @@ class Client(commands.Bot):
                         session_name TEXT NOT NULL,
                         session_key INT NOT NULL,
                         location TEXT NOT NULL,
-                        year INT NOT NULL
+                        year INT NOT NULL,
                         UNIQUE(circuit_key, session_name, year)
                     );
                     
@@ -196,10 +197,10 @@ class Client(commands.Bot):
                         round INT NOT NULL,
                         circuit_key INT NOT NULL,
                         circuit TEXT NOT NULL,
-                        meeting_name TEXT NOT NULL
+                        meeting_name TEXT NOT NULL,
                         date_start TIMESTAMPTZ NOT NULL,
                         date_end TIMESTAMPTZ NOT NULL,
-                        year INT NOT NULL
+                        year INT NOT NULL,
                         UNIQUE(circuit_key, year)
                     );
 

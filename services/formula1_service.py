@@ -113,6 +113,16 @@ class Formula1Service():
             traceback.print_exc()
             return False
     
+    # Get race sessions
+    async def get_race_sessions(self, circuit_key, year):
+        async with self.db_pool.acquire() as conn:
+            return await conn.fetch("""
+                SELECT * FROM f1_sessions
+                WHERE circuit_key = $1
+                AND year = $2
+                ORDER BY date_start
+                """, circuit_key, year)
+    
     # Determine next race weekend based on current date
     async def determine_next_race(self):
         try:
@@ -128,20 +138,16 @@ class Formula1Service():
                     LIMIT 1
                     """, now)
             
-                if not next_race:
-                    print("[F1 Cog] No upcoming race found")
-                    return
+            if not next_race:
+                print("[F1 Cog] No upcoming race found")
+                return
+
+            # Get sessions based on next race found above
+            race_sessions = await self.get_race_sessions(next_race["circuit_key"], next_race["year"])
             
-                # Get sessions based on next race found above
-                race_sessions = await conn.fetch("""
-                    SELECT * FROM f1_sessions
-                    WHERE circuit_key = $1
-                    AND year = $2
-                    ORDER BY date_start
-                    """, next_race["circuit_key"], next_race["year"])
-                
-                if not race_sessions:
-                    await self.store_session_data(year)
+            if not race_sessions:
+                await self.store_session_data(next_race["year"])
+                race_sessions = await self.get_race_sessions(next_race["circuit_key"], next_race["year"])
             
             return {
                 'race': next_race['meeting_name'],
@@ -190,7 +196,7 @@ class Formula1Service():
                 SELECT * FROM f1_sessions
                 WHERE date_start < $1
                 AND session_name = 'race'
-                ORDER BY date_start
+                ORDER BY date_start DESC
                 LIMIT 1
                 """, date)
         return previous_race

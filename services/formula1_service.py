@@ -14,9 +14,11 @@ class Formula1Service():
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 resp.raise_for_status()
                 meetings = await resp.json()
+                
+                races = [m for m in meetings if 'Grand Prix' in m.get('meeting_name', '')]
 
         schedule = []
-        for i, m in enumerate(meetings, start=1):
+        for i, r in enumerate(races, start=1):
             schedule.append({
                 "round": i,
                 "name": m.get("meeting_name"),

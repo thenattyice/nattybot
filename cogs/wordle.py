@@ -15,6 +15,8 @@ class Wordle(commands.Cog):
         self.economy_service = economy_service
         self.wordle_service = wordle_service
         
+        print(f"[DEBUG] Wordle App ID passed to cog: {wordle_app_id}")
+        
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
         

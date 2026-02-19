@@ -32,6 +32,7 @@ from services.game_service import GameService
 from services.user_service import UserService
 from services.slots_service import SlotsService
 from services.wordle_service import WordleService
+from services.formula1_service import Formula1Service
 
 load_dotenv() #Load the env file
 
@@ -39,7 +40,7 @@ load_dotenv() #Load the env file
 GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
-WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID")) if os.getenv("WORDLE_APP_ID") else None
+WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID"))
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
 PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
@@ -174,6 +175,33 @@ class Client(commands.Bot):
                         last_winner_id BIGINT,
                         last_winner_date DATE
                     );
+                    
+                    -- F1 session data
+                    CREATE TABLE IF NOT EXISTS f1_sessions (
+                        id SERIAL PRIMARY KEY,
+                        circuit_key INT NOT NULL,
+                        circuit TEXT NOT NULL,
+                        date_start TIMESTAMPTZ NOT NULL,
+                        date_end TIMESTAMPTZ NOT NULL,
+                        session_name TEXT NOT NULL,
+                        session_key INT NOT NULL,
+                        location TEXT NOT NULL,
+                        year INT NOT NULL
+                        UNIQUE(circuit_key, session_name, year)
+                    );
+                    
+                    -- F1 season data
+                    CREATE TABLE IF NOT EXISTS f1_seasons (
+                        id SERIAL PRIMARY KEY,
+                        round INT NOT NULL,
+                        circuit_key INT NOT NULL,
+                        circuit TEXT NOT NULL,
+                        meeting_name TEXT NOT NULL
+                        date_start TIMESTAMPTZ NOT NULL,
+                        date_end TIMESTAMPTZ NOT NULL,
+                        year INT NOT NULL
+                        UNIQUE(circuit_key, year)
+                    );
 
                     -- Indexes for performance
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);
@@ -227,6 +255,7 @@ async def setup_cogs():
     user_service = UserService(client.db_pool, economy_service, game_service)
     slots_service = SlotsService(client.db_pool, economy_service, game_service)
     wordle_service = WordleService(client.db_pool)
+    f1_service = Formula1Service(client.db_pool)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -272,6 +301,9 @@ async def setup_cogs():
     
     # MC Server Status
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
+    
+    # F1 Cog
+    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, f1_service))
     
 # Main method
 async def main():

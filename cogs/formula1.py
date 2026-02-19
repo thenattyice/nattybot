@@ -22,10 +22,15 @@ class Formula1(commands.Cog):
     async def setup_notification_role(self):
         try:
             guild = self.bot.get_guild(self.guild_object.id)
+            
+            if not guild:
+                print("❌ Guild not found in bot cache")
+                return
+            
             role = discord.utils.get(guild.roles, name="F1 Notifications")
             
             if not role:
-                role = await guild_object.create_role(
+                role = await guild.create_role(
                         name="F1 Notifications",
                         color=discord.Color.red(),
                         mentionable=True,

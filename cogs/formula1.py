@@ -85,7 +85,7 @@ class Formula1(commands.Cog):
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
         # Logic to get the full season calendar
-        if action.value == 'full_season':
+        elif action.value == 'full_season':
             races = await self.f1_service.get_current_season()
             
             description = ""
@@ -116,5 +116,4 @@ class Formula1(commands.Cog):
         
 async def setup(bot, guild_object, f1_service):
     cog = Formula1(bot, guild_object, f1_service)          
-    await bot.add_cog(cog)   
-    cog.setup_notification_role()
+    await bot.add_cog(cog)

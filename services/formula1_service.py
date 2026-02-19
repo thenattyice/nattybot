@@ -45,8 +45,8 @@ class Formula1Service():
                     s["circuit_key"],
                     s["circuit"],
                     s["meeting_name"],
-                    s["start"],
-                    s["end"],
+                    datetime.fromisoformat(s["start"]) if s["start"] else None,
+                    datetime.fromisoformat(s["end"]) if s["end"] else None,
                     s["year"]
                     )
                     for s in schedule
@@ -87,8 +87,8 @@ class Formula1Service():
                     (
                     s.get("circuit_key"),
                     s.get("circuit_short_name"),
-                    s.get("date_start"),
-                    s.get("date_end"),
+                    datetime.fromisoformat(s["date_start"]) if s.get("date_start") else None,
+                    datetime.fromisoformat(s["date_end"]) if s.get("date_end") else None,
                     s.get("session_name"),
                     s.get("session_key"),
                     s.get("location"),
@@ -126,17 +126,17 @@ class Formula1Service():
                     LIMIT 1
                     """, now)
             
-            if not next_race:
-                print("[F1 Cog] No upcoming race found")
-                return
+                if not next_race:
+                    print("[F1 Cog] No upcoming race found")
+                    return
             
-            # Get sessions based on next race found above
-            race_sessions = await conn.fetch("""
-                                SELECT * FROM f1_sessions
-                                WHERE circuit_key = $1
-                                AND year = $2
-                                ORDER BY date_start
-                                """, next_race["circuit_key"], next_race["year"])
+                # Get sessions based on next race found above
+                race_sessions = await conn.fetch("""
+                    SELECT * FROM f1_sessions
+                    WHERE circuit_key = $1
+                    AND year = $2
+                    ORDER BY date_start
+                    """, next_race["circuit_key"], next_race["year"])
             
             return {
                 'race': next_race['meeting_name'],

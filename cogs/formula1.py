@@ -78,7 +78,7 @@ class Formula1(commands.Cog):
                     
                     description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
                     
-                    for s in sessions['race_sessions']:
+                    for s in sessions['sessions']:
                         session_start = int(s['date_start'].timestamp())
 
                         description += f"{s['session_name']}: <t:{session_start}:F>\n"

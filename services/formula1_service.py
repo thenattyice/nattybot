@@ -139,6 +139,9 @@ class Formula1Service():
                     AND year = $2
                     ORDER BY date_start
                     """, next_race["circuit_key"], next_race["year"])
+                
+                if not race_sessions:
+                    await self.store_session_data(year)
             
             return {
                 'race': next_race['meeting_name'],

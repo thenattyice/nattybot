@@ -150,24 +150,33 @@ class Formula1Service():
         except Exception as e:
             traceback.print_exc()
             
+    # Helper method to get season rows from DB
+    async def _fetch_season_rows(self, year):
+        async with self.db_pool.acquire() as conn:
+            return await conn.fetch("""
+                SELECT * FROM f1_seasons
+                WHERE year = $1
+                ORDER BY round ASC
+            """, year)
+            
     # Method to get all data for the current F1 season
     async def get_current_season(self):
         try:
-            year = datetime.now(timezone.utc).year
+            year = datetime.now(timezone.utc).year # Get the current year
             
             # get the data from the DB using the current year
-            async with self.db_pool.acquire() as conn:
-                rows = await conn.fetch("""
-                    SELECT * FROM f1_seasons
-                    WHERE year = $1
-                    ORDER BY round ASC
-                    """, year)
+            rows = await self._fetch_season_rows(year)
+                
+            if not rows:
+                await self.store_season_data(year)
+                rows = await self._fetch_season_rows(year)
                 
             return [dict(row) for row in rows]
         
         except Exception as e:
             print(f"[F1] Failed to fetch {year} season data: {e}")
             traceback.print_exc()
+            return []
     
     # Get most recent completed race
     async def get_most_recent_race(self, date):

@@ -13,10 +13,19 @@ class Formula1(commands.Cog):
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
+        
+        # Start the setup task when cog is loaded
+        self.setup_task.start()
     
-    # Checks for the notification roel every bot start    
-    async def cog_load(self):
+    @tasks.task
+    async def setup_task(self):
+        """Run setup once when bot is ready"""
         await self.setup_notification_role()
+    
+    @setup_task.before_loop
+    async def before_setup_task(self):
+        """Wait for bot to be ready before running setup"""
+        await self.bot.wait_until_ready()
         
     # Method to check if the notifcation role exists, and if not, create it and cache it
     async def setup_notification_role(self):

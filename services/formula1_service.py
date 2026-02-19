@@ -21,15 +21,15 @@ class Formula1Service():
         for i, r in enumerate(races, start=1):
             schedule.append({
                 "round": i,
-                "name": m.get("meeting_name"),
-                "start": m.get("date_start"),
-                "end": m.get("date_end"),
-                "location": m.get("location"),
-                "country": m.get("country_name"),
-                "circuit": m.get("circuit_short_name"),
-                "circuit_key": m.get("circuit_key"),
-                "meeting_name": m.get("meeting_name"),
-                "year": m.get("year")
+                "name": r.get("meeting_name"),
+                "start": r.get("date_start"),
+                "end": r.get("date_end"),
+                "location": r.get("location"),
+                "country": r.get("country_name"),
+                "circuit": r.get("circuit_short_name"),
+                "circuit_key": r.get("circuit_key"),
+                "meeting_name": r.get("meeting_name"),
+                "year": r.get("year")
             })
 
         return schedule

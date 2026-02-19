@@ -21,7 +21,7 @@ class Formula1(commands.Cog):
     # Method to check if the notifcation role exists, and if not, create it and cache it
     async def setup_notification_role(self):
         try:
-            role = discord.utils.get(guild_object.roles, name="F1 Notifications")
+            role = discord.utils.get(self.guild_object.roles, name="F1 Notifications")
             
             if not role:
                 role = await guild_object.create_role(

@@ -12,7 +12,7 @@ class Formula1(commands.Cog):
         self.notification_role = None
     
         # Register commands here
-        self.bot.tree.add_command(self.stats_card, guild=self.guild_object)
+        self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
     
     # Checks for the notification roel every bot start    
     async def cog_load(self):

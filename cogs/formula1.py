@@ -92,33 +92,38 @@ class Formula1(commands.Cog):
 
         # Logic to get the full season calendar
         elif action.value == 'full_season':
-            races = await self.f1_service.get_current_season()
-            
-            description = ""
-            
-            if not races:
-                await interaction.response.send_message(
-                    "No races are populated for the current season.", 
-                    ephemeral=True
-                )
-                return
-            
-            else:
-                for race in races:
-                    start_date = int(race['date_start'].timestamp())
-                    end_date = int(race['date_end'].timestamp())
-                    
-                    description += f"**Round {race['round']}**\n"
-                    description += f"{race['meeting_name']}\n"
-                    description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
-                    
-                embed = discord.Embed(
-                    title='**F1 Season**',
-                    description=description,
-                    color=discord.Color.red()
-                )
+            try:
+                races = await self.f1_service.get_current_season()
                 
-                await interaction.response.send_message(embed=embed, ephemeral=True)                 
+                description = ""
+                
+                if not races:
+                    await interaction.response.send_message(
+                        "No races are populated for the current season.", 
+                        ephemeral=True
+                    )
+                    return
+                
+                else:
+                    for race in races:
+                        start_date = int(race['date_start'].timestamp())
+                        end_date = int(race['date_end'].timestamp())
+                        
+                        description += f"**Round {race['round']}**\n"
+                        description += f"{race['meeting_name']}\n"
+                        description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
+                        
+                    embed = discord.Embed(
+                        title='**F1 Season**',
+                        description=description,
+                        color=discord.Color.red()
+                    )
+                    
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except Exception as e:
+                print(f"F1 Error: {e}")
+                traceback.print_exc()
+                return
         
 async def setup(bot, guild_object, f1_service):
     cog = Formula1(bot, guild_object, f1_service)          

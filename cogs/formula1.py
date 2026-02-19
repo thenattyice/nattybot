@@ -10,7 +10,6 @@ class Formula1(commands.Cog):
         self.guild_object = guild_object
         self.f1_service = f1_service
         self.notification_role = None
-        self.setup_complete = False
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
@@ -42,6 +41,7 @@ class Formula1(commands.Cog):
                 
                 self.notification_role = role
             else:
+                self.notification_role = role
                 print(f"[F1] Found existing F1 Notifications Role! ID: {role.id}")
                 
         except discord.Forbidden:

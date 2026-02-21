@@ -83,8 +83,6 @@ class Formula1(commands.Cog):
                 session_start = int(s['date_start'].timestamp())
 
                 description += f"{s['session_name']}: <t:{session_start}:F>\n"
-                
-            description += f"\n\n{self.notification_role.mention}"
             
             embed = discord.Embed(
                 title=f'**{sessions['race']}**',
@@ -92,7 +90,7 @@ class Formula1(commands.Cog):
                 color=discord.Color.red()
             )
             
-            await channel.send(embed=embed)
+            await channel.send(content=self.notification_role.mention, embed=embed)
         else:
             print(f"[F1] Next race is {days_until_race} days away, no notification needed.")
             return

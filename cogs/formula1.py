@@ -68,7 +68,7 @@ class Formula1(commands.Cog):
                 
                     description = ""
                     
-                    channel = self.bot.get_channel(self.f1_notifications_channel)
+                    channel = self.bot.get_channel(self.f1_notifications_channel)git commit -m ""
                     
                     # Convert to unix
                     start_date = int(sessions['start'].timestamp())
@@ -180,5 +180,5 @@ class Formula1(commands.Cog):
 async def setup(bot, guild_object, f1_notifications_channel, f1_service):
     cog = Formula1(bot, guild_object, f1_notifications_channel, f1_service)          
     await bot.add_cog(cog)
-    cog.setup_notification_role()
+    await cog.setup_notification_role()
     cog.race_week_task.start()

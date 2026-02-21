@@ -190,8 +190,12 @@ class Formula1(commands.Cog):
     # Command to test the race notification sending        
     @app_commands.command(name="f1test", description="Race notification testing")
     async def race_notification_test(self, interaction: discord.Interaction):
-        await self._send_race_notification()
-        await interaction.response.send_message("Notification sent!", ephemeral=True)
+        try:
+            await self._send_race_notification()
+            await interaction.response.send_message("Notification sent!", ephemeral=True)
+        except Exception as e:
+            print(f"ERROR: {e}")
+            traceback.print_exc()
         
 async def setup(bot, guild_object, f1_notifications_channel, f1_service):
     cog = Formula1(bot, guild_object, f1_notifications_channel, f1_service)          

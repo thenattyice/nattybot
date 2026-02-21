@@ -1,24 +1,25 @@
 import discord
 import traceback
+import datetime
+from zoneinfo import ZoneInfo
 from discord import app_commands, Member, TextChannel
 from discord.ext import commands, tasks
-from datetime import datetime
+
+eastern = ZoneInfo("America/New_York")
 
 class Formula1(commands.Cog):
-    def __init__(self, bot, guild_object, f1_service):
+    def __init__(self, bot, guild_object, f1_notifications_channel, f1_service):
         self.bot = bot
         self.guild_object = guild_object
+        self.f1_notifications_channel = f1_notifications_channel
         self.f1_service = f1_service
         self.notification_role = None
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
-        
-        
-    @commands.Cog.listener()
-    async def on_ready(self):
-        await self.setup_notification_role()
-        print('F1 Role Setup complete')
+    
+    def cog_unload(self):
+        self.race_week_task.cancel()
     
     async def setup_notification_role(self):
         try:
@@ -49,6 +50,52 @@ class Formula1(commands.Cog):
         except Exception as e:
             print(f"❌ Error setting up F1 notification role: {e}")
             traceback.print_exc()
+    
+    # Task that runs every Monday at 8am EST to ping for race week
+    @tasks.loop(time=datetime.time(hour=8, minute=0, tzinfo=eastern))
+    async def race_week_task(self):
+        if datetime.datetime.now(eastern).weekday() == 0:
+            try:
+                sessions = await self.f1_service.determine_next_race() 
+                
+                if not sessions:
+                    return
+                
+                today = datetime.datetime.now(eastern)
+                days_until_race = (sessions['start'] - today).days
+                
+                if days_until_race <= 5:
+                
+                    description = ""
+                    
+                    channel = self.bot.get_channel(self.f1_notifications_channel)
+                    
+                    # Convert to unix
+                    start_date = int(sessions['start'].timestamp())
+                    end_date = int(sessions['end'].timestamp())
+                    
+                    description += f"<t:{start_date}:D> - <t:{end_date}:D>\n\n"
+                    
+                    for s in sessions['sessions']:
+                        session_start = int(s['date_start'].timestamp())
+
+                        description += f"{s['session_name']}: <t:{session_start}:F>\n"
+                        
+                    description += f"\n\n{self.notification_role.mention}"
+                    
+                    embed = discord.Embed(
+                        title=f'**{sessions['race']}**',
+                        description=description,
+                        color=discord.Color.red()
+                    )
+                    
+                    await channel.send(embed=embed)
+                else:
+                    print(f"[F1] Next race is {days_until_race} days away, no notification needed.")
+                    return
+            except Exception as e:
+                print(f"[F1] Race week task error: {e}")
+                traceback.print_exc()
             
     # Command to get the next race weekend details
     @app_commands.command(name="f1", description="Utilize the F1 features of the bot!")
@@ -130,6 +177,8 @@ class Formula1(commands.Cog):
                 traceback.print_exc()
                 return
         
-async def setup(bot, guild_object, f1_service):
-    cog = Formula1(bot, guild_object, f1_service)          
+async def setup(bot, guild_object, f1_notifications_channel, f1_service):
+    cog = Formula1(bot, guild_object, f1_notifications_channel, f1_service)          
     await bot.add_cog(cog)
+    cog.setup_notification_role()
+    cog.race_week_task.start()

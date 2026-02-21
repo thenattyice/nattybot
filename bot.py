@@ -45,6 +45,7 @@ WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID"))
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
 PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
+F1_NOTIFICATIONS_CHANNEL = int(os.getenv("F1_NOTIFICATIONS_CHANNEL"))
 
 GAME_ROLES = {
     "rocket league": int(os.getenv("RL_ROLE")),
@@ -304,7 +305,7 @@ async def setup_cogs():
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
     
     # F1 Cog
-    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, f1_service))
+    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, F1_NOTIFICATIONS_CHANNEL,f1_service))
     
 # Main method
 async def main():

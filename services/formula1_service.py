@@ -188,15 +188,3 @@ class Formula1Service():
             print(f"[F1] Failed to fetch {year} season data: {e}")
             traceback.print_exc()
             return []
-    
-    # Get most recent completed race
-    async def get_most_recent_race(self, date):
-        async with self.db_pool.acquire() as conn:
-            previous_race = await conn.fetchrow("""
-                SELECT * FROM f1_sessions
-                WHERE date_start < $1
-                AND session_name = 'race'
-                ORDER BY date_start DESC
-                LIMIT 1
-                """, date)
-        return previous_race

@@ -191,7 +191,7 @@ class Formula1(commands.Cog):
     @app_commands.command(name="f1test", description="Race notification testing")
     async def race_notification_test(self, interaction: discord.Interaction):
         try:
-            await self._send_race_notification()
+            await self.send_race_notification()
             await interaction.response.send_message("Notification sent!", ephemeral=True)
         except Exception as e:
             print(f"ERROR: {e}")

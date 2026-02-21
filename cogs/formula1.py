@@ -17,7 +17,7 @@ class Formula1(commands.Cog):
     
         # Register commands here
         self.bot.tree.add_command(self.f1_command, guild=self.guild_object)
-        self.bot.tree.add_command(self.race_notification_test, guild=self.guild_object)
+        #self.bot.tree.add_command(self.race_notification_test, guild=self.guild_object)
     
     def cog_unload(self):
         self.race_week_task.cancel()

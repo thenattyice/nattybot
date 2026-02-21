@@ -68,7 +68,7 @@ class Formula1(commands.Cog):
                 
                     description = ""
                     
-                    channel = self.bot.get_channel(self.f1_notifications_channel)git commit -m ""
+                    channel = self.bot.get_channel(self.f1_notifications_channel)
                     
                     # Convert to unix
                     start_date = int(sessions['start'].timestamp())

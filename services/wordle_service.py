@@ -96,8 +96,9 @@ class WordleService():
                                     RANK() OVER (ORDER BY wordle_pts DESC) AS rank,
                                     user_id,
                                     wordle_pts
-                                    FROM users LIMIT 5
-                                    WHERE wordle_pts > 0;""")
+                                    FROM users
+                                    WHERE wordle_pts > 0
+                                    LIMIT 5;""")
         
         description = '' # Init the field
         

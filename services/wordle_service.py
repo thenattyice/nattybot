@@ -70,11 +70,13 @@ class WordleService():
                 # Update the user's current streak to continue it
                 new_wordle_streak = wordle_streak + 1
                 await self.update_wordle_details(user_id, yesterday, new_wordle_streak)
+                print(f'[WORDLE STREAK] Continuing streak for {user_id}. New streak value: {new_wordle_streak}')
                 
             elif days_between_last_wordle > 1:
                 # Reset the current wordle streak to 1 and check if its their best streak
                 new_wordle_streak = 1
                 await self.update_wordle_details(user_id, yesterday, new_wordle_streak)
+                print(f'[WORDLE STREAK] Resetting streak for {user_id}. New streak value: {new_wordle_streak}')
             
         # Catch all for users not in the summary
         await self.wordle_streak_cleanup(yesterday)

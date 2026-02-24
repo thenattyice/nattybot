@@ -65,3 +65,7 @@
 - See your best wordle streak in /stats
 - MTG pack opening summary no longer has dollar sign in it (WE ARE NATTYCOINS ONLY HERE)
 - Refactored Wordle cog to ue a service for more optimal processing
+
+**Natty Bot v2.7 - 2/21/2026**
+- Added /f1 command! Can show you details on next race or the full season schedule
+- F1 race week notifications! Role holders will get notified on the Monday of each race week at 8am Eastern

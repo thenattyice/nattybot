@@ -43,7 +43,8 @@ class EconomyService:
             rows = await conn.fetch("""
                 SELECT RANK() OVER (ORDER BY balance DESC)
                 AS rank, user_id, balance
-                FROM users;""")
+                FROM users
+                WHERE balance > 0;""")
         return [dict(row) for row in rows]
     
     # Bet validation method

@@ -21,25 +21,29 @@ class Economy(commands.Cog):
         rows = await self.economy_service.get_leaderboard()
         
         description = '' # Init the field
-        for row in rows:
-            user_id = row['user_id']
-            balance = row['balance']
-            rank = row['rank']
-            
-            # Mention the user based on id
-            display_name = f"<@{user_id}>"
-            
-            # Add emoji for top 3
-            if rank == 1:
-                medal = "🥇"
-            elif rank == 2:
-                medal = "🥈"
-            elif rank == 3:
-                medal = "🥉"
-            else:
-                medal = f"#{rank}"
-            
-            description += f"**{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+        
+        if rows:
+            for row in rows:
+                user_id = row['user_id']
+                balance = row['balance']
+                rank = row['rank']
+                
+                # Mention the user based on id
+                display_name = f"<@{user_id}>"
+                
+                # Add emoji for top 3
+                if rank == 1:
+                    medal = "🥇"
+                elif rank == 2:
+                    medal = "🥈"
+                elif rank == 3:
+                    medal = "🥉"
+                else:
+                    medal = f"#{rank}"
+                
+                description += f"**{medal}** – {display_name}: {balance} coins\n" # Formatting for each row in the embed
+        else:
+            description = 'No users with a NattyCoin balance'
             
         #Discord embed structure
         leaderboard_embed = discord.Embed(

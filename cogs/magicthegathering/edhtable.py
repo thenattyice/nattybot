@@ -57,51 +57,60 @@ class RSVPButton(discord.ui.View):
 
     @discord.ui.button(label="✅ Attending", style=discord.ButtonStyle.green)
     async def attending_btn(self, interaction, button):
-        user = interaction.user.display_name # Get the display name of the user who clicked
+        try:
+            user = interaction.user.display_name # Get the display name of the user who clicked
+            
+            # If they are already in attending, send an ephemeral "already RSVP'd" message and return
+            if user in self.attending:
+                await interaction.followup.send('You are already attending!', ephemeral=True)
+                return
+            
+            if user in self.not_attending:
+                self.not_attending.remove(user)
+                self.attending.append(user)
+                await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
+                
+            elif user not in self.attending and user not in self.not_attending:
+                self.attending.append(user)
+                await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
+                
+            if len(self.attending) >= self.max_players:
+                await self.close_rsvp()
+                
+            else:
+                await self.update_embed()
         
-        # If they are already in attending, send an ephemeral "already RSVP'd" message and return
-        if user in self.attending:
-            await interaction.followup.send('You are already attending!', ephemeral=True)
-            return
-        
-        if user in self.not_attending:
-            self.not_attending.remove(user)
-            self.attending.append(user)
-            await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
-            
-        elif user not in self.attending and user not in self.not_attending:
-            self.attending.append(user)
-            await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
-            
-        if len(self.attending) >= self.max_players:
-            await self.close_rsvp()
-            
-        else:
-            await self.update_embed()
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[EDHTable] Attending Error: {e}")
 
     @discord.ui.button(label="❌ Not Attending", style=discord.ButtonStyle.red)
     async def not_attending_btn(self, interaction, button):
-        user = interaction.user.display_name # Get the display name of the user who clicked
-        
-        # If they are already in attending, send an ephemeral "already RSVP'd" message and return
-        if user in self.not_attending:
-            await interaction.followup.send("You are already RSVP'd!", ephemeral=True)
-            return
-        
-        if user in self.attending:
-            self.attending.remove(user)
-            self.not_attending.append(user)
-            await interaction.followup.send("You are now unregistered. Shame on you.", ephemeral=True)
+        try:
+            user = interaction.user.display_name # Get the display name of the user who clicked
             
-        elif user not in self.attending and user not in self.not_attending:
-            self.not_attending.append(user)
-            await interaction.followup.send("You're missing out, loser", ephemeral=True)
+            # If they are already in attending, send an ephemeral "already RSVP'd" message and return
+            if user in self.not_attending:
+                await interaction.followup.send("You are already RSVP'd!", ephemeral=True)
+                return
             
-        if len(self.attending) >= self.max_players:
-            await self.close_rsvp()
-            
-        else:
-            await self.update_embed()
+            if user in self.attending:
+                self.attending.remove(user)
+                self.not_attending.append(user)
+                await interaction.followup.send("You are now unregistered. Shame on you.", ephemeral=True)
+                
+            elif user not in self.attending and user not in self.not_attending:
+                self.not_attending.append(user)
+                await interaction.followup.send("You're missing out, loser", ephemeral=True)
+                
+            if len(self.attending) >= self.max_players:
+                await self.close_rsvp()
+                
+            else:
+                await self.update_embed()
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[EDHTable] Not-attending Error: {e}")
 
     async def update_embed(self):
         self.embed.clear_fields() # Clear all fields each time, then repopulate with changes below

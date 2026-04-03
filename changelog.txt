@@ -69,3 +69,10 @@
 **Natty Bot v2.7 - 2/21/2026**
 - Added /f1 command! Can show you details on next race or the full season schedule
 - F1 race week notifications! Role holders will get notified on the Monday of each race week at 8am Eastern
+
+**Natty Bot v2.8 - 2/24/2026**
+- Removed users with 0 balance from economy leaderboard
+- Removed users with 0 Wordle points from championship leaderboard
+- Added current Wrodle streak to the /stats card
+- Added logging/debugging for the wordle streak process
+- Upgraded bot build to use Metal

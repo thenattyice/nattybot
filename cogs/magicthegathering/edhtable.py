@@ -58,6 +58,7 @@ class RSVPButton(discord.ui.View):
     @discord.ui.button(label="✅ Attending", style=discord.ButtonStyle.green)
     async def attending_btn(self, interaction, button):
         try:
+            await interaction.response.defer()
             user = interaction.user.display_name # Get the display name of the user who clicked
             
             # If they are already in attending, send an ephemeral "already RSVP'd" message and return
@@ -68,11 +69,11 @@ class RSVPButton(discord.ui.View):
             if user in self.not_attending:
                 self.not_attending.remove(user)
                 self.attending.append(user)
-                await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
+                await interaction.response.send_message("You are now registered for tonight's shenanigans", ephemeral=True)
                 
             elif user not in self.attending and user not in self.not_attending:
                 self.attending.append(user)
-                await interaction.followup.send("You are now registered for tonight's shenanigans", ephemeral=True)
+                await interaction.response.send_message("You are now registered for tonight's shenanigans", ephemeral=True)
                 
             if len(self.attending) >= self.max_players:
                 await self.close_rsvp()
@@ -97,11 +98,11 @@ class RSVPButton(discord.ui.View):
             if user in self.attending:
                 self.attending.remove(user)
                 self.not_attending.append(user)
-                await interaction.followup.send("You are now unregistered. Shame on you.", ephemeral=True)
+                await interaction.response.send_message("You are now unregistered. Shame on you.", ephemeral=True)
                 
             elif user not in self.attending and user not in self.not_attending:
                 self.not_attending.append(user)
-                await interaction.followup.send("You're missing out, loser", ephemeral=True)
+                await interaction.response.send_message("You're missing out, loser", ephemeral=True)
                 
             if len(self.attending) >= self.max_players:
                 await self.close_rsvp()

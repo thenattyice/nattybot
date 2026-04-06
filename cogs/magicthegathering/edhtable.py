@@ -197,5 +197,5 @@ class EDHTable(commands.Cog):
             traceback.print_exc()
             
 async def setup(bot, guild_object, game_roles):
-    cog = EDHTable(bot, guild_object, gamne_roles)          
+    cog = EDHTable(bot, guild_object, game_roles)          
     await bot.add_cog(cog)

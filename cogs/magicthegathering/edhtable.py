@@ -19,7 +19,7 @@ class RSVPButton(discord.ui.View):
         self.not_attending = []
         self.message = None
         self.embed = discord.Embed(title='MTG Commander Table', color=discord.Color.green())
-        self.embed.description = discord_timestamp
+        self.embed.description = "Game Time: " + discord_timestamp
     
     # Method to start the countdown    
     async def start_timer(self):
@@ -41,7 +41,7 @@ class RSVPButton(discord.ui.View):
         # Build a closed embed showing the final attending/not attending lists
         closed_embed = discord.Embed(
             title='MTG Commander Table',
-            description=f'Game time: {self.discord_timestamp}',
+            description=f'Game Time: {self.discord_timestamp}',
             color=discord.Color.green()
         )
         
@@ -58,7 +58,7 @@ class RSVPButton(discord.ui.View):
         mention_string = ', '.join([user.mention for user in self.attending])
         
         # Send a message pinging the RSVP'd players
-        await self.message.channel.send(f"IT IS GAME TIME! {mention_string}")
+        await self.message.channel.send(f"ITs MAGIC TIME! {mention_string}")
 
     @discord.ui.button(label="✅ Attending", style=discord.ButtonStyle.green)
     async def attending_btn(self, interaction, button):

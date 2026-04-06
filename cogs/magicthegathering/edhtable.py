@@ -45,24 +45,29 @@ class RSVPButton(discord.ui.View):
             color=discord.Color.green()
         )
         
-        closed_embed.add_field(name="Player 1", value=self.attending[0] if len(self.attending) > 0 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 2", value=self.attending[1] if len(self.attending) > 1 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 3", value=self.attending[2] if len(self.attending) > 2 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 4", value=self.attending[3] if len(self.attending) > 3 else "Empty", inline=True)
+        closed_embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "Empty", inline=True)
+        closed_embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "Empty", inline=True)
+        closed_embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "Empty", inline=True)
+        closed_embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "Empty", inline=True)
         
         # Call self.stop() to stop listening for interactions
         self.stop()
         
         await self.message.edit(embed=closed_embed, view=self)
+        
+        mention_string = ', '.join([user.mention for user in self.attending])
+        
+        # Send a message pinging the RSVP'd players
+        await self.message.channel.send(f"IT IS GAME TIME! {mention_string}")
 
     @discord.ui.button(label="✅ Attending", style=discord.ButtonStyle.green)
     async def attending_btn(self, interaction, button):
         try:
-            user = interaction.user.display_name # Get the display name of the user who clicked
+            user = interaction.user # Get the user object of whoever clicks
             
             # If they are already in attending, send an ephemeral "already RSVP'd" message and return
             if user in self.attending:
-                await interaction.followup.send('You are already attending!', ephemeral=True)
+                await interaction.response.send_message('You are already attending!', ephemeral=True)
                 return
             
             if user in self.not_attending:
@@ -87,11 +92,11 @@ class RSVPButton(discord.ui.View):
     @discord.ui.button(label="❌ Not Attending", style=discord.ButtonStyle.red)
     async def not_attending_btn(self, interaction, button):
         try:
-            user = interaction.user.display_name # Get the display name of the user who clicked
+            user = interaction.user # Get the user object of whoever clicks
             
             # If they are already in attending, send an ephemeral "already RSVP'd" message and return
             if user in self.not_attending:
-                await interaction.followup.send("You are already RSVP'd!", ephemeral=True)
+                await interaction.response.send_message("You are already RSVP'd!", ephemeral=True)
                 return
             
             if user in self.attending:
@@ -115,10 +120,10 @@ class RSVPButton(discord.ui.View):
     async def update_embed(self):
         self.embed.clear_fields() # Clear all fields each time, then repopulate with changes below
         
-        self.embed.add_field(name="Player 1", value=self.attending[0] if len(self.attending) > 0 else "Empty", inline=True)
-        self.embed.add_field(name="Player 2", value=self.attending[1] if len(self.attending) > 1 else "Empty", inline=True)
-        self.embed.add_field(name="Player 3", value=self.attending[2] if len(self.attending) > 2 else "Empty", inline=True)
-        self.embed.add_field(name="Player 4", value=self.attending[3] if len(self.attending) > 3 else "Empty", inline=True)
+        self.embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "Empty", inline=True)
+        self.embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "Empty", inline=True)
+        self.embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "Empty", inline=True)
+        self.embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "Empty", inline=True)
 
         await self.message.edit(embed=self.embed, view=self)
 

@@ -301,7 +301,7 @@ async def setup_cogs():
     # MTG
     await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service, inventory_service))
     await load_cog("CardShop", setup_cardshop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service, inventory_service, item_service, mtg_service))
-    await load_cog("EDHTable", setup_edhtable(client, GUILD_OBJECT))
+    await load_cog("EDHTable", setup_edhtable(client, GUILD_OBJECT, GAME_ROLES))
     
     # MC Server Status
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))

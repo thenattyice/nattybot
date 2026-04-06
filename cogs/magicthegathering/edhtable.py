@@ -171,9 +171,10 @@ class StartTimeModal(Modal, title="Set Start Time"):
         asyncio.create_task(view.start_timer())
         
 class EDHTable(commands.Cog):
-    def __init__(self, bot, guild_object):
+    def __init__(self, bot, guild_object, game_roles):
         self.bot = bot
         self.guild_object = guild_object
+        self.game_roles = game_roles
         
         # Registered commands
         self.bot.tree.add_command(self.mtg_table, guild=self.guild_object)
@@ -183,11 +184,18 @@ class EDHTable(commands.Cog):
     async def mtg_table(self, interaction: discord.Interaction):
         # Prompts for start time
         try:
+            user = interaction.user
+            
+            mtg_role = self.game_roles["mtg"]
+            
+            await interaction.response.send_message(f"{user.mention} want to play some Commander tonight! RSVP below for an open slot\n{mtg_role.mention}")
+            
             await interaction.response.send_modal(StartTimeModal())
+            
         except Exception as e:
             print(f"MTG TABLE ERROR: {e}")
             traceback.print_exc()
             
-async def setup(bot, guild_object):
-    cog = EDHTable(bot, guild_object)          
+async def setup(bot, guild_object, game_roles):
+    cog = EDHTable(bot, guild_object, gamne_roles)          
     await bot.add_cog(cog)

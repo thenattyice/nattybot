@@ -58,7 +58,6 @@ class RSVPButton(discord.ui.View):
     @discord.ui.button(label="✅ Attending", style=discord.ButtonStyle.green)
     async def attending_btn(self, interaction, button):
         try:
-            await interaction.response.defer()
             user = interaction.user.display_name # Get the display name of the user who clicked
             
             # If they are already in attending, send an ephemeral "already RSVP'd" message and return

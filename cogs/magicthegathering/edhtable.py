@@ -186,7 +186,8 @@ class EDHTable(commands.Cog):
         try:
             user = interaction.user
             
-            mtg_role = self.game_roles["mtg"]
+            mtg_role_id = self.game_roles["mtg"]
+            mtg_role = interaction.guild.get_role(mtg_role_id)
             
             await interaction.response.send_message(f"{user.mention} want to play some Commander tonight! RSVP below for an open slot\n{mtg_role.mention}")
             

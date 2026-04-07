@@ -20,6 +20,14 @@ class RSVPButton(discord.ui.View):
         self.message = None
         self.embed = discord.Embed(title='MTG Commander Table', color=discord.Color.green())
         self.embed.description = "Game Time: " + discord_timestamp
+        self.embed_player_field_builder(self.embed)
+    
+    # Help method to create the embed fields
+    def embed_player_field_builder(self, embed):
+        embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "", inline=True)
+        embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "", inline=True)
+        embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "", inline=True)
+        embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "", inline=True)
     
     # Method to start the countdown    
     async def start_timer(self):
@@ -45,10 +53,7 @@ class RSVPButton(discord.ui.View):
             color=discord.Color.green()
         )
         
-        closed_embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "", inline=True)
-        closed_embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "", inline=True)
-        closed_embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "", inline=True)
-        closed_embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "", inline=True)
+        self.embed_player_field_builder(closed_embed)
         
         # Call self.stop() to stop listening for interactions
         self.stop()
@@ -120,15 +125,17 @@ class RSVPButton(discord.ui.View):
     async def update_embed(self):
         self.embed.clear_fields() # Clear all fields each time, then repopulate with changes below
         
-        self.embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "", inline=True)
-        self.embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "", inline=True)
-        self.embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "", inline=True)
-        self.embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "", inline=True)
+        self.embed_player_field_builder(self.embed)
 
         await self.message.edit(embed=self.embed, view=self)
 
 # Modal class that displays to the user and prompts for the start time of MTG games
 class StartTimeModal(Modal, title="Set Start Time"):
+    def __init__(self, user, mtg_role):
+        super().__init__()
+        self.user = user
+        self.mtg_role = mtg_role
+    
     start_time = TextInput(
         label="Start Time",
         placeholder="e.g. 14:30 or 2:30 PM - Eastern",
@@ -170,7 +177,7 @@ class StartTimeModal(Modal, title="Set Start Time"):
         # Kick off the timer async task
         asyncio.create_task(view.start_timer())
         
-        await interaction.followup.send(f"{user.mention} wants to play some Commander tonight! RSVP for an open slot\n{mtg_role.mention}")
+        await interaction.followup.send(f"{self.user.mention} wants to play some Commander tonight! RSVP for an open slot\n{self.mtg_role.mention}")
         
 class EDHTable(commands.Cog):
     def __init__(self, bot, guild_object, game_roles):
@@ -191,7 +198,7 @@ class EDHTable(commands.Cog):
             mtg_role_id = self.game_roles["mtg"]
             mtg_role = interaction.guild.get_role(mtg_role_id)
             
-            await interaction.response.send_modal(StartTimeModal())
+            await interaction.response.send_modal(StartTimeModal(user,mtg_role))
             
         except Exception as e:
             print(f"MTG TABLE ERROR: {e}")

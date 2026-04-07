@@ -76,3 +76,6 @@
 - Added current Wrodle streak to the /stats card
 - Added logging/debugging for the wordle streak process
 - Upgraded bot build to use Metal
+
+**Natty Bot v2.9 - 4/6/2026**
+- Added MTG Commander table RSVP system for the boys. Use /table to set a start time for a 4-person EDH game

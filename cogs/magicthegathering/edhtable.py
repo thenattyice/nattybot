@@ -45,10 +45,10 @@ class RSVPButton(discord.ui.View):
             color=discord.Color.green()
         )
         
-        closed_embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "Empty", inline=True)
-        closed_embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "Empty", inline=True)
+        closed_embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "", inline=True)
+        closed_embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "", inline=True)
+        closed_embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "", inline=True)
+        closed_embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "", inline=True)
         
         # Call self.stop() to stop listening for interactions
         self.stop()
@@ -120,10 +120,10 @@ class RSVPButton(discord.ui.View):
     async def update_embed(self):
         self.embed.clear_fields() # Clear all fields each time, then repopulate with changes below
         
-        self.embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "Empty", inline=True)
-        self.embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "Empty", inline=True)
-        self.embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "Empty", inline=True)
-        self.embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "Empty", inline=True)
+        self.embed.add_field(name="Player 1", value=self.attending[0].display_name if len(self.attending) > 0 else "", inline=True)
+        self.embed.add_field(name="Player 2", value=self.attending[1].display_name if len(self.attending) > 1 else "", inline=True)
+        self.embed.add_field(name="Player 3", value=self.attending[2].display_name if len(self.attending) > 2 else "", inline=True)
+        self.embed.add_field(name="Player 4", value=self.attending[3].display_name if len(self.attending) > 3 else "", inline=True)
 
         await self.message.edit(embed=self.embed, view=self)
 
@@ -131,7 +131,7 @@ class RSVPButton(discord.ui.View):
 class StartTimeModal(Modal, title="Set Start Time"):
     start_time = TextInput(
         label="Start Time",
-        placeholder="e.g. 14:30 or 2:30 PM",
+        placeholder="e.g. 14:30 or 2:30 PM - Eastern",
         required=True,
         max_length=20
     )
@@ -170,6 +170,8 @@ class StartTimeModal(Modal, title="Set Start Time"):
         # Kick off the timer async task
         asyncio.create_task(view.start_timer())
         
+        await interaction.followup.send(f"{user.mention} wants to play some Commander tonight! RSVP for an open slot\n{mtg_role.mention}")
+        
 class EDHTable(commands.Cog):
     def __init__(self, bot, guild_object, game_roles):
         self.bot = bot
@@ -188,8 +190,6 @@ class EDHTable(commands.Cog):
             
             mtg_role_id = self.game_roles["mtg"]
             mtg_role = interaction.guild.get_role(mtg_role_id)
-            
-            await interaction.response.send_message(f"{user.mention} want to play some Commander tonight! RSVP below for an open slot\n{mtg_role.mention}")
             
             await interaction.response.send_modal(StartTimeModal())
             

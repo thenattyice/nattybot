@@ -172,7 +172,7 @@ class StartTimeModal(Modal, title="Set Start Time"):
         await interaction.response.send_message(embed=view.embed, view=view)
         
         # Store the message on the button view
-        view.message = await interaction.original_response()
+        view.message = await (await interaction.original_response()).fetch()
         
         # Kick off the timer async task
         asyncio.create_task(view.start_timer())

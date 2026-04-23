@@ -2,5 +2,21 @@
   "python.testing.pytestArgs": ["tests"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
-  "postman.settings.dotenv-detection-notification-visibility": false
+  "postman.settings.dotenv-detection-notification-visibility": false,
+  "cSpell.words": [
+    "buildpack",
+    "cardshop",
+    "coinflip",
+    "coro",
+    "DAILYPAYOUT",
+    "dotenv",
+    "edhtable",
+    "freespin",
+    "guids",
+    "magicthegathering",
+    "mcserver",
+    "openpack",
+    "TIMESTAMPTZ",
+    "Wordle"
+  ]
 }

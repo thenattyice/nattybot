@@ -43,6 +43,7 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJECT = discord.Object(id=GUILD_ID)
 ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
 WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID"))
+WORDLE_CHANNEL = int(os.getenv("WORDLE_CHANNEL"))
 PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
 DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
 PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
@@ -71,7 +72,7 @@ class Client(commands.Bot):
         except Exception as e:
             print(f'Error syncing commands: {e}')
         
-    # DB conenction details method
+    # DB connection details method
     async def setup_db(self):
         try:
             self.db_pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
@@ -286,7 +287,7 @@ async def setup_cogs():
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
     # Wordle Cog
-    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, economy_service, wordle_service))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, WORDLE_CHANNEL, economy_service, wordle_service))
     
     # User Stats Cog
     await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service, game_service))

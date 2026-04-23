@@ -8,10 +8,11 @@ from discord.ext import commands, tasks
 
 eastern = ZoneInfo("America/New_York")
 class Wordle(commands.Cog):
-    def __init__(self, bot, guild_object, wordle_app_id, economy_service, wordle_service):
+    def __init__(self, bot, guild_object, wordle_app_id, wordle_channel, economy_service, wordle_service):
         self.bot = bot
         self.guild_object = guild_object
         self.wordle_app_id = wordle_app_id
+        self.wordle_channel = wordle_channel
         self.economy_service = economy_service
         self.wordle_service = wordle_service
         
@@ -19,24 +20,20 @@ class Wordle(commands.Cog):
         
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
+        self.bot.tree.add_command(self.test_monthly_champ, guild=self.guild_object) # /test-monthly-champ
         
     def cog_unload(self):
         self.monthly_wordle_champ_process.cancel()
     
     # Create and assign the wordle champ role
-    async def wordle_champ_role(self):
+    async def assign_wordle_champ_role(self, champ_id):
         try:
-            guild = self.bot.get_guild(self.guild_object.id)
+            champ = await self.wordle_service.user_check(champ_id)
             
-            # Get champ details
-            champ_id = await self.wordle_service.determine_champ()
-            
-            champ = guild.get_member(champ_id)
-            if champ is None:
-                print(f"[WARN] Champion with ID {champ_id} not found in guild.")
+            if not champ:
                 return
             
-            # Get PREVIOUS month and year for the role name
+            # Get previous month and year for the role name
             now = datetime.datetime.now(eastern)
             # Calculate first day of current month, then subtract 1 day to get last day of previous month
             first_day_current = now.replace(day=1)
@@ -56,42 +53,52 @@ class Wordle(commands.Cog):
                 )
             
             # Assign it to the champ
-            await champ.add_roles(wordle_champ_role, reason="Awarded Wordle Champion")
+            await champ.add_roles(role, reason="Awarded Wordle Champion")
             print(f"[DEBUG] Assigned {role_name} to {champ.display_name}")
             return True
         except Exception:
             traceback.print_exc()
             return False
     
-    # Clear all wordle champ pts monthly
+    # Method to build the monthly winner embed
+    async def monthly_winner_embed(self, champ_id):
+        
+        champ_embed = discord.Embed(
+            title="**Monthly Wordle Championship**",
+            description=f"WINNER: <@{champ_id}>\n\nThe month has ended and a new one begins!\n\nWho will be the Wordle Champ?!",
+            color=discord.Color.gold()
+        )
+        return champ_embed
+    
+    # Clear all wordle champ pts monthly AND crown the champion
     @tasks.loop(time=datetime.time(hour=12, minute=0, tzinfo=eastern))
     async def monthly_wordle_champ_process(self):
+        
+        wordle_channel = await self.bot.get_channel(self.wordle_channel)
+        
         now = datetime.datetime.now(eastern)
         if now.day != 1:  # Only run on the 1st of the month
             return
         
-        success = await self.wordle_champ_role()
+        champ_id = await self.wordle_service.determine_champ() # Get champ user ID
+        
+        success = await self.assign_wordle_champ_role(champ_id) # Process to create and assign the champ role
         if success:
-            # Clear the points
             try:
-                async with self.bot.db_pool.acquire() as conn:
-                    rows = await conn.execute("""
-                                        WITH users_with_pts AS (
-                                            SELECT user_id FROM users
-                                            WHERE wordle_pts > 0
-                                        )
-                                        UPDATE users
-                                        SET wordle_pts = 0
-                                        FROM users_with_pts uwp
-                                        WHERE users.user_id = uwp.user_id
-                                    """)
+                champ_embed = await self.monthly_winner_embed(champ_id) # Call the announcement embed
+                
+                await wordle_channel.send(embed=champ_embed) # Send the embed message
+                
+                await self.wordle_service.clear_all_wordle_pts() # Clear the points
+                
                 print("[TASK] Monthly Wordle Championship Points reset completed!")
-            except:
+            except Exception as e:
                 traceback.print_exc()
-                print("[ERROR] Monthly Wordle Championship Points reset FAILED!")
+                print(f"[ERROR] Monthly Wordle Championship Points reset FAILED! Error: {e}")
         else:
             print("[ERROR] Failed to process the champion and their role")
     
+    # Start the task loop
     @monthly_wordle_champ_process.before_loop
     async def before_monthly_wordle_champ_process(self):
         await self.bot.wait_until_ready()
@@ -211,6 +218,9 @@ class Wordle(commands.Cog):
                     print(f"⚠️ Could not match any users for: '{raw_mentions_or_names}'")
 
             economy_cog = self.bot.get_cog("Economy")
+            if not economy_cog:
+                print("[ERROR] Economy cog not found")
+                return
             
             # Process the wordle streaks (only if users played)
             if user_rewards:
@@ -281,7 +291,38 @@ class Wordle(commands.Cog):
         championship_embed = await self.wordle_service.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
-async def setup(bot, guild_object, wordle_app_id, economy_service, wordle_service):
-    cog = Wordle(bot, guild_object, wordle_app_id, economy_service, wordle_service)          
+@app_commands.command(name="test-monthly-champ", description="[DEV] Test the monthly champion process")
+@app_commands.checks.has_permissions(administrator=True)
+async def test_monthly_champ(self, interaction: discord.Interaction):
+    await interaction.response.defer()
+    
+    try:
+        # Get the champion
+        champ_id = await self.wordle_service.determine_champ()
+        if not champ_id:
+            await interaction.followup.send("No champion found (no wordle scores recorded yet)")
+            return
+        
+        # Process the champion role assignment
+        success = await self.assign_wordle_champ_role(champ_id)
+        if not success:
+            await interaction.followup.send("Failed to assign champion role")
+            return
+        
+        # Send the announcement
+        champ_embed = await self.monthly_winner_embed(champ_id)
+        wordle_channel = self.bot.get_channel(self.wordle_channel)
+        await wordle_channel.send(embed=champ_embed)
+        
+        # Clear points
+        await self.wordle_service.clear_all_wordle_pts()
+        
+        await interaction.followup.send("✅ Monthly champion process completed (test)")
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {e}")
+        traceback.print_exc()
+
+async def setup(bot, guild_object, wordle_app_id, wordle_channel, economy_service, wordle_service):
+    cog = Wordle(bot, guild_object, wordle_app_id, wordle_channel, economy_service, wordle_service)          
     await bot.add_cog(cog) 
     cog.monthly_wordle_champ_process.start()

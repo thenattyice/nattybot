@@ -177,6 +177,28 @@ class WordleService():
         multiplier = streak_multipliers[max(eligible)] if eligible else 1.0
         
         return multiplier
+    
+    # Method to check if a given user exists in the server. Returns true/false
+    async def user_check(self, user_id):
+        guild = self.bot.get_guild(self.guild_object.id)
+            
+        user = guild.get_member(user_id)
+        if user is None:
+            print(f"[WARN] User with ID {user_id} not found in guild.")
+            return False
+        else:
+            return True
         
-        
-        
+    # Method to clear current wordle pts in user table
+    async def clear_all_wordle_pts(self):
+        async with self.bot.db_pool.acquire() as conn:
+                    rows = await conn.execute("""
+                        WITH users_with_pts AS (
+                            SELECT user_id FROM users
+                            WHERE wordle_pts > 0
+                        )
+                        UPDATE users
+                        SET wordle_pts = 0
+                        FROM users_with_pts uwp
+                        WHERE users.user_id = uwp.user_id
+                    """)

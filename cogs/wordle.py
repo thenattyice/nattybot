@@ -291,36 +291,36 @@ class Wordle(commands.Cog):
         championship_embed = await self.wordle_service.championship_pull()
         await interaction.followup.send(embed=championship_embed)
         
-@app_commands.command(name="test-monthly-champ", description="[DEV] Test the monthly champion process")
-@app_commands.checks.has_permissions(administrator=True)
-async def test_monthly_champ(self, interaction: discord.Interaction):
-    await interaction.response.defer()
-    
-    try:
-        # Get the champion
-        champ_id = await self.wordle_service.determine_champ()
-        if not champ_id:
-            await interaction.followup.send("No champion found (no wordle scores recorded yet)")
-            return
+    @app_commands.command(name="test-monthly-champ", description="[DEV] Test the monthly champion process")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def test_monthly_champ(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         
-        # Process the champion role assignment
-        success = await self.assign_wordle_champ_role(champ_id)
-        if not success:
-            await interaction.followup.send("Failed to assign champion role")
-            return
-        
-        # Send the announcement
-        champ_embed = await self.monthly_winner_embed(champ_id)
-        wordle_channel = self.bot.get_channel(self.wordle_channel)
-        await wordle_channel.send(embed=champ_embed)
-        
-        # Clear points
-        await self.wordle_service.clear_all_wordle_pts()
-        
-        await interaction.followup.send("✅ Monthly champion process completed (test)")
-    except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
-        traceback.print_exc()
+        try:
+            # Get the champion
+            champ_id = await self.wordle_service.determine_champ()
+            if not champ_id:
+                await interaction.followup.send("No champion found (no wordle scores recorded yet)")
+                return
+            
+            # Process the champion role assignment
+            success = await self.assign_wordle_champ_role(champ_id)
+            if not success:
+                await interaction.followup.send("Failed to assign champion role")
+                return
+            
+            # Send the announcement
+            champ_embed = await self.monthly_winner_embed(champ_id)
+            wordle_channel = self.bot.get_channel(self.wordle_channel)
+            await wordle_channel.send(embed=champ_embed)
+            
+            # Clear points
+            await self.wordle_service.clear_all_wordle_pts()
+            
+            await interaction.followup.send("✅ Monthly champion process completed (test)")
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error: {e}")
+            traceback.print_exc()
 
 async def setup(bot, guild_object, wordle_app_id, wordle_channel, economy_service, wordle_service):
     cog = Wordle(bot, guild_object, wordle_app_id, wordle_channel, economy_service, wordle_service)          

@@ -25,10 +25,21 @@ class Wordle(commands.Cog):
     def cog_unload(self):
         self.monthly_wordle_champ_process.cancel()
     
+    # Helper method to check if a given user exists in the server. Returns true/false
+    async def user_check(self, user_id):
+        guild = self.bot.get_guild(self.guild_object.id)
+            
+        user = guild.get_member(user_id)
+        if user is None:
+            print(f"[WARN] User with ID {user_id} not found in guild.")
+            return False
+        else:
+            return True
+    
     # Create and assign the wordle champ role
     async def assign_wordle_champ_role(self, champ_id):
         try:
-            champ = await self.wordle_service.user_check(champ_id)
+            champ = await self.user_check(champ_id)
             
             if not champ:
                 return

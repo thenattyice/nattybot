@@ -79,7 +79,7 @@ class Wordle(commands.Cog):
     @tasks.loop(time=datetime.time(hour=12, minute=0, tzinfo=eastern))
     async def monthly_wordle_champ_process(self):
         
-        wordle_channel = await self.bot.get_channel(self.wordle_channel)
+        wordle_channel = self.bot.get_channel(self.wordle_channel)
         
         now = datetime.datetime.now(eastern)
         if now.day != 1:  # Only run on the 1st of the month

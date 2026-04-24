@@ -147,6 +147,8 @@ class WordleService():
                                         SELECT user_id, wordle_pts
                                         FROM ranked
                                         WHERE rnk = 1;""")
+        if result is None:
+            return None
         champion = result["user_id"]
         return champion
     

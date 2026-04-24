@@ -172,7 +172,7 @@ class WordleService():
         
         current_streak = await self.get_user_wordle_streak(user_id)
         
-        # Filter the streak_multipliers as threshholds
+        # Filter the streak_multipliers as thresholds
         eligible = [s for s in streak_multipliers if s <= current_streak]
         multiplier = streak_multipliers[max(eligible)] if eligible else 1.0
         

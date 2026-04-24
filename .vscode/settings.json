@@ -11,6 +11,8 @@
     "DAILYPAYOUT",
     "dotenv",
     "edhtable",
+    "fetchrow",
+    "fetchval",
     "freespin",
     "guids",
     "magicthegathering",

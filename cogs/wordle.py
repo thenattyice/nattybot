@@ -44,6 +44,9 @@ class Wordle(commands.Cog):
             if not champ:
                 return
             
+            # Get the actual Guild object
+            guild = self.bot.get_guild(self.guild_object.id)
+            
             # Get previous month and year for the role name
             now = datetime.datetime.now(eastern)
             # Calculate first day of current month, then subtract 1 day to get last day of previous month
@@ -53,21 +56,22 @@ class Wordle(commands.Cog):
             
             # Create the role for current month/year
             # Check if role already exists
-            existing_role = discord.utils.get(self.guild_object.roles, name=role_name)
+            existing_role = discord.utils.get(guild.roles, name=role_name)
             if existing_role:
                 wordle_champ_role = existing_role
             else:
-                wordle_champ_role = await self.guild_object.create_role(
+                wordle_champ_role = await guild.create_role(
                     name=role_name,
                     color=discord.Color.yellow(),
                     reason="Monthly Wordle Champion role"
                 )
             
             # Assign it to the champ
-            await champ.add_roles(role, reason="Awarded Wordle Champion")
+            await champ.add_roles(wordle_champ_role, reason="Awarded Wordle Champion")
             print(f"[DEBUG] Assigned {role_name} to {champ.display_name}")
             return True
-        except Exception:
+        except Exception as e:
+            print(f"[ERROR]: {e}")
             traceback.print_exc()
             return False
     

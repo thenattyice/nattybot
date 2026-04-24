@@ -180,7 +180,7 @@ class WordleService():
         
     # Method to clear current wordle pts in user table
     async def clear_all_wordle_pts(self):
-        async with self.bot.db_pool.acquire() as conn:
+        async with self.db_pool.acquire() as conn:
                     rows = await conn.execute("""
                         WITH users_with_pts AS (
                             SELECT user_id FROM users

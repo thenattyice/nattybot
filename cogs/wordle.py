@@ -53,11 +53,11 @@ class Wordle(commands.Cog):
             
             # Create the role for current month/year
             # Check if role already exists
-            existing_role = discord.utils.get(guild.roles, name=role_name)
+            existing_role = discord.utils.get(self.guild_object.roles, name=role_name)
             if existing_role:
                 wordle_champ_role = existing_role
             else:
-                wordle_champ_role = await guild.create_role(
+                wordle_champ_role = await self.guild_object.create_role(
                     name=role_name,
                     color=discord.Color.yellow(),
                     reason="Monthly Wordle Champion role"

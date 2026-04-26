@@ -10,11 +10,7 @@ class NicknameService:
     async def token_validation(self, user_id) -> bool:
         user_inventory = await self.inventory_service.get_user_inventory(user_id)
         
-        if "Nickname Token" in user_inventory:
-            return True
-        
-        else:
-            return False
+        return any(item.get('name') == "Nickname Token" for item in user_inventory)
         
     # Get nickname token item ID
     async def get_nickname_token_id(self):

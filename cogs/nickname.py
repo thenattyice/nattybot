@@ -30,15 +30,15 @@ class NicknameModal(Modal, title='Enter desired nickname:'):
         
         # Method to check for profanity
         if profanity.contains_profanity(new_nickname):
-            await interaction.response.send_message("The nickname cannot contain profanity!")
+            await interaction.response.send_message("The nickname cannot contain profanity!", ephemeral=True)
             return
         
         try:
             await self.target_user.edit(nick=new_nickname) # Change the user's guild nickname
             await self.inventory_service.remove_item_from_inventory(self.user_id, self.token_id, 1) # Remove a nickname token from player inventory
-            await interaction.response.send_message(f"Changed {self.target_user}'s nickname to {new_nickname}!")
+            await interaction.response.send_message(f"Changed {self.target_user}'s nickname to {new_nickname}!", ephemeral=True)
         except discord.Forbidden:
-            await interaction.response.send_message("No permission to change this user's nickname")
+            await interaction.response.send_message("No permission to change this user's nickname", ephemeral=True)
         except Exception as e:
             traceback.print_exc()
             print(f"[NICKNAME] Error: {e} ")
@@ -91,12 +91,12 @@ class NicknameChange(commands.Cog):
             
             # Check if the token is cached first
             if not self.token_id:
-                await interaction.response.send_message("Nickname system not initialized. Try again later.")
+                await interaction.response.send_message("Nickname system not initialized. Try again later.", ephemeral=True)
                 return
             
             # Check if the user has a nickname change token
             if not has_token:
-                await interaction.response.send_message('You do not have a nickname change token in your inventory. Please buy one from the /shop to change a nickname')
+                await interaction.response.send_message('You do not have a nickname change token in your inventory. Please buy one from the /shop to change a nickname', ephemeral=True)
                 return
             
             # Start the modal, pass the user ID target, then validate in the modal

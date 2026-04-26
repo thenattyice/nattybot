@@ -103,3 +103,4 @@ class ItemService:
             AND is_active = TRUE
         """, set_code)
         return dict(row) if row else None
+        

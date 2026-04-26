@@ -23,6 +23,7 @@ from cogs.magicthegathering.buildpack import setup as setup_openpack
 from cogs.magicthegathering.cardshop import setup as setup_cardshop
 from cogs.magicthegathering.edhtable import setup as setup_edhtable
 from cogs.formula1 import setup as setup_f1
+from cogs.nickname import setup as setup_nickname
 from services.item_service import ItemService
 from services.inventory_service import InventoryService
 from services.shop_service import ShopService
@@ -35,6 +36,7 @@ from services.user_service import UserService
 from services.slots_service import SlotsService
 from services.wordle_service import WordleService
 from services.formula1_service import Formula1Service
+from services.nickname_service import NicknameService
 
 load_dotenv() #Load the env file
 
@@ -260,6 +262,7 @@ async def setup_cogs():
     slots_service = SlotsService(client.db_pool, economy_service, game_service)
     wordle_service = WordleService(client.db_pool)
     f1_service = Formula1Service(client.db_pool)
+    nickname_service = NicknameService(client.db_pool, inventory_service, item_service)
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -308,7 +311,10 @@ async def setup_cogs():
     await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
     
     # F1 Cog
-    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, F1_NOTIFICATIONS_CHANNEL,f1_service))
+    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, F1_NOTIFICATIONS_CHANNEL, f1_service))
+    
+    # NicknameChange cog
+    await load_cog("NicknameChange", setup_nickname(client, GUILD_OBJECT, inventory_service, nickname_service))
     
 # Main method
 async def main():

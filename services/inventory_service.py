@@ -4,7 +4,7 @@ class InventoryService:
     def __init__(self, db_pool):
         self.db_pool = db_pool
         
-    # Get an item quantity for a specifc user by item_id
+    # Get an item quantity for a specific user by item_id
     async def get_item_quantity(self, user_id: int, item_id: int) -> int:
         async with self.db_pool.acquire() as conn:
             result = await conn.fetchrow("""

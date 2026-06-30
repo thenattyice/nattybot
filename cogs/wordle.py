@@ -227,9 +227,12 @@ class Wordle(commands.Cog):
                 print("[ERROR] Economy cog not found")
                 return
             
-            # Process the wordle streaks (only if users played)
+            # Process the wordle streaks (only if users played) and log the scores in wordle_streaks table
             if user_rewards:
                 await self.wordle_service.wordle_streak_process(list(user_rewards.keys()))
+                
+                # Log all of the wordle results
+                await self.wordle_service.log_wordle_results(user_rewards)
             
             for user_id, score in user_rewards.items():
                 

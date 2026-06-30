@@ -208,6 +208,14 @@ class Client(commands.Bot):
                         year INT NOT NULL,
                         UNIQUE(circuit_key, year)
                     );
+                    
+                    -- Wordle results table
+                    CREATE TABLE IF NOT EXISTS wordle_results (
+                        user_id BIGINT REFERENCES users(user_id),
+                        guesses INT NOT NULL,
+                        game_date DATE NOT NULL,
+                        PRIMARY KEY (user_id, game_date)
+                    )
 
                     -- Indexes for performance
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);

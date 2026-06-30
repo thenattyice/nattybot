@@ -1,6 +1,5 @@
 import discord
-import traceback
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 class WordleService():
     def __init__(self, db_pool, user_service):
@@ -215,3 +214,63 @@ class WordleService():
                         FROM users_with_pts uwp
                         WHERE users.user_id = uwp.user_id
                     """)
+                    
+    # Log daily wordle results to the wordle_results table
+    async def log_wordle_results(self, wordle_results: dict):
+        today = date.today()
+        game_date =  today - timedelta(days=1) # Yesterday
+        
+        records = [(user_id, score, game_date) for user_id, score in wordle_results.items()]
+        
+        async with self.db_pool.acquire() as conn:
+            await conn.executemany("""
+                INSERT INTO wordle_results (user_id, guesses, game_date)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (user_id, game_date) DO NOTHING
+            """, records)
+    
+    # Get all wordle guess data for a specific month
+    async def get_month_wordle_results(self, month_name: str  | None , year: int | None):
+        # Set the month number properly for the query
+        if not month_name:
+            month_num = datetime.now().month
+        else:
+            # Convert the month text to num for SQL query
+            month_num = datetime.strptime(month_name, "%B").month
+            
+        # Default the year to current year
+        if year is None:
+            year = date.today().year
+            
+        # SQL query to get the data
+        async with self.db_pool.acquire() as conn:
+            return await conn.fetch("""
+                SELECT user_id, guesses, game_date
+                FROM wordle_results
+                WHERE EXTRACT(MONTH FROM game_date) = $1
+                AND EXTRACT(YEAR FROM game_date) = $2
+                ORDER BY game_date ASC
+            """, month_num, year)
+    
+    # Summarize a player's wordle performance in a month by: Dates played, count per guess (0-6), avg wordle guess count
+    async def user_wordle_summary(self, user_id: int, month: int, year: int):
+        async with self.db_pool.acquire() as conn:
+            return await conn.fetchrow("""
+                SELECT
+                    user_id,
+                    COUNT(*) FILTER (WHERE guesses = 1) AS guess_1,
+                    COUNT(*) FILTER (WHERE guesses = 2) AS guess_2,
+                    COUNT(*) FILTER (WHERE guesses = 3) AS guess_3,
+                    COUNT(*) FILTER (WHERE guesses = 4) AS guess_4,
+                    COUNT(*) FILTER (WHERE guesses = 5) AS guess_5,
+                    COUNT(*) FILTER (WHERE guesses = 6) AS guess_6,
+                    COUNT(*) FILTER (WHERE guesses = 0) AS guess_fail,
+                    COUNT(*) AS total_games,
+                    ROUND(AVG(guesses) FILTER (WHERE guesses != 0), 2) AS avg_guesses
+                FROM wordle_results
+                WHERE user_id = $1
+                    AND EXTRACT(MONTH FROM game_date) = $2
+                    AND EXTRACT(YEAR FROM game_date) = $3
+                GROUP BY user_id
+            """, user_id, month, year)
+            

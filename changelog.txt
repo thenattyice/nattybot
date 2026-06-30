@@ -79,3 +79,9 @@
 
 **Natty Bot v2.9 - 4/6/2026**
 - Added MTG Commander table RSVP system for the boys. Use /table to set a start time for a 4-person EDH game
+
+**Natty Bot v2.10 - 4/24/2026**
+- Added monthly Wordle winner announcement
+
+**Natty Bot v2.11 - 4/26/2026**
+- Nickname Tokens! These can be bought from the shop and allow you to use /set_nickname to change a user's nickname

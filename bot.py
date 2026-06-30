@@ -215,7 +215,7 @@ class Client(commands.Bot):
                         guesses INT NOT NULL,
                         game_date DATE NOT NULL,
                         PRIMARY KEY (user_id, game_date)
-                    )
+                    );
 
                     -- Indexes for performance
                     CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);

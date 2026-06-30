@@ -260,7 +260,7 @@ async def setup_cogs():
     game_service = GameService(client.db_pool)
     user_service = UserService(client.db_pool, economy_service, game_service)
     slots_service = SlotsService(client.db_pool, economy_service, game_service)
-    wordle_service = WordleService(client.db_pool)
+    wordle_service = WordleService(client.db_pool, user_service)
     f1_service = Formula1Service(client.db_pool)
     nickname_service = NicknameService(client.db_pool, inventory_service, item_service)
 

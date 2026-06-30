@@ -3,8 +3,9 @@ import traceback
 from datetime import date, timedelta
 
 class WordleService():
-    def __init__(self, db_pool):
+    def __init__(self, db_pool, user_service):
         self.db_pool = db_pool
+        self.user_service = user_service
         
     # Get the current wordle streak details
     async def check_wordle_streaks(self, wordle_players: list):
@@ -51,7 +52,28 @@ class WordleService():
         today = date.today()
         yesterday =  today - timedelta(days=1)
         
+        # Initial check
         streaks = await self.check_wordle_streaks(wordle_players)
+        
+        existing_players = {row['user_id'] for row in streaks}
+        new_players = [uid for uid in wordle_players if uid not in existing_players]
+        
+        # New player check
+        if new_players:
+            for uid in new_players:
+                result = await self.user_service.add_user(uid)
+                
+                rows_inserted = int(result.split()[-1])
+                if rows_inserted > 0:
+                    print(f"[WORDLE STREAK] New user inserted: {uid}")
+                    streaks.append({
+                        'user_id': uid,
+                        'wordle_streak': 0,
+                        'last_wordle_date': None,
+                        'best_wordle_streak': None
+                    })
+                else:
+                    print(f"[WORDLE STREAK] User {uid} already existed, skipping.")
         
         for row in streaks:
             user_id = row['user_id']

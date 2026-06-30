@@ -84,3 +84,14 @@ class UserService:
             "most_played_game": stats["most_played_game"] or "None",
             "wager_rank": stats["wager_rank"]
         }
+    
+    # Adds a user to users table with schema defaults
+    async def add_user(self, user_id: int):
+        async with self.db_pool.acquire() as conn:
+            result = await conn.execute("""
+                INSERT INTO users (user_id)
+                VALUES ($1)
+                ON CONFLICT (user_id) DO NOTHING
+                """, user_id)
+        return result
+        

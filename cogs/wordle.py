@@ -5,6 +5,7 @@ import datetime
 from zoneinfo import ZoneInfo
 from discord import app_commands, Member, TextChannel
 from discord.ext import commands, tasks
+from typing import Optional
 
 eastern = ZoneInfo("America/New_York")
 class Wordle(commands.Cog):
@@ -298,6 +299,70 @@ class Wordle(commands.Cog):
         # Display the Wordle points championship leaderboard
         championship_embed = await self.wordle_service.championship_pull()
         await interaction.followup.send(embed=championship_embed)
+    
+    # Command to get a player's wordle summary for a month
+    @app_commands.command(name="wordle_stats", description="Shows a player's wordle summary for a given month")
+    @app_commands.choices(month=[
+        app_commands.Choice(name="January", value=1),
+        app_commands.Choice(name="February", value=2),
+        app_commands.Choice(name="March", value=3),
+        app_commands.Choice(name="April", value=4),
+        app_commands.Choice(name="May", value=5),
+        app_commands.Choice(name="June", value=6),
+        app_commands.Choice(name="July", value=7),
+        app_commands.Choice(name="August", value=8),
+        app_commands.Choice(name="September", value=9),
+        app_commands.Choice(name="October", value=10),
+        app_commands.Choice(name="November", value=11),
+        app_commands.Choice(name="December", value=12)
+    ])
+    async def wordle_stats(self,
+                           interaction: discord.Interaction,
+                           member: Optional[discord.Member] = None,
+                           month: Optional[app_commands.Choice[int]] = None,
+                           year: Optional[app_commands.Range[int, 2026, 2100]] = None
+                           ):
+        try:
+            user = member or interaction.user
+            user_id = user.id
+            
+            today = datetime.datetime.now()
+            month_value = month.value if month is not None else today.month
+            year_value = year if year is not None else today.year
+            
+            results = await self.wordle_service.user_wordle_summary(user_id, month_value, year_value)
+            
+            if not results:
+                await interaction.response.send_message(f"Could not find any Wordle stats for that combination of Player: {user}, Month: {month_value}, and Year: {year_value}", ephemeral=True)
+                return
+                
+            # Build the embed
+            embed = discord.Embed(
+                title=f"📊 {user.display_name}'s Wordle Stats 📊",
+                color=discord.Color.gold()
+            )
+            
+            # Set the user's avatar as the thumbnail
+            embed.set_thumbnail(url=user.display_avatar.url)
+            
+            # Add the fields for each stat
+            avg_guesses_display = f"{results['avg_guesses']:,}" if results['avg_guesses'] is not None else "N/A"
+            embed.add_field(name="Avg Guess Count", value=f"{avg_guesses_display}", inline=False)
+            embed.add_field(name="Wins in 1", value=f"{results['guess_1']:,}", inline=False)
+            embed.add_field(name="Wins in 2", value=f"{results['guess_2']:,}", inline=False)
+            embed.add_field(name="Wins in 3", value=f"{results['guess_3']:,}", inline=False)
+            embed.add_field(name="Wins in 4", value=f"{results['guess_4']:,}", inline=False)
+            embed.add_field(name="Wins in 5", value=f"{results['guess_5']:,}", inline=False)
+            embed.add_field(name="Wins in 6", value=f"{results['guess_6']:,}", inline=False)
+            embed.add_field(name="Fails", value=f"{results['guess_fail']:,}", inline=False)
+            
+            # Send the embed
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[WORDLE STATS] Error retrieving stats for user_id: {user_id}. Error: {e}")
+            await interaction.response.send_message(f"Error retrieving stats for user_id: {user}. Error: {e}", ephemeral=True)
         
     @app_commands.command(name="test-monthly-champ", description="[DEV] Test the monthly champion process")
     @app_commands.checks.has_permissions(administrator=True)

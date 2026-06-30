@@ -187,10 +187,15 @@ class WordleService():
     async def wordle_payout_multiplier(self, reward: int, user_id):
         streak_multipliers = {
             0: 1.0,
-            5: 1.2,
+            5: 1.25,
             10: 1.5,
             25: 2.0,
-            50: 2.5 
+            50: 2.5,
+            100: 3.0,
+            150: 3.5,
+            200: 4.0,
+            250: 4.5,
+            300: 5.0 
         }
         
         current_streak = await self.get_user_wordle_streak(user_id)

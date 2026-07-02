@@ -273,10 +273,6 @@ class Wordle(commands.Cog):
             # Display the Wordle points championship leaderboard
             championship_embed = await self.wordle_service.championship_pull()
             await message.channel.send(embed=championship_embed)
-            
-            # Display the NattyCoin leaderboard
-            leaderboard_embed = await economy_cog.build_leaderboard()
-            await message.channel.send(embed=leaderboard_embed)
 
             await self.bot.process_commands(message)
         except Exception as e:

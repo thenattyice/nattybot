@@ -14,11 +14,13 @@ from cogs.stats import setup as setup_stats
 from cogs.shop.shop import setup as setup_shop
 from cogs.shop.businesses import setup as setup_businesses
 from cogs.wordle import setup as setup_wordle
+from cogs.games import setup as setup_games
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack
 from cogs.games.freespin import setup as setup_freespin
 from cogs.games.slots import setup as setup_slots
+from cogs.games.roulette import RouletteGame
 from cogs.magicthegathering.buildpack import setup as setup_openpack
 from cogs.magicthegathering.cardshop import setup as setup_cardshop
 from cogs.magicthegathering.edhtable import setup as setup_edhtable
@@ -265,12 +267,13 @@ async def setup_cogs():
     inventory_service = InventoryService(client.db_pool)
     mtg_service = MtgService(client.db_pool, inventory_service, item_service)
     business_service = BusinessService(client.db_pool, economy_service)
-    game_service = GameService(client.db_pool)
+    game_service = GameService(client.db_pool, economy_service)
     user_service = UserService(client.db_pool, economy_service, game_service)
     slots_service = SlotsService(client.db_pool, economy_service, game_service)
     wordle_service = WordleService(client.db_pool, user_service)
     f1_service = Formula1Service(client.db_pool)
     nickname_service = NicknameService(client.db_pool, inventory_service, item_service)
+    roulette = RouletteGame() # Instantiate roulette game
 
     # 2. Get the handler registry
     handler_registry = get_default_registry()
@@ -304,6 +307,7 @@ async def setup_cogs():
     await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service, game_service))
     
     #Game Cogs
+    await load_cog("Games", setup_games(client, GUILD_OBJECT, economy_service, game_service, roulette))
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service, game_service))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service, game_service))

@@ -14,7 +14,7 @@ from cogs.stats import setup as setup_stats
 from cogs.shop.shop import setup as setup_shop
 from cogs.shop.businesses import setup as setup_businesses
 from cogs.wordle import setup as setup_wordle
-from cogs.games import setup as setup_games
+from cogs.games.games import setup as setup_games
 from cogs.games.coinflip import setup as setup_coinflip
 from cogs.games.rps import setup as setup_rps
 from cogs.games.blackjack import setup as setup_blackjack

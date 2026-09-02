@@ -6,7 +6,8 @@ import re
 import traceback
 from discord.ext import commands
 from discord import Member
-from dotenv import load_dotenv
+from config import load_config
+from db import create_db_pool, close_db_pool
 from cogs.economy import setup as setup_economy
 from cogs.lfg import LookingForGroup
 from cogs.mcserver import setup as setup_mcserver
@@ -40,24 +41,9 @@ from services.wordle_service import WordleService
 from services.formula1_service import Formula1Service
 from services.nickname_service import NicknameService
 
-load_dotenv() #Load the env file
+config = load_config()
 
-# Vars instead of hard coding guids
-GUILD_ID = int(os.getenv("GUILD_ID"))
-GUILD_OBJECT = discord.Object(id=GUILD_ID)
-ROLES_ALLOWED_ADD_MONEY = {int(os.getenv("MR_ICE_ROLE"))}  # Mr. Ice for now
-WORDLE_APP_ID = int(os.getenv("WORDLE_APP_ID"))
-WORDLE_CHANNEL = int(os.getenv("WORDLE_CHANNEL"))
-PURCHASE_LOG_CHANNEL = int(os.getenv("PURCHASE_LOG_CHANNEL"))
-DAILYPAYOUT_LOG_CHANNEL = int(os.getenv("DAILYPAYOUT_LOG_CHANNEL"))
-PACK_OPENING_CHANNEL = int(os.getenv("PACK_OPENING_CHANNEL"))
-F1_NOTIFICATIONS_CHANNEL = int(os.getenv("F1_NOTIFICATIONS_CHANNEL"))
-
-GAME_ROLES = {
-    "rocket league": int(os.getenv("RL_ROLE")),
-    "rematch": int(os.getenv("REMATCH_ROLE")),
-    "mtg": int(os.getenv("MTG_ROLE"))
-}
+GUILD_OBJECT = discord.Object(id=config.guild_id)
 
 class Client(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -71,7 +57,7 @@ class Client(commands.Bot):
         # Sync all commands after cogs load and bot initializes
         try:
             synced = await self.tree.sync(guild=GUILD_OBJECT)
-            print(f'Synced {len(synced)} commands to guild {GUILD_ID}')
+            print(f'Synced {len(synced)} commands to guild {config.guild_id}')
 
         except Exception as e:
             print(f'Error syncing commands: {e}')
@@ -79,153 +65,7 @@ class Client(commands.Bot):
     # DB connection details method
     async def setup_db(self):
         try:
-            self.db_pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
-            async with self.db_pool.acquire() as conn:
-                await conn.execute("""
-                    -- Users table
-                    CREATE TABLE IF NOT EXISTS users (
-                        user_id BIGINT PRIMARY KEY,
-                        balance BIGINT NOT NULL DEFAULT 0,
-                        wordle_pts BIGINT NOT NULL DEFAULT 0,
-                        daily_spin BOOLEAN DEFAULT FALSE,
-                        wordle_streak INT NOT NULL DEFAULT 0,
-                        last_wordle_date DATE,
-                        best_wordle_streak INT
-                    );
-
-                    -- Shop items table (item_type stored as text)
-                    CREATE TABLE IF NOT EXISTS shop_items (
-                        id SERIAL PRIMARY KEY,
-                        name TEXT UNIQUE NOT NULL,
-                        description TEXT,
-                        price INTEGER NOT NULL CHECK (price > 0),
-                        item_type TEXT NOT NULL CHECK (item_type IN ('consumable', 'bundle', 'business', 'collectible')),
-                        metadata JSONB DEFAULT '{}',
-                        is_active BOOLEAN DEFAULT TRUE,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    -- User inventory table
-                    CREATE TABLE IF NOT EXISTS inventory (
-                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-                        item_id INTEGER REFERENCES shop_items(id) ON DELETE CASCADE,
-                        quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 0),
-                        metadata JSONB DEFAULT '{}',
-                        acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (user_id, item_id)
-                    );
-                    
-                    -- MTG sets table (for pack opening feature)
-                    CREATE TABLE IF NOT EXISTS mtg_sets (
-                        id SERIAL PRIMARY KEY,
-                        set_code TEXT UNIQUE NOT NULL,
-                        set_name TEXT UNIQUE NOT NULL,
-                        pack_price INTEGER NOT NULL,
-                        box_price INTEGER NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    -- Purchase history/log table
-                    CREATE TABLE IF NOT EXISTS purchases (
-                        id SERIAL PRIMARY KEY,
-                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
-                        quantity INTEGER NOT NULL DEFAULT 1,
-                        price_paid INTEGER NOT NULL,
-                        purchase_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    -- Item usage log (for consumables, pack openings, etc.)
-                    CREATE TABLE IF NOT EXISTS item_usage (
-                        id SERIAL PRIMARY KEY,
-                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-                        item_id INTEGER REFERENCES shop_items(id) ON DELETE SET NULL,
-                        usage_type TEXT NOT NULL, -- 'consume', 'activate', 'daily_payout'
-                        quantity INTEGER DEFAULT 1,
-                        result_data JSONB, -- Store pack contents, payout amounts, etc.
-                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    -- Game stats table (for leaderboards)
-                    CREATE TABLE IF NOT EXISTS game_stats (
-                        id SERIAL PRIMARY KEY,  -- Add an auto-incrementing ID
-                        user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-                        game TEXT NOT NULL,
-                        result TEXT NOT NULL,
-                        wager INTEGER DEFAULT 0,
-                        balance_change INTEGER DEFAULT 0,
-                        game_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-                    
-                    -- Game stats table (for leaderboards)
-                    CREATE TABLE IF NOT EXISTS gambling_stats (
-                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-                        total_wagered INTEGER DEFAULT 0,
-                        total_won INTEGER DEFAULT 0,
-                        games_played INTEGER DEFAULT 0,
-                        biggest_win INTEGER DEFAULT 0,
-                        last_game_timestamp TIMESTAMP
-                    );
-
-                    -- Minecraft server tracking
-                    CREATE TABLE IF NOT EXISTS mc_server (
-                        id SERIAL PRIMARY KEY,
-                        ip_address TEXT UNIQUE NOT NULL,
-                        setup_status BOOLEAN DEFAULT FALSE,
-                        category_id BIGINT,
-                        status_channel_id BIGINT,
-                        player_count_channel_id BIGINT
-                    );
-                    
-                    -- Jackpot for slots
-                    CREATE TABLE IF NOT EXISTS jackpot (
-                        total INTEGER DEFAULT 1000,
-                        last_winner_id BIGINT,
-                        last_winner_date DATE
-                    );
-                    
-                    -- F1 session data
-                    CREATE TABLE IF NOT EXISTS f1_sessions (
-                        id SERIAL PRIMARY KEY,
-                        circuit_key INT NOT NULL,
-                        circuit TEXT NOT NULL,
-                        date_start TIMESTAMPTZ NOT NULL,
-                        date_end TIMESTAMPTZ NOT NULL,
-                        session_name TEXT NOT NULL,
-                        session_key INT NOT NULL,
-                        location TEXT NOT NULL,
-                        year INT NOT NULL,
-                        UNIQUE(circuit_key, session_name, year)
-                    );
-                    
-                    -- F1 season data
-                    CREATE TABLE IF NOT EXISTS f1_seasons (
-                        id SERIAL PRIMARY KEY,
-                        round INT NOT NULL,
-                        circuit_key INT NOT NULL,
-                        circuit TEXT NOT NULL,
-                        meeting_name TEXT NOT NULL,
-                        date_start TIMESTAMPTZ NOT NULL,
-                        date_end TIMESTAMPTZ NOT NULL,
-                        year INT NOT NULL,
-                        UNIQUE(circuit_key, year)
-                    );
-                    
-                    -- Wordle results table
-                    CREATE TABLE IF NOT EXISTS wordle_results (
-                        user_id BIGINT REFERENCES users(user_id),
-                        guesses INT NOT NULL,
-                        game_date DATE NOT NULL,
-                        PRIMARY KEY (user_id, game_date)
-                    );
-
-                    -- Indexes for performance
-                    CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON inventory(user_id);
-                    CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
-                    CREATE INDEX IF NOT EXISTS idx_purchases_timestamp ON purchases(purchase_time DESC);
-                    CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
-                    CREATE INDEX IF NOT EXISTS idx_shop_items_active ON shop_items(is_active) WHERE is_active = TRUE;
-                """)
+            self.db_pool = await create_db_pool(config.database_url)    
             print("Database connection pool created and schema ensured.")
 
         except asyncpg.PostgresError as e:
@@ -290,53 +130,47 @@ async def setup_cogs():
     
     # 4. Load cogs that need services
     # Shop Cogs
-    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service, inventory_service, item_service, mtg_service))
-    await load_cog("Businesses", setup_businesses(client, DAILYPAYOUT_LOG_CHANNEL, GUILD_OBJECT, business_service))
+    await load_cog("Shop", setup_shop(client, GUILD_OBJECT, config.mr_ice_role, config.purchase_log_channel, shop_service, inventory_service, item_service, mtg_service))
+    await load_cog("Businesses", setup_businesses(client, config.daily_payout_log_channel, GUILD_OBJECT, business_service))
     
     # Economy Cog
-    await load_cog("Economy", setup_economy(client, GUILD_OBJECT,ROLES_ALLOWED_ADD_MONEY, economy_service))
+    await load_cog("Economy", setup_economy(client, GUILD_OBJECT,config.mr_ice_role, economy_service))
     
     # LFG Cog
-    lfg_cog = LookingForGroup(client, GUILD_OBJECT,GAME_ROLES)
+    lfg_cog = LookingForGroup(client, GUILD_OBJECT,config.game_roles)
     await load_cog("LookingForGroup", client.add_cog(lfg_cog))
     
     # Wordle Cog
-    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, WORDLE_APP_ID, WORDLE_CHANNEL, economy_service, wordle_service))
+    await load_cog("Wordle", setup_wordle(client, GUILD_OBJECT, config.wordle_app_id, config.wordle_channel, economy_service, wordle_service))
     
     # User Stats Cog
-    await load_cog("Stats", setup_stats(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, user_service, game_service))
+    await load_cog("Stats", setup_stats(client, GUILD_OBJECT, config.mr_ice_role, user_service, game_service))
     
     #Game Cogs
     await load_cog("Games", setup_games(client, GUILD_OBJECT, economy_service, game_service, roulette))
     await load_cog("Coinflip", setup_coinflip(client, GUILD_OBJECT, economy_service, game_service))
-    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, economy_service, game_service))
+    await load_cog("RockPaperScissors", setup_rps(client, GUILD_OBJECT, config.mr_ice_role, economy_service, game_service))
     await load_cog("Blackjack", setup_blackjack(client, GUILD_OBJECT, economy_service, game_service))
     await load_cog("FreeDailySpin", setup_freespin(client, GUILD_OBJECT, economy_service))
     await load_cog("SlotMachine", setup_slots(client, GUILD_OBJECT, economy_service, game_service, slots_service))
     
     # MTG
-    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PACK_OPENING_CHANNEL, economy_service, mtg_service, inventory_service))
-    await load_cog("CardShop", setup_cardshop(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY, PURCHASE_LOG_CHANNEL, shop_service, inventory_service, item_service, mtg_service))
-    await load_cog("EDHTable", setup_edhtable(client, GUILD_OBJECT, GAME_ROLES))
+    await load_cog("BuildBoosterPack", setup_openpack(client, GUILD_OBJECT, config.mr_ice_role, config.pack_opening_channel, economy_service, mtg_service, inventory_service))
+    await load_cog("CardShop", setup_cardshop(client, GUILD_OBJECT, config.mr_ice_role, config.purchase_log_channel, shop_service, inventory_service, item_service, mtg_service))
+    await load_cog("EDHTable", setup_edhtable(client, GUILD_OBJECT, config.game_roles))
     
     # MC Server Status
-    await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, ROLES_ALLOWED_ADD_MONEY))
+    await load_cog("MinecraftServerStatus", setup_mcserver(client, GUILD_OBJECT, config.mr_ice_role))
     
     # F1 Cog
-    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, F1_NOTIFICATIONS_CHANNEL, f1_service))
+    await load_cog("Formula1", setup_f1(client, GUILD_OBJECT, config.f1_notifications_channel, f1_service))
     
     # NicknameChange cog
     await load_cog("NicknameChange", setup_nickname(client, GUILD_OBJECT, inventory_service, nickname_service))
     
 # Main method
 async def main():
-    # Check if bot should run
-    if os.getenv("BOT_DISABLED") == "true":
-        print("Bot is disabled via BOT_DISABLED environment variable")
-        print("Remove or set to 'false' to re-enable")
-        return
-    
-    await client.start(os.getenv('DISCORD_TOKEN'))
+    await client.start(config.discord_token)
 
 # Run main
 if __name__ == '__main__':

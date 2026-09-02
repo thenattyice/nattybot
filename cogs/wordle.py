@@ -22,7 +22,7 @@ class Wordle(commands.Cog):
         # Register commands to my specific guild/server
         self.bot.tree.add_command(self.wordle_championship, guild=self.guild_object) # /championship
         self.bot.tree.add_command(self.wordle_stats, guild=self.guild_object) # /wordle_stats
-        #self.bot.tree.add_command(self.test_monthly_champ, guild=self.guild_object) # /test-monthly-champ
+        self.bot.tree.add_command(self.test_monthly_champ, guild=self.guild_object) # /test-monthly-champ
         
     def cog_unload(self):
         self.monthly_wordle_champ_process.cancel()

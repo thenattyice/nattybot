@@ -68,11 +68,11 @@ class Wordle(commands.Cog):
             return False
     
     # Method to build the monthly winner embed
-    async def monthly_winner_embed(self, champ_id):
+    async def monthly_winner_embed(self, champ_mention):
         
         champ_embed = discord.Embed(
             title="**Monthly Wordle Championship**",
-            description=f"WINNER: <@{champ_id}>\n\nThe month has ended and a new one begins!\n\nWho will be the Wordle Champ?!",
+            description=f"WINNER: {champ_mention}\n\nThe month has ended and a new one begins!\n\nWho will be the Wordle Champ?!",
             color=discord.Color.gold()
         )
         return champ_embed
@@ -87,23 +87,28 @@ class Wordle(commands.Cog):
         if now.day != 1:  # Only run on the 1st of the month
             return
         
-        champ_id = await self.wordle_service.determine_champ() # Get champ user ID
+        champ_ids = await self.wordle_service.determine_champ() # Get champ user IDs
         
-        success = await self.assign_wordle_champ_role(champ_id) # Process to create and assign the champ role
-        if success:
-            try:
-                champ_embed = await self.monthly_winner_embed(champ_id) # Call the announcement embed
-                
-                await wordle_channel.send(embed=champ_embed) # Send the embed message
-                
-                await self.wordle_service.clear_all_wordle_pts() # Clear the points
-                
-                print("[TASK] Monthly Wordle Championship Points reset completed!")
-            except Exception as e:
-                traceback.print_exc()
-                print(f"[ERROR] Monthly Wordle Championship Points reset FAILED! Error: {e}")
-        else:
-            print("[ERROR] Failed to process the champion and their role")
+        for uid in champ_ids:
+            success = await self.assign_wordle_champ_role(uid) # Process to create and assign the champ role
+            if not success:
+                print(f"Failed to assign champion role to {uid}")
+                return
+        
+        # Put all champ IDs into a string    
+        champ_mention = " ".join([f"<@{uid}>" for uid in champ_ids])
+        
+        try:
+            champ_embed = await self.monthly_winner_embed(champ_mention) # Call the announcement embed
+            
+            await wordle_channel.send(embed=champ_embed) # Send the embed message
+            
+            await self.wordle_service.clear_all_wordle_pts() # Clear the points
+            
+            print("[TASK] Monthly Wordle Championship Points reset completed!")
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[ERROR] Monthly Wordle Championship Points reset FAILED! Error: {e}")
     
     # Start the task loop
     @monthly_wordle_champ_process.before_loop
@@ -367,20 +372,24 @@ class Wordle(commands.Cog):
         await interaction.response.defer()
         
         try:
-            # Get the champion
-            champ_id = await self.wordle_service.determine_champ()
-            if not champ_id:
+            # Get the champion(s) - this is a LIST of user_ids
+            champ_ids = await self.wordle_service.determine_champ()
+            if not champ_ids:
                 await interaction.followup.send("No champion found (no wordle scores recorded yet)")
                 return
-            
-            # Process the champion role assignment
-            success = await self.assign_wordle_champ_role(champ_id)
-            if not success:
-                await interaction.followup.send("Failed to assign champion role")
-                return
+
+            # Process the champion role assignment for each champ
+            for uid in champ_ids:
+                success = await self.assign_wordle_champ_role(uid)
+                if not success:
+                    await interaction.followup.send(f"Failed to assign champion role to <@{uid}>")
+                    return
+
+            # Build the mention string for the embed
+            champ_mention = " ".join([f"<@{uid}>" for uid in champ_ids])
             
             # Send the announcement
-            champ_embed = await self.monthly_winner_embed(champ_id)
+            champ_embed = await self.monthly_winner_embed(champ_mention)
             wordle_channel = self.bot.get_channel(self.wordle_channel)
             await wordle_channel.send(embed=champ_embed)
             

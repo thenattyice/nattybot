@@ -159,8 +159,10 @@ class WordleService():
     
     # Determine championship winner
     async def determine_champ(self):
+        champions = []
+        
         async with self.db_pool.acquire() as conn:
-            result = await conn.fetchrow("""WITH ranked AS (
+            rows = await conn.fetch("""WITH ranked AS (
                                             SELECT user_id, wordle_pts,
                                                 RANK() OVER (ORDER BY wordle_pts DESC) AS rnk
                                             FROM users
@@ -168,10 +170,13 @@ class WordleService():
                                         SELECT user_id, wordle_pts
                                         FROM ranked
                                         WHERE rnk = 1;""")
-        if result is None:
+        if rows is None:
             return None
-        champion = result["user_id"]
-        return champion
+        
+        for row in rows:    
+            champions.append(row["user_id"])
+            
+        return champions
     
     # Get user's wordle streak
     async def get_user_wordle_streak(self, user_id):
